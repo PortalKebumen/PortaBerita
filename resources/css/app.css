@@ -1,9 +1,58 @@
 @import 'tailwindcss';
-
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
+@source '../views/**/*.blade.php';
 
 @theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+    --color-brand-50: #EEF1FA;
+    --color-brand-100: #DCE2F5;
+    --color-brand-300: #8FA0DD;
+    --color-brand-500: #2C48A8;
+    --color-brand-600: #1E398E;
+    --color-brand-700: #142B57;
+    --color-brand-900: #0B1C37;
+
+    --color-accent-100: #FFE4D1;
+    --color-accent-400: #FF8A3D;
+    --color-accent-500: #FF6E11;
+    --color-accent-600: #E85D00;
+
+    --color-success: #1B8A5A;
+    --color-success-bg: #E4F5EC;
+    --color-warning: #B5730A;
+    --color-warning-bg: #FBF0DA;
+    --color-danger: #C23B3B;
+    --color-danger-bg: #FBE7E7;
+    --color-info: #3B5BDB;
+    --color-info-bg: #E7EBFB;
+
+    --font-sans: 'Public Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-display: 'Fraunces', Georgia, serif;
+    --font-mono: 'IBM Plex Mono', monospace;
+
+    --radius-card: 14px;
+}
+
+@layer base {
+    body {
+        @apply bg-[#F1F3F7] text-[#171B28] font-sans;
+    }
+    h1, h2, h3, h4 {
+        @apply font-display font-semibold;
+        text-wrap: balance;
+    }
+}
+
+@layer components {
+    .btn {
+        @apply inline-flex items-center justify-center gap-2 rounded-lg text-[13.5px] font-semibold px-4 py-2.5 leading-none transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap;
+    }
+    .btn-primary { @apply inline-flex items-center justify-center gap-2 rounded-lg text-[13.5px] font-semibold px-4 py-2.5 leading-none transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap bg-brand-600 text-white hover:bg-brand-700; }
+    .btn-secondary { @apply inline-flex items-center justify-center gap-2 rounded-lg text-[13.5px] font-semibold px-4 py-2.5 leading-none transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap bg-[#E4E8EF] text-[#171B28] hover:bg-[#D7DCE6]; }
+    .card { @apply bg-white border border-[#CDD3DF] rounded-card; }
+    .form-label { @apply block text-[12.5px] font-semibold text-[#3B4152] mb-1.5; }
+    .form-input {
+        @apply w-full rounded-lg border border-[#CDD3DF] bg-white px-3.5 py-2.5 text-[13.5px] text-[#171B28] placeholder:text-[#7C88AE] outline-none transition-colors duration-150 focus:border-brand-500 focus:ring-2 focus:ring-brand-100;
+    }
 }
