@@ -2,11 +2,13 @@
 
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
+use App\Http\Controllers\Public\PublicController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return redirect()->route('login');
-});
+Route::get('/', [PublicController::class, 'beranda'])->name('public.beranda');
+Route::get('/kategori/{slug}', [PublicController::class, 'kategori'])->name('public.kategori');
+Route::get('/penulis/{user}', [PublicController::class, 'byline'])->name('public.byline');
+Route::get('/artikel/{slug}', [PublicController::class, 'artikel'])->name('public.artikel');
 
 Route::middleware('guest')->group(function () {
     Route::get('login', [AuthenticatedSessionController::class, 'create'])->name('login');
