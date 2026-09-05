@@ -10,7 +10,9 @@ class AdminUserSeeder extends Seeder
 {
     public function run(): void
     {
-        User::firstOrCreate(
+        $this->call(RolePermissionSeeder::class);
+
+        $user = User::firstOrCreate(
             ['email' => 'admin@portalkebumen.test'],
             [
                 'name' => 'Admin Test',
@@ -18,5 +20,7 @@ class AdminUserSeeder extends Seeder
                 'email_verified_at' => now(),
             ]
         );
+
+        $user->assignRole('Super Admin');
     }
 }

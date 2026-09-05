@@ -26,14 +26,14 @@ Route::middleware('auth')->group(function () {
     Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
 });
 
-Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
+Route::middleware(['auth', 'can:dashboard.view'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 
-    Route::get('artikel', fn () => view('admin.coming-soon', ['title' => 'Artikel']))->name('artikel.index');
-    Route::get('kategori-tag', fn () => view('admin.coming-soon', ['title' => 'Kategori & Tag']))->name('kategori-tag.index');
-    Route::get('media-library', fn () => view('admin.coming-soon', ['title' => 'Media Library']))->name('media-library.index');
-    Route::get('iklan', fn () => view('admin.coming-soon', ['title' => 'Iklan']))->name('iklan.index');
-    Route::get('pengguna-role', fn () => view('admin.coming-soon', ['title' => 'Pengguna & Role']))->name('pengguna-role.index');
-    Route::get('activity-log', fn () => view('admin.coming-soon', ['title' => 'Activity Log']))->name('activity-log.index');
-    Route::get('pengaturan', fn () => view('admin.coming-soon', ['title' => 'Pengaturan']))->name('pengaturan.index');
+    Route::get('artikel', fn () => view('admin.coming-soon', ['title' => 'Artikel']))->can('articles.view')->name('artikel.index');
+    Route::get('kategori-tag', fn () => view('admin.coming-soon', ['title' => 'Kategori & Tag']))->can('categories.view')->name('kategori-tag.index');
+    Route::get('media-library', fn () => view('admin.coming-soon', ['title' => 'Media Library']))->can('media.view')->name('media-library.index');
+    Route::get('iklan', fn () => view('admin.coming-soon', ['title' => 'Iklan']))->can('ads.view')->name('iklan.index');
+    Route::get('pengguna-role', fn () => view('admin.coming-soon', ['title' => 'Pengguna & Role']))->can('users.view')->name('pengguna-role.index');
+    Route::get('activity-log', fn () => view('admin.coming-soon', ['title' => 'Activity Log']))->can('activity-log.view')->name('activity-log.index');
+    Route::get('pengaturan', fn () => view('admin.coming-soon', ['title' => 'Pengaturan']))->can('settings.view')->name('pengaturan.index');
 });
