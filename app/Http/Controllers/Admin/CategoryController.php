@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Category;
+use App\Models\Tag;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -20,14 +21,18 @@ class CategoryController extends Controller
 
         // ambil daftar kategori utama untuk pilihan dropdown parent di form
         $parentCategories = Category::whereNull('parent_id')->get();
-        return view('admin.categories.index', compact('categories','parentCategories'));
+
+        // ambil daftar tag terbaru (30)
+        $tags = Tag::withCount('articles')->latest()->take(30)->get();
+
+        return view('admin.kategori-tag', compact('categories','parentCategories', 'tags'));
     }
 
     public function store(Request $request)
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255', 'unique:categories,name'],
-            'parent_id' => ['nullable', 'exits:categories,id'],
+            'parent_id' => ['nullable', 'exists:categories,id'],
         ]);
 
         // Category::create($validated); <-- kurang efisien
@@ -39,7 +44,7 @@ class CategoryController extends Controller
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255', Rule::unique('categories', 'name')->ignore($category->id)],
-            'parent_id' => ['nullable', 'exits:categories,id'],
+            'parent_id' => ['nullable', 'exists:categories,id'],
         ]);
 
         // mencegah kategori menjadikan dirinya sendiri sebagai parent
@@ -54,7 +59,7 @@ class CategoryController extends Controller
     public function destroy(Category $category)
     {
         // mencegah hapus jika kategori masih memiliki article
-        if ($category->articles()->exits()){
+        if ($category->articles()->exists()){
             return redirect()->back()->with('error','kategori tidak dapat dihapus karena masih memiliki article');
         }
 
