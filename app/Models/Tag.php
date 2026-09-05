@@ -21,9 +21,9 @@ class Tag extends Model
         });
     }
 
-    // relasi many-to-many ke article lewat table pivot tag_article
+    // relasi many-to-many ke article lewat table pivot article_tag
     public function articles(): BelongsToMany
     {
-        return $this->belongsToMany(Article::class, 'tag_article');
+        return $this->belongsToMany(Article::class, 'article_tag');
     }
 }
