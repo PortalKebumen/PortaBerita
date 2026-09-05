@@ -29,10 +29,16 @@
             @enderror
         </div>
 
-        <label class="flex items-center gap-2.5 cursor-pointer mb-6">
-            <input type="checkbox" name="remember" class="form-checkbox">
-            <span class="text-[13px]">Ingat saya di perangkat ini</span>
-        </label>
+        <div class="mb-6 flex items-center justify-between gap-4">
+            <label class="flex items-center gap-2.5 cursor-pointer">
+                <input type="checkbox" name="remember" class="form-checkbox">
+                <span class="text-[13px]">Ingat saya</span>
+            </label>
+
+            <a href="{{ route('password.request') }}" class="text-[13px] font-semibold text-brand-600 hover:text-brand-700">
+                Lupa kata sandi?
+            </a>
+        </div>
 
         <button type="submit" class="btn-primary w-full justify-center">Masuk</button>
     </form>
