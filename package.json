@@ -3,7 +3,7 @@
     "private": true,
     "type": "module",
     "scripts": {
-        "build": "cross-env RAYON_NUM_THREADS=1 vite build",
+        "build": "vite build",
         "dev": "vite"
     },
     "devDependencies": {
