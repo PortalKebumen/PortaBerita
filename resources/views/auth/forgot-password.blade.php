@@ -6,6 +6,8 @@
         <div class="alert-success mb-5">{{ session('status') }}</div>
     @endif
 
+    <x-auth-countdown :until="session('password_retry_at')" message="Pengiriman ulang tautan reset dibatasi sementara." />
+
     <form method="POST" action="{{ route('password.email') }}">
         @csrf
 
@@ -15,7 +17,9 @@
                    placeholder="nama@portalkebumen.com"
                    class="form-input @error('email') is-error @enderror">
             @error('email')
-                <div class="form-error-text">{{ $message }}</div>
+                @if ((int) session('password_retry_at') <= now()->timestamp)
+                    <div class="form-error-text" style="color: #dc2626;" role="alert">{{ $message }}</div>
+                @endif
             @enderror
         </div>
 
