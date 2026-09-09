@@ -6,6 +6,8 @@
         <div class="alert-success mb-5">{{ session('status') }}</div>
     @endif
 
+    <x-auth-countdown :until="session('login_retry_at')" message="Terlalu banyak percobaan login yang gagal." />
+
     <form method="POST" action="{{ route('login') }}">
         @csrf
 
@@ -15,7 +17,9 @@
                    placeholder="nama@portalkebumen.com"
                    class="form-input @error('email') is-error @enderror">
             @error('email')
-                <div class="form-error-text">{{ $message }}</div>
+                @if ((int) session('login_retry_at') <= now()->timestamp)
+                <div class="form-error-text" style="color: #dc2626;" role="alert">{{ $message }}</div>
+                @endif
             @enderror
         </div>
 
@@ -25,7 +29,7 @@
                    placeholder="••••••••"
                    class="form-input @error('password') is-error @enderror">
             @error('password')
-                <div class="form-error-text">{{ $message }}</div>
+                <div class="form-error-text" style="color: #dc2626;" role="alert">{{ $message }}</div>
             @enderror
         </div>
 
