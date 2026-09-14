@@ -10,32 +10,54 @@ use Illuminate\Validation\Rule;
 
 class CategoryController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        // ambil kategori utama beserta sub kategori children dan hitungan jumlah article
-        $categories = Category::whereNull('parent_id')
-        ->with(['children' => fn($q) => $q->withCount('articles')])
-        ->withCount('articles')
-        ->latest()
-        ->paginate(10);
+        $categorySearch = $request->query('q_cat');
+        $tagSearch = $request->query('q_tag');
 
-        // ambil daftar kategori utama untuk pilihan dropdown parent di form
-        $parentCategories = Category::whereNull('parent_id')->get();
+        // Ambil semua kategori beserta parent & hitungan artikel
+        $categoriesQuery = Category::with('parent')->withCount('articles');
+        if ($categorySearch) {
+            $categoriesQuery->where('name', 'like', "%{$categorySearch}%")
+                ->orWhere('slug', 'like', "%{$categorySearch}%");
+        }
+        $categories = $categoriesQuery->orderByRaw('CASE WHEN parent_id IS NULL THEN 0 ELSE 1 END')
+            ->orderBy('name')
+            ->paginate(15, ['*'], 'cat_page')
+            ->withQueryString();
 
-        // ambil daftar tag terbaru (30)
-        $tags = Tag::withCount('articles')->latest()->take(30)->get();
+        // Daftar kategori utama untuk dropdown parent di modal
+        $parentCategories = Category::whereNull('parent_id')->orderBy('name')->get();
 
-        return view('admin.kategori-tag', compact('categories','parentCategories', 'tags'));
+        // Ambil daftar tags dengan hitungan artikel
+        $tagsQuery = Tag::withCount('articles');
+        if ($tagSearch) {
+            $tagsQuery->where('name', 'like', "%{$tagSearch}%")
+                ->orWhere('slug', 'like', "%{$tagSearch}%");
+        }
+        $tags = $tagsQuery->latest()->paginate(20, ['*'], 'tag_page')->withQueryString();
+
+        return view('admin.kategori-tag', compact('categories', 'parentCategories', 'tags'));
     }
 
     public function store(Request $request)
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255', 'unique:categories,name'],
-            'parent_id' => ['nullable', 'exists:categories,id'],
+            'parent_id' => [
+                'nullable',
+                'exists:categories,id',
+                function ($attribute, $value, $fail) {
+                    if ($value) {
+                        $parent = Category::find($value);
+                        if ($parent && !is_null($parent->parent_id)) {
+                            $fail('Sub-kategori tidak dapat dijadikan induk (maksimal 1 tingkat hierarki).');
+                        }
+                    }
+                },
+            ],
         ]);
 
-        // Category::create($validated); <-- kurang efisien
         Category::firstOrCreate($validated);
         return redirect()->back()->with('success', 'Kategori berhasil dibuat');
     }
@@ -44,13 +66,31 @@ class CategoryController extends Controller
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255', Rule::unique('categories', 'name')->ignore($category->id)],
-            'parent_id' => ['nullable', 'exists:categories,id'],
-        ]);
+            'parent_id' => [
+                'nullable',
+                'exists:categories,id',
+                function ($attribute, $value, $fail) use ($category) {
+                    if ($value) {
+                        if ($value == $category->id) {
+                            $fail('Kategori tidak boleh menjadi induk bagi dirinya sendiri.');
+                            return;
+                        }
 
-        // mencegah kategori menjadikan dirinya sendiri sebagai parent
-        if ($validated['parent_id'] == $category->id){
-            return redirect()->back()->with('error', 'kategori tidak boleh menjadikan dirinya sendiri sebagai parent');
-        }
+                        $parent = Category::find($value);
+                        if ($parent && !is_null($parent->parent_id)) {
+                            $fail('Sub-kategori tidak dapat dijadikan induk (maksimal 1 tingkat hierarki).');
+                            return;
+                        }
+
+                        // Jika kategori ini sudah memiliki anak (sub-kategori), tidak boleh dijadikan sub-kategori
+                        if ($category->children()->exists()) {
+                            $fail('Kategori utama yang sudah memiliki sub-kategori tidak dapat dijadikan sub-kategori.');
+                            return;
+                        }
+                    }
+                },
+            ],
+        ]);
 
         $category->update($validated);
         return redirect()->back()->with('success', 'Kategori berhasil diupdate');

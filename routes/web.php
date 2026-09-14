@@ -8,6 +8,7 @@ use App\Http\Controllers\Public\PublicController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [PublicController::class, 'beranda'])->name('public.beranda');
+Route::get('/kategori/{parent}/{sub}', [PublicController::class, 'kategori'])->name('public.kategori.sub');
 Route::get('/kategori/{slug}', [PublicController::class, 'kategori'])->name('public.kategori');
 Route::get('/penulis/{user}', [PublicController::class, 'byline'])->name('public.byline');
 Route::get('/artikel/{slug}', [PublicController::class, 'artikel'])->name('public.artikel');
@@ -28,7 +29,6 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
 
     // rute utama kategori & tag diarahin langsung ke CategoryController
     Route::get('kategori-tag', [CategoryController::class, 'index'])->name('kategori-tag.index');
-    // Route::get('kategori-tag', fn () => view('admin.coming-soon', ['title' => 'Kategori & Tag']))->name('kategori-tag.index'); <- versi lawas
 
     Route::get('media-library', fn () => view('admin.coming-soon', ['title' => 'Media Library']))->name('media-library.index');
     Route::get('iklan', fn () => view('admin.coming-soon', ['title' => 'Iklan']))->name('iklan.index');
