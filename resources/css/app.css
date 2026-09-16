@@ -26,20 +26,18 @@
     --color-info: #3B5BDB;
     --color-info-bg: #E7EBFB;
 
-    --font-sans: 'Public Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
-    --font-display: 'Fraunces', Georgia, serif;
-    --font-mono: 'IBM Plex Mono', monospace;
+    --font-heading: "Poppins", "Montserrat", sans-serif;
+    --font-body: "Inter", sans-serif;
 
     --radius-card: 14px;
 }
 
 @layer base {
     body {
-        @apply bg-[#F1F3F7] text-[#171B28] font-sans;
+        @apply bg-[#F1F3F7] text-[#171B28] font-body;
     }
     h1, h2, h3, h4 {
-        @apply font-display font-semibold;
+        @apply font-heading font-semibold;
         text-wrap: balance;
     }
 }

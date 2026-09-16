@@ -15,7 +15,7 @@
         .form-error-text { color: #dc2626; }
     </style>
 </head>
-<body class="bg-[#F1F3F7] text-[#171B28] font-sans min-h-screen relative overflow-hidden">
+<body class="bg-[#F1F3F7] text-[#171B28] font-body min-h-screen relative overflow-hidden">
 
     {{-- Dekorasi background lembut, tetap pakai warna brand/accent --}}
     <div class="pointer-events-none absolute -top-24 -left-24 w-[420px] h-[420px] rounded-full bg-brand-500/10 blur-3xl"></div>
