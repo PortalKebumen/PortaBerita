@@ -1,6 +1,8 @@
 <?php
 
+use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\TagController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
@@ -8,6 +10,7 @@ use App\Http\Controllers\Public\PublicController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [PublicController::class, 'beranda'])->name('public.beranda');
+Route::get('/kategori/{parent}/{sub}', [PublicController::class, 'kategori'])->name('public.kategori.sub');
 Route::get('/kategori/{slug}', [PublicController::class, 'kategori'])->name('public.kategori');
 Route::get('/penulis/{user}', [PublicController::class, 'byline'])->name('public.byline');
 Route::get('/artikel/{slug}', [PublicController::class, 'artikel'])->name('public.artikel');
@@ -30,10 +33,17 @@ Route::middleware(['auth', 'can:dashboard.view'])->prefix('admin')->name('admin.
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 
     Route::get('artikel', fn () => view('admin.coming-soon', ['title' => 'Artikel']))->can('articles.view')->name('artikel.index');
-    Route::get('kategori-tag', fn () => view('admin.coming-soon', ['title' => 'Kategori & Tag']))->can('categories.view')->name('kategori-tag.index');
+
+    // rute utama kategori & tag diarahin langsung ke CategoryController
+    Route::get('kategori-tag', [CategoryController::class, 'index'])->can('categories.view')->name('kategori-tag.index');
+
     Route::get('media-library', fn () => view('admin.coming-soon', ['title' => 'Media Library']))->can('media.view')->name('media-library.index');
     Route::get('iklan', fn () => view('admin.coming-soon', ['title' => 'Iklan']))->can('ads.view')->name('iklan.index');
     Route::get('pengguna-role', fn () => view('admin.coming-soon', ['title' => 'Pengguna & Role']))->can('users.view')->name('pengguna-role.index');
     Route::get('activity-log', fn () => view('admin.coming-soon', ['title' => 'Activity Log']))->can('activity-log.view')->name('activity-log.index');
     Route::get('pengaturan', fn () => view('admin.coming-soon', ['title' => 'Pengaturan']))->can('settings.view')->name('pengaturan.index');
+
+    // resource rute untuk operasi CRUD kategori & tag
+    Route::resource('categories', CategoryController::class)->except(['create', 'show', 'edit', 'index']);
+    Route::resource('tags', TagController::class)->except(['create', 'show', 'edit']);
 });
