@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Mail\ResetPasswordMail;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Traits\LogsModelActivity;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -18,7 +19,7 @@ use Spatie\Permission\Traits\HasRoles;
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, HasRoles, Notifiable;
+    use HasFactory, Notifiable, HasRoles, LogsModelActivity;
 
     /**
      * Get the attributes that should be cast.
@@ -33,10 +34,6 @@ class User extends Authenticatable
         ];
     }
 
-    public function sendPasswordResetNotification(#[\SensitiveParameter] $token): void
-    {
-        Mail::to($this->getEmailForPasswordReset())->send(
-            new ResetPasswordMail($this, $token)
-        );
-    }
+    protected array $logAttributes = ['name', 'email', 'bio'];
+    protected string $logLabel = 'Pengguna';
 }
