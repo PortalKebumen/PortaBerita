@@ -48,12 +48,28 @@
     }
     .btn-primary { @apply inline-flex items-center justify-center gap-2 rounded-lg text-[13.5px] font-semibold px-4 py-2.5 leading-none transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap bg-brand-600 text-white hover:bg-brand-700; }
     .btn-secondary { @apply inline-flex items-center justify-center gap-2 rounded-lg text-[13.5px] font-semibold px-4 py-2.5 leading-none transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap bg-[#E4E8EF] text-[#171B28] hover:bg-[#D7DCE6]; }
+    .btn-danger { @apply inline-flex items-center justify-center gap-2 rounded-lg text-[13.5px] font-semibold px-4 py-2.5 leading-none transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap bg-danger text-white hover:bg-[#A62F2F]; }
+    .btn-icon { @apply inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-colors duration-150; }
     .card { @apply bg-white border border-[#CDD3DF] rounded-card; }
     .form-label { @apply block text-[12.5px] font-semibold text-[#3B4152] mb-1.5; }
     .form-input {
         @apply w-full rounded-lg border border-[#CDD3DF] bg-white px-3.5 py-2.5 text-[13.5px] text-[#171B28] placeholder:text-[#7C88AE] outline-none transition-colors duration-150 focus:border-brand-500 focus:ring-2 focus:ring-brand-100;
     }
     .form-input.is-error { @apply border-danger focus:border-danger focus:ring-danger-bg; }
+    .form-select {
+        @apply w-full appearance-none rounded-lg border border-[#CDD3DF] bg-white bg-no-repeat bg-[right_0.9rem_center] px-3.5 py-2.5 pr-9 text-[13.5px] text-[#171B28] outline-none transition-colors duration-150 focus:border-brand-500 focus:ring-2 focus:ring-brand-100;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23848CA3' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+        background-size: 14px 14px;
+    }
     .form-error-text { @apply mt-1.5 text-[12.5px] font-medium text-danger; }
     .alert-success { @apply rounded-lg border border-success/20 bg-success-bg px-3.5 py-2.5 text-[13px] font-medium text-success; }
+    .alert-info { @apply flex items-start gap-3 rounded-lg border border-info/20 bg-info-bg px-3.5 py-2.5 text-[13px] text-[#1F2B5C]; }
+    .badge-neutral { @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11.5px] font-semibold bg-[#E4E8EF] text-[#6C7387]; }
+    .badge-success { @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11.5px] font-semibold bg-success-bg text-success; }
+    .badge-warning { @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11.5px] font-semibold bg-warning-bg text-warning; }
+    .badge-danger { @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11.5px] font-semibold bg-danger-bg text-danger; }
+    .badge-info { @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11.5px] font-semibold bg-info-bg text-info; }
+    .badge-accent { @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11.5px] font-semibold bg-accent-100 text-accent-600; }
+    .badge-dot { @apply h-1.5 w-1.5 shrink-0 rounded-full bg-current; }
+    .code-block { @apply rounded-lg bg-brand-900 p-4 font-mono text-[12px] leading-relaxed text-brand-100 whitespace-pre overflow-x-auto; }
 }

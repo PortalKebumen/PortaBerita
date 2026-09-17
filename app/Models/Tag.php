@@ -2,15 +2,21 @@
 
 namespace App\Models;
 
+use App\Traits\LogsModelActivity;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Str;
 
 class Tag extends Model
 {
+    use LogsModelActivity;
+
     protected $fillable = [
         'name', 'slug'
     ];
+
+    protected array $logAttributes = ['name', 'slug'];
+    protected string $logLabel = 'Tag';
 
     protected static function booted(): void
     {

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Traits\LogsModelActivity;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -9,9 +10,14 @@ use Illuminate\Support\Str;
 
 class Category extends Model
 {
+    use LogsModelActivity;
+
     protected $fillable = [
         'name', 'slug', 'parent_id'
     ];
+
+    protected array $logAttributes = ['name', 'slug', 'parent_id'];
+    protected string $logLabel = 'Kategori';
 
     // otomatis membuat slug
     protected static function booted(): void

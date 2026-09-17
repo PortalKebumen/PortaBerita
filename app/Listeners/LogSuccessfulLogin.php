@@ -15,6 +15,7 @@ class LogSuccessfulLogin
 
         activity('auth')
             ->causedBy($event->user)
+            ->event('login')
             ->withProperties(['ip' => request()->ip()])
             ->log('Login berhasil');
     }

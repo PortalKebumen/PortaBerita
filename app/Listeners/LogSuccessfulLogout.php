@@ -15,6 +15,8 @@ class LogSuccessfulLogout
 
         activity('auth')
             ->causedBy($event->user)
+            ->event('logout')
+            ->withProperties(['ip' => request()->ip()])
             ->log('Logout');
     }
 }

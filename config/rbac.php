@@ -37,7 +37,7 @@ $administrator = [
     'articles.delete-any',
     'users.view', 'users.create', 'users.update', 'users.deactivate', 'users.delete',
     'roles.view', 'roles.assign', 'roles.update-permissions',
-    'activity-log.view-any', 'settings.view', 'settings.update',
+    'activity-log.view-any', 'activity-log.purge', 'settings.view', 'settings.update',
 ];
 
 return [

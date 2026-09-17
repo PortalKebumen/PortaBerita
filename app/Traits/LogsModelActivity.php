@@ -29,9 +29,12 @@ use Illuminate\Support\Facades\Auth;
  * - Waktu        -> created_at pada baris log
  * - Objek        -> subject_type/subject_id (model & id yang berubah)
  * - Aksi         -> created / updated / deleted
+ * - Alamat IP    -> disuntik otomatis lewat listener global di AppServiceProvider (PK-39),
+ *                   BUKAN lewat trait ini, karena versi spatie/laravel-activitylog yang
+ *                   terpasang (5.1.0) tidak punya hook tapActivity() di logging otomatis.
  * - Before/After -> tersimpan di kolom attribute_changes (key "old" dan "attributes")
  *                   Akses lewat: $activity->attribute_changes['old'] / ['attributes']
-
+ *
  * Untuk aksi penting yang BUKAN sekadar create/update/delete (misal
  * "artikel dipublikasikan", "role diberikan ke pengguna"), catat manual:
  *

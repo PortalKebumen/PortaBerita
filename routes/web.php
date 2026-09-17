@@ -40,7 +40,7 @@ Route::middleware(['auth', 'can:dashboard.view'])->prefix('admin')->name('admin.
     Route::get('media-library', fn () => view('admin.coming-soon', ['title' => 'Media Library']))->can('media.view')->name('media-library.index');
     Route::get('iklan', fn () => view('admin.coming-soon', ['title' => 'Iklan']))->can('ads.view')->name('iklan.index');
     Route::get('pengguna-role', fn () => view('admin.coming-soon', ['title' => 'Pengguna & Role']))->can('users.view')->name('pengguna-role.index');
-    Route::get('activity-log', fn () => view('admin.coming-soon', ['title' => 'Activity Log']))->can('activity-log.view')->name('activity-log.index');
+    Route::get('activity-log', fn () => view('admin.activity-log'))->can('activity-log.view')->name('activity-log.index');
     Route::get('pengaturan', fn () => view('admin.coming-soon', ['title' => 'Pengaturan']))->can('settings.view')->name('pengaturan.index');
 
     // resource rute untuk operasi CRUD kategori & tag
