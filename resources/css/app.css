@@ -62,8 +62,30 @@
         background-size: 14px 14px;
     }
     .form-error-text { @apply mt-1.5 text-[12.5px] font-medium text-danger; }
-    .alert-success { @apply rounded-lg border border-success/20 bg-success-bg px-3.5 py-2.5 text-[13px] font-medium text-success; }
     .alert-info { @apply flex items-start gap-3 rounded-lg border border-info/20 bg-info-bg px-3.5 py-2.5 text-[13px] text-[#1F2B5C]; }
+    .alert-success {
+        @apply flex items-center gap-2 rounded-lg bg-success/10 text-success text-sm px-4 py-3;
+    }
+    .alert-danger {
+        @apply flex items-center gap-2 rounded-lg bg-danger/10 text-danger text-sm px-4 py-3;
+    }
+    .tab-btn {
+        @apply px-4 py-2.5 text-sm font-medium text-[#6C7387] border-b-2 border-transparent -mb-px;
+    }
+    .tab-btn.is-active {
+        @apply text-brand-600 border-brand-600;
+    }
+    .toggle-input:checked ~ .toggle-thumb {
+        @apply translate-x-5 bg-white;
+    }
+    .toggle-input:checked {
+        & ~ .toggle-thumb {
+            transform: translateX(1.25rem);
+        }
+    }
+    .toggle-track:has(.toggle-input:checked) {
+        @apply bg-brand-600;
+    }
     .badge-neutral { @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11.5px] font-semibold bg-[#E4E8EF] text-[#6C7387]; }
     .badge-success { @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11.5px] font-semibold bg-success-bg text-success; }
     .badge-warning { @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11.5px] font-semibold bg-warning-bg text-warning; }

@@ -48,4 +48,8 @@ return [
         'Penulis' => $writer,
         'Ads Manager' => $adsManager,
     ],
+    'role_aliases' => [
+        'Editor' => 'Redaktur',
+        'Penulis' => 'Reporter',
+    ],
 ];
