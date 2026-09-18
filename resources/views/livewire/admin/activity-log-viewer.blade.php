@@ -1,5 +1,4 @@
 <div>
-    <x-flash-toast />
 
     <div class="alert-info mb-5">
         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="shrink-0 mt-0.5"><circle cx="12" cy="12" r="9"></circle><path d="M12 16v-5M12 8h.01"></path></svg>

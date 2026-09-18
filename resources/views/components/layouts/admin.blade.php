@@ -223,6 +223,7 @@
                     @endif
                     <h1 class="text-2xl font-bold text-[#171B28]">{{ $title }}</h1>
                 </div>
+                <x-flash-toast />
 
                 {{ $slot }}
             </main>
