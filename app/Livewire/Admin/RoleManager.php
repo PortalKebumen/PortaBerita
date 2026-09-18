@@ -56,7 +56,7 @@ class RoleManager extends Component
         $role = Role::findOrFail($this->managingRoleId);
 
         if ($this->isLockedRole($role->name)) {
-            session()->flash('error', 'Izin Super Admin tidak bisa diubah dari sini.');
+            $this->dispatch('flash-message', type: 'error', text: 'Izin Super Admin tidak bisa diubah dari sini.');
             $this->closePermissionModal();
 
             return;
@@ -66,7 +66,7 @@ class RoleManager extends Component
 
         $this->closePermissionModal();
         unset($this->roles);
-        session()->flash('success', 'Izin role berhasil diperbarui.');
+        $this->dispatch('flash-message', type: 'success', text: 'Izin role berhasil diperbarui.');
     }
 
     public function closePermissionModal(): void

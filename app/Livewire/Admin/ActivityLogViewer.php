@@ -134,6 +134,8 @@ class ActivityLogViewer extends Component
         $this->authorize('activity-log.purge');
 
         $cutoff = match ($this->purgeOlderThan) {
+            '1week' => now()->subWeek(),
+            '1month' => now()->subMonth(),
             '3months' => now()->subMonths(3),
             '6months' => now()->subMonths(6),
             '1year' => now()->subYear(),
@@ -145,7 +147,7 @@ class ActivityLogViewer extends Component
         $this->showPurgeModal = false;
         $this->resetPage();
 
-        session()->flash('status', 'Log lama berhasil dibersihkan.');
+        $this->dispatch('flash-message', type: 'success', text: 'Log lama berhasil dibersihkan.');
     }
 
     protected function eventLabels(): array
@@ -200,9 +202,9 @@ class ActivityLogViewer extends Component
         $labels = ['Article' => 'Artikel', 'Category' => 'Kategori', 'Tag' => 'Tag', 'User' => 'Pengguna'];
         $modelLabel = $labels[class_basename($log->subject_type)] ?? class_basename($log->subject_type);
 
-        $name = $log->subject->title ?? $log->subject->name ?? null;
+        $name = $log->subject?->title ?? $log->subject?->name ?? null;
 
-        return $name ? "{$modelLabel} · {$name}" : "{$modelLabel} · #{$log->subject_id}";
+        return $name ? "{$modelLabel} · {$name}" : "{$modelLabel} · #{$log->subject_id} (dihapus)";
     }
 
     public function render()

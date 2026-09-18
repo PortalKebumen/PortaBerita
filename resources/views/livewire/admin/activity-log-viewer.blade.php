@@ -1,7 +1,5 @@
 <div>
-    @if (session('status'))
-        <div class="alert-success mb-5">{{ session('status') }}</div>
-    @endif
+    <x-flash-toast />
 
     <div class="alert-info mb-5">
         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="shrink-0 mt-0.5"><circle cx="12" cy="12" r="9"></circle><path d="M12 16v-5M12 8h.01"></path></svg>
@@ -58,7 +56,7 @@
                         @php [$actionLabel, $actionClass] = $this->actionMeta($log->event); @endphp
                         <tr class="border-b border-[#E4E8EF]">
                             <td class="px-4 py-3 text-[12.5px] font-mono text-[#6C7387] whitespace-nowrap">{{ $log->created_at->translatedFormat('d M Y, H:i') }}</td>
-                            <td class="px-4 py-3 text-sm font-semibold whitespace-nowrap">{{ $log->causer->name ?? 'Sistem' }}</td>
+                            <td class="px-4 py-3 text-sm font-semibold whitespace-nowrap">{{ $log->causer?->name ?? 'Sistem' }}</td>
                             <td class="px-3 py-3 whitespace-nowrap"><span class="{{ $actionClass }}"><span class="badge-dot"></span>{{ $actionLabel }}</span></td>
                             <td class="px-4 py-3 text-sm">{{ $this->subjectLabel($log) }}</td>
                             <td class="px-4 py-3 text-[12px] font-mono text-[#848CA3] whitespace-nowrap">{{ $log->properties['ip'] ?? '—' }}</td>
@@ -91,7 +89,7 @@
                 @php [$dLabel] = $this->actionMeta($this->selectedLog->event); @endphp
                 <dl class="grid grid-cols-3 gap-y-3 text-[13px] mb-4">
                     <dt class="text-[#848CA3]">Waktu</dt><dd class="col-span-2 font-medium">{{ $this->selectedLog->created_at->translatedFormat('d M Y, H:i') }}</dd>
-                    <dt class="text-[#848CA3]">Pengguna</dt><dd class="col-span-2 font-medium">{{ $this->selectedLog->causer->name ?? 'Sistem' }}</dd>
+                    <dt class="text-[#848CA3]">Pengguna</dt><dd class="col-span-2 font-medium">{{ $this->selectedLog->causer?->name ?? 'Sistem' }}</dd>
                     <dt class="text-[#848CA3]">Aksi</dt><dd class="col-span-2 font-medium">{{ $dLabel }} — {{ $this->selectedLog->description }}</dd>
                     <dt class="text-[#848CA3]">Objek</dt><dd class="col-span-2 font-medium">{{ $this->subjectLabel($this->selectedLog) }}</dd>
                     <dt class="text-[#848CA3]">Alamat IP</dt><dd class="col-span-2 font-mono">{{ $this->selectedLog->properties['ip'] ?? '—' }}</dd>
@@ -122,14 +120,20 @@
                 </div>
                 <h3 class="text-[16px] font-bold mb-1.5">Bersihkan log lama?</h3>
                 <p class="text-[13px] text-[#6C7387] mb-4">Hapus permanen seluruh entri log yang lebih lama dari periode berikut:</p>
-                <select wire:model="purgeOlderThan" class="form-select mb-5">
+                <select wire:model="purgeOlderThan" class="form-select mb-4">
+                    <option value="1week">Lebih dari 1 minggu</option>
+                    <option value="1month">Lebih dari 1 bulan</option>
                     <option value="3months">Lebih dari 3 bulan</option>
                     <option value="6months">Lebih dari 6 bulan</option>
                     <option value="1year">Lebih dari 1 tahun</option>
                 </select>
+                <div class="alert-danger mb-5">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="shrink-0 mt-0.5"><path d="M12 9v4M12 17h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"></path></svg>
+                    <div>Yakin ingin menghapus permanen log lama ini? Tindakan ini <strong class="font-semibold">tidak bisa dibatalkan</strong>.</div>
+                </div>
                 <div class="flex justify-end gap-2.5">
                     <button type="button" wire:click="closePurgeModal" class="btn-secondary">Batal</button>
-                    <button type="button" wire:click="purgeOldLogs" wire:confirm="Yakin ingin menghapus permanen log lama ini?" class="btn-danger">Ya, Bersihkan</button>
+                    <button type="button" wire:click="purgeOldLogs" class="btn-danger">Ya, Bersihkan</button>
                 </div>
             </div>
         </div>

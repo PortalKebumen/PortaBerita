@@ -1,10 +1,5 @@
 <div class="space-y-5">
-    @if (session('success'))
-        <div class="alert-success">{{ session('success') }}</div>
-    @endif
-    @if (session('error'))
-        <div class="alert-danger">{{ session('error') }}</div>
-    @endif
+    <x-flash-toast />
 
     <div class="flex flex-wrap items-center justify-between gap-3">
         <div class="flex flex-wrap items-center gap-3">

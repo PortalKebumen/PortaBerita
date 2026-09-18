@@ -1,10 +1,5 @@
 <div class="space-y-5">
-    @if (session('success'))
-        <div class="alert-success">{{ session('success') }}</div>
-    @endif
-    @if (session('error'))
-        <div class="alert-danger">{{ session('error') }}</div>
-    @endif
+    <x-flash-toast />
 
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         @foreach ($this->roles as $role)

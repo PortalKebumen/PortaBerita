@@ -194,7 +194,7 @@ class UserManager extends Component
         $this->showUserModal = false;
         $this->resetForm();
         unset($this->users);
-        session()->flash('success', 'Data pengguna berhasil disimpan.');
+        $this->dispatch('flash-message', type: 'success', text: 'Data pengguna berhasil disimpan.');
     }
 
     public function confirmDelete(int $userId): void
@@ -204,13 +204,13 @@ class UserManager extends Component
         $user = User::findOrFail($userId);
 
         if ($user->id === Auth::id()) {
-            session()->flash('error', 'Anda tidak bisa menghapus akun Anda sendiri.');
+            $this->dispatch('flash-message', type: 'error', text: 'Anda tidak bisa menghapus akun Anda sendiri.');
 
             return;
         }
 
         if ($user->email === config('system.redaksi_email')) {
-            session()->flash('error', 'Akun Redaksi tidak bisa dihapus karena dipakai sistem untuk artikel yang ditinggalkan penulisnya.');
+            $this->dispatch('flash-message', type: 'error', text: 'Akun Redaksi tidak bisa dihapus karena dipakai sistem untuk artikel yang ditinggalkan penulisnya.');
 
             return;
         }
@@ -226,14 +226,14 @@ class UserManager extends Component
         $user = User::findOrFail($this->deletingUserId);
 
         if ($user->id === Auth::id()) {
-            session()->flash('error', 'Anda tidak bisa menghapus akun Anda sendiri.');
+            $this->dispatch('flash-message', type: 'error', text: 'Anda tidak bisa menghapus akun Anda sendiri.');
             $this->closeDeleteModal();
 
             return;
         }
 
         if ($user->hasRole('Super Admin') && User::role('Super Admin')->count() <= 1) {
-            session()->flash('error', 'Tidak bisa menghapus satu-satunya akun Super Admin.');
+            $this->dispatch('flash-message', type: 'error', text: 'Tidak bisa menghapus satu-satunya akun Super Admin.');
             $this->closeDeleteModal();
 
             return;
@@ -242,7 +242,7 @@ class UserManager extends Component
         $redaksi = User::where('email', config('system.redaksi_email'))->first();
 
         if (! $redaksi) {
-            session()->flash('error', 'Akun Redaksi belum ada. Jalankan seeder SystemAccountSeeder dulu.');
+            $this->dispatch('flash-message', type: 'error', text: 'Akun Redaksi belum ada. Jalankan seeder SystemAccountSeeder dulu.');
             $this->closeDeleteModal();
 
             return;
@@ -255,7 +255,7 @@ class UserManager extends Component
 
         $this->closeDeleteModal();
         unset($this->users);
-        session()->flash('success', 'Pengguna berhasil dihapus, artikel miliknya dipindahkan ke akun Redaksi.');
+        $this->dispatch('flash-message', type: 'success', text: 'Pengguna berhasil dihapus, artikel miliknya dipindahkan ke akun Redaksi.');
     }
 
     public function closeDeleteModal(): void
