@@ -13,3 +13,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::put('/media-library/{media}', [MediaLibraryController::class, 'update'])->name('media-library.update');
     Route::delete('/media-library/{media}', [MediaLibraryController::class, 'destroy'])->name('media-library.destroy');
 });
+
+Route::get('/admin/test-media-picker', function () {
+    return view('admin.test-media-picker');
+})->name('admin.test-media-picker');
