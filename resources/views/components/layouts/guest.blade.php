@@ -11,8 +11,11 @@
     <link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}">
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <style>
+        .form-error-text { color: #dc2626; }
+    </style>
 </head>
-<body class="bg-[#F1F3F7] text-[#171B28] font-sans min-h-screen relative overflow-hidden">
+<body class="bg-[#F1F3F7] text-[#171B28] font-body min-h-screen relative overflow-hidden">
 
     {{-- Dekorasi background lembut, tetap pakai warna brand/accent --}}
     <div class="pointer-events-none absolute -top-24 -left-24 w-[420px] h-[420px] rounded-full bg-brand-500/10 blur-3xl"></div>
@@ -29,5 +32,25 @@
             &copy; {{ date('Y') }} PortalKebumen.com | Internal Admin
         </p>
     </div>
+    <script>
+        document.addEventListener('invalid', (event) => {
+            const field = event.target;
+            if (typeof field.setCustomValidity !== 'function') return;
+            field.setCustomValidity('');
+            const label = field.labels?.[0]?.textContent.trim() || 'Kolom ini';
+            if (field.validity.valueMissing) {
+                field.setCustomValidity(label + ' wajib diisi.');
+            } else if (field.validity.typeMismatch && field.type === 'email') {
+                field.setCustomValidity('Masukkan alamat email yang valid.');
+            } else if (!field.validity.valid) {
+                field.setCustomValidity('Periksa kembali isian ' + label.toLowerCase() + '.');
+            }
+        }, true);
+        document.addEventListener('input', (event) => {
+            if (typeof event.target.setCustomValidity === 'function') {
+                event.target.setCustomValidity('');
+            }
+        });
+    </script>
 </body>
 </html>

@@ -9,10 +9,14 @@
     <link rel="icon" href="{{ asset('favicon.ico') }}" sizes="any">
     <link rel="icon" type="image/png" href="{{ asset('icon.png') }}">
     <link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Montserrat:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 
     @vite(['resources/css/app.css', 'resources/js/app.js', 'resources/js/admin.js'])
+    @livewireStyles
 </head>
-<body class="bg-[#F7F8FA] text-[#171B28] font-sans antialiased">
+<body class="bg-[#F7F8FA] text-[#171B28] font-body antialiased">
     <div class="flex min-h-screen">
 
         <input type="checkbox" id="sidebar-toggle" class="peer hidden">
@@ -38,31 +42,36 @@
                     [
                         'label' => null,
                         'items' => [
-                            ['route' => 'admin.dashboard', 'label' => 'Dashboard', 'icon' => 'dashboard'],
+                            ['route' => 'admin.dashboard', 'label' => 'Dashboard', 'icon' => 'dashboard', 'permission' => 'dashboard.view'],
                         ],
                     ],
                     [
                         'label' => 'Konten',
                         'items' => [
-                            ['route' => 'admin.artikel.index', 'label' => 'Artikel', 'icon' => 'artikel'],
-                            ['route' => 'admin.kategori-tag.index', 'label' => 'Kategori & Tag', 'icon' => 'kategori'],
-                            ['route' => 'admin.media-library.index', 'label' => 'Media Library', 'icon' => 'media'],
+                            ['route' => 'admin.artikel.index', 'label' => 'Artikel', 'icon' => 'artikel', 'permission' => 'articles.view'],
+                            ['route' => 'admin.kategori-tag.index', 'label' => 'Kategori & Tag', 'icon' => 'kategori', 'permission' => 'categories.view'],
+                            ['route' => 'admin.media-library.index', 'label' => 'Media Library', 'icon' => 'media', 'permission' => 'media.view'],
                         ],
                     ],
                     [
                         'label' => 'Monetisasi',
                         'items' => [
-                            ['route' => 'admin.iklan.index', 'label' => 'Iklan', 'icon' => 'iklan'],
+                            ['route' => 'admin.iklan.index', 'label' => 'Iklan', 'icon' => 'iklan', 'permission' => 'ads.view'],
                         ],
                     ],
                     [
                         'label' => 'Manajemen',
                         'items' => [
-                            ['route' => 'admin.pengguna-role.index', 'label' => 'Pengguna & Role', 'icon' => 'pengguna'],
-                            ['route' => 'admin.activity-log.index', 'label' => 'Activity Log', 'icon' => 'activity'],
+                            ['route' => 'admin.pengguna-role.index', 'label' => 'Pengguna & Role', 'icon' => 'pengguna', 'permission' => 'users.view'],
+                            ['route' => 'admin.activity-log.index', 'label' => 'Activity Log', 'icon' => 'activity', 'permission' => 'activity-log.view'],
                         ],
                     ],
                 ];
+                $menuGroups = collect($menuGroups)->map(function ($group) {
+                    $group['items'] = array_filter($group['items'], fn ($item) => auth()->user()->can($item['permission']));
+
+                    return $group;
+                })->filter(fn ($group) => count($group['items']));
                 $initials = collect(explode(' ', auth()->user()->name))
                     ->map(fn ($w) => mb_substr($w, 0, 1))
                     ->take(2)->implode('');
@@ -92,6 +101,7 @@
                     </div>
                 @endforeach
 
+                @can('settings.view')
                 <div class="border-t border-white/10 mt-auto pt-3">
                     <a href="{{ route('admin.pengaturan.index') }}"
                     title="Pengaturan"
@@ -103,6 +113,7 @@
                         <span class="sidebar-label truncate">Pengaturan</span>
                     </a>
                 </div>
+                @endcan
             </nav>
 
             <div class="flex items-center gap-2.5 px-4 py-4 border-t border-white/10 shrink-0">
@@ -131,6 +142,7 @@
                     </svg>
                 </button>
 
+                @can('articles.view')
                 <form action="{{ route('admin.artikel.index') }}" method="GET" class="hidden md:flex items-center gap-2 bg-[#F1F3F7] rounded-lg px-3.5 py-2.5 flex-1 max-w-md">
                     <svg class="shrink-0" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#848CA3" stroke-width="2">
                         <circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
@@ -145,6 +157,7 @@
                     </svg>
                 </button>
 
+                @endcan
                 <div class="flex items-center gap-2 sm:gap-3 ml-auto shrink-0">
                     <div class="relative inline-block" data-dropdown>
                         <button type="button" data-dropdown-btn aria-label="Notifikasi" class="w-9 h-9 rounded-lg bg-[#F1F3F7] flex items-center justify-center hover:bg-[#E4E8EF] transition-colors">
@@ -210,12 +223,14 @@
                     @endif
                     <h1 class="text-2xl font-bold text-[#171B28]">{{ $title }}</h1>
                 </div>
+                <x-flash-toast />
 
                 {{ $slot }}
             </main>
         </div>
     </div>
 
+    @can('articles.view')
     <div class="modal-overlay hidden fixed inset-0 z-50 items-center justify-center p-4 bg-black/40" id="modal-search">
         <div class="bg-white rounded-2xl max-w-[420px] w-full p-5 shadow-xl">
             <h3 class="text-[15px] font-bold mb-3">Cari</h3>
@@ -233,5 +248,7 @@
             </form>
         </div>
     </div>
+    @endcan
+    @livewireScripts
 </body>
 </html>

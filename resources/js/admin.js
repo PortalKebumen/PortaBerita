@@ -106,19 +106,5 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    // ---------- Dropdown ----------
-    document.querySelectorAll('[data-dropdown]').forEach(function (dd) {
-        var btn = dd.querySelector('[data-dropdown-btn]');
-        var menu = dd.querySelector('[data-dropdown-menu]');
-        btn.addEventListener('click', function (e) {
-            e.stopPropagation();
-            menu.classList.toggle('hidden');
-        });
-        menu.querySelectorAll('.dropdown-item').forEach(function (item) {
-            item.addEventListener('click', function () { menu.classList.add('hidden'); });
-        });
-    });
-    document.addEventListener('click', function () {
-        document.querySelectorAll('[data-dropdown-menu]').forEach(function (m) { m.classList.add('hidden'); });
-    });
+  
 });

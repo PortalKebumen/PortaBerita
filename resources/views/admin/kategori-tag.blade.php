@@ -59,7 +59,7 @@
                                 <td class="px-6 py-4 text-[13.5px] font-semibold text-gray-900 whitespace-nowrap">
                                     {{ $cat->name }}
                                 </td>
-                                <td class="px-5 py-4 text-[12.5px] font-mono text-[#848CA3] whitespace-nowrap">
+                                <td class="px-5 py-4 text-[12.5px] font-body text-[#848CA3] whitespace-nowrap">
                                     /{{ $cat->slug }}
                                 </td>
                                 <td class="px-5 py-4 text-[12.5px] whitespace-nowrap">
@@ -160,7 +160,7 @@
                                 <td class="px-6 py-4 text-[13.5px] font-semibold text-gray-900 whitespace-nowrap">
                                     #{{ $t->name }}
                                 </td>
-                                <td class="px-5 py-4 text-[12.5px] font-mono text-[#848CA3] whitespace-nowrap">
+                                <td class="px-5 py-4 text-[12.5px] font-body text-[#848CA3] whitespace-nowrap">
                                     /{{ $t->slug }}
                                 </td>
                                 <td class="px-4 py-4 text-[13px] text-center font-medium text-gray-700 whitespace-nowrap">

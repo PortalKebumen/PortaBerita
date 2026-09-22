@@ -6,6 +6,8 @@
         <div class="alert-success mb-5">{{ session('status') }}</div>
     @endif
 
+    <x-auth-countdown :until="session('login_retry_at')" message="Terlalu banyak percobaan login yang gagal." />
+
     <form method="POST" action="{{ route('login') }}">
         @csrf
 
@@ -15,7 +17,9 @@
                    placeholder="nama@portalkebumen.com"
                    class="form-input @error('email') is-error @enderror">
             @error('email')
-                <div class="form-error-text">{{ $message }}</div>
+                @if ((int) session('login_retry_at') <= now()->timestamp)
+                <div class="form-error-text" style="color: #dc2626;" role="alert">{{ $message }}</div>
+                @endif
             @enderror
         </div>
 
@@ -25,14 +29,20 @@
                    placeholder="••••••••"
                    class="form-input @error('password') is-error @enderror">
             @error('password')
-                <div class="form-error-text">{{ $message }}</div>
+                <div class="form-error-text" style="color: #dc2626;" role="alert">{{ $message }}</div>
             @enderror
         </div>
 
-        <label class="flex items-center gap-2.5 cursor-pointer mb-6">
-            <input type="checkbox" name="remember" class="form-checkbox">
-            <span class="text-[13px]">Ingat saya di perangkat ini</span>
-        </label>
+        <div class="mb-6 flex items-center justify-between gap-4">
+            <label class="flex items-center gap-2.5 cursor-pointer">
+                <input type="checkbox" name="remember" class="form-checkbox">
+                <span class="text-[13px]">Ingat saya</span>
+            </label>
+
+            <a href="{{ route('password.request') }}" class="text-[13px] font-semibold text-brand-600 hover:text-brand-700">
+                Lupa kata sandi?
+            </a>
+        </div>
 
         <button type="submit" class="btn-primary w-full justify-center">Masuk</button>
     </form>
