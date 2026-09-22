@@ -44,10 +44,13 @@ Route::middleware(['auth', 'can:dashboard.view'])->prefix('admin')->name('admin.
     // rute utama kategori & tag diarahin langsung ke CategoryController
     Route::get('kategori-tag', [CategoryController::class, 'index'])->can('categories.view')->name('kategori-tag.index');
 
-    Route::get('media-library', [MediaLibraryController::class, 'index'])->can('media.view')->name('media-library.index');
-    Route::post('media-library', [MediaLibraryController::class, 'store'])->name('media-library.store');
-    Route::put('media-library/{media}', [MediaLibraryController::class, 'update'])->name('media-library.update');
-    Route::delete('media-library/{media}', [MediaLibraryController::class, 'destroy'])->name('media-library.destroy');
+    // Media Library — versi lama berbasis Controller (PK-27), digantikan Livewire component MediaLibraryManager.
+    // Route::get('media-library', [MediaLibraryController::class, 'index'])->can('media.view')->name('media-library.index');
+    // Route::post('media-library', [MediaLibraryController::class, 'store'])->name('media-library.store');
+    // Route::put('media-library/{media}', [MediaLibraryController::class, 'update'])->name('media-library.update');
+    // Route::delete('media-library/{media}', [MediaLibraryController::class, 'destroy'])->name('media-library.destroy');
+    Route::get('media-library', fn () => view('admin.media-library'))->can('media.view')->name('media-library.index');
+    
     Route::get('iklan', [AdvertisementController::class, 'index'])->can('ads.view')->name('iklan.index');
     Route::get('pengguna-role', fn () => view('admin.pengguna-role'))->can('users.view')->name('pengguna-role.index');
     Route::get('activity-log', fn () => view('admin.activity-log'))->can('activity-log.view')->name('activity-log.index');
