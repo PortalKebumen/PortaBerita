@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\AdvertisementController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\MediaLibraryController;
 use App\Http\Controllers\Admin\TagController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\NewPasswordController;
@@ -43,7 +44,10 @@ Route::middleware(['auth', 'can:dashboard.view'])->prefix('admin')->name('admin.
     // rute utama kategori & tag diarahin langsung ke CategoryController
     Route::get('kategori-tag', [CategoryController::class, 'index'])->can('categories.view')->name('kategori-tag.index');
 
-    Route::get('media-library', fn () => view('admin.coming-soon', ['title' => 'Media Library']))->can('media.view')->name('media-library.index');
+    Route::get('media-library', [MediaLibraryController::class, 'index'])->can('media.view')->name('media-library.index');
+    Route::post('media-library', [MediaLibraryController::class, 'store'])->name('media-library.store');
+    Route::put('media-library/{media}', [MediaLibraryController::class, 'update'])->name('media-library.update');
+    Route::delete('media-library/{media}', [MediaLibraryController::class, 'destroy'])->name('media-library.destroy');
     Route::get('iklan', [AdvertisementController::class, 'index'])->can('ads.view')->name('iklan.index');
     Route::get('pengguna-role', fn () => view('admin.pengguna-role'))->can('users.view')->name('pengguna-role.index');
     Route::get('activity-log', fn () => view('admin.activity-log'))->can('activity-log.view')->name('activity-log.index');

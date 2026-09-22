@@ -92,6 +92,11 @@
         "platform": {
             "ext-pcntl": "8.5.1",
             "ext-posix": "8.5.1"
+        },
+        "policy": {
+            "advisories": {
+                "block": false
+            }
         }
     },
     "minimum-stability": "stable",
