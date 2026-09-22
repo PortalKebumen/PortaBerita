@@ -17,3 +17,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
 Route::get('/admin/test-media-picker', function () {
     return view('admin.test-media-picker');
 })->name('admin.test-media-picker');
+
+Route::get('/admin/test-editor', function () {
+    return view('admin.test-editor');
+})->name('admin.test-editor');
