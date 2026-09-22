@@ -11,7 +11,14 @@
         <div class="grid grid-cols-1 gap-8 lg:grid-cols-12">
             <div class="lg:col-span-8">
                 <header>
-                    <x-public.rubric-tag :label="$article->category->label" />
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <x-public.rubric-tag :label="$article->category->label ?? ($article->category->name ?? 'Berita')" />
+                        @if (!empty($article->is_advertorial))
+                            <span class="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-1 text-xs font-bold uppercase tracking-wide text-amber-800 border border-amber-300">
+                                Advertorial
+                            </span>
+                        @endif
+                    </div>
                     <h1 class="mt-3 text-2xl font-bold leading-tight text-[#171B28] sm:text-3xl">
                         {{ $article->title }}
                     </h1>
