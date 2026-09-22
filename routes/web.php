@@ -57,4 +57,9 @@ Route::middleware(['auth', 'can:dashboard.view'])->prefix('admin')->name('admin.
     Route::resource('categories', CategoryController::class)->except(['create', 'show', 'edit', 'index']);
     Route::resource('tags', TagController::class)->except(['create', 'show', 'edit']);
     Route::resource('advertisements', AdvertisementController::class)->except(['create', 'show', 'edit']);
+
+    // rute uji-coba sementara komponen x-editor & Media Picker (PK-28/PK-29)
+    // TODO: hapus setelah x-editor benar-benar dipasang di form Artikel yang sesungguhnya
+    Route::get('test-media-picker', fn () => view('admin.test-media-picker'))->name('test-media-picker');
+    Route::get('test-editor', fn () => view('admin.test-editor'))->name('test-editor');
 });
