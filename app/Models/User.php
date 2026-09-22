@@ -35,6 +35,6 @@ class User extends Authenticatable
         ];
     }
 
-    protected array $logAttributes = ['name', 'email', 'bio'];
+    protected array $logAttributes = ['name', 'email', 'bio', 'is_active'];
     protected string $logLabel = 'Pengguna';
 }

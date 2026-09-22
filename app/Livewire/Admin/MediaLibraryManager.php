@@ -4,9 +4,7 @@ namespace App\Livewire\Admin;
 
 use App\Models\LibraryMedia;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Gate;
 use Livewire\Attributes\Computed;
-use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 use Livewire\WithPagination;
@@ -17,16 +15,12 @@ class MediaLibraryManager extends Component
     use WithFileUploads;
     use WithPagination;
 
-    #[Url(history: true)]
     public string $search = '';
 
-    #[Url(history: true)]
     public string $type = '';
 
-    #[Url(history: true)]
     public string $dateFrom = '';
 
-    #[Url(history: true)]
     public string $dateTo = '';
 
     public bool $showUploadModal = false;
@@ -131,7 +125,7 @@ class MediaLibraryManager extends Component
         $this->reset(['newFile', 'newAltText', 'newCaption']);
     }
 
-    public function upload(): void
+    public function saveUpload(): void
     {
         $this->authorize('media.upload');
 
@@ -145,7 +139,7 @@ class MediaLibraryManager extends Component
             'uploaded_by' => Auth::id(),
         ]);
 
-        $libraryMedia
+        $media = $libraryMedia
             ->addMedia($this->newFile->getRealPath())
             ->usingFileName($this->newFile->getClientOriginalName())
             ->withCustomProperties([
@@ -153,6 +147,26 @@ class MediaLibraryManager extends Component
                 'caption' => $this->newCaption,
             ])
             ->toMediaCollection('library');
+
+        $activity = activity('media')
+            ->causedBy(Auth::user())
+            ->performedOn($libraryMedia)
+            ->event('created')
+            ->withProperties([
+                'file_name' => $media->file_name,
+                'size' => $media->size,
+            ])
+            ->log("Media \"{$media->file_name}\" diunggah");
+
+        /** @var \Spatie\Activitylog\Models\Activity $activity */
+        $activity->attribute_changes = [
+            'attributes' => [
+                'file_name' => $media->file_name,
+                'alt_text' => $this->newAltText,
+                'caption' => $this->newCaption,
+            ],
+        ];
+        $activity->save();
 
         $this->closeUploadModal();
         unset($this->mediaItems);
@@ -198,9 +212,26 @@ class MediaLibraryManager extends Component
             abort(403);
         }
 
+        $oldAltText = $media->getCustomProperty('alt_text', '');
+        $oldCaption = $media->getCustomProperty('caption', '');
+
         $media->setCustomProperty('alt_text', $this->editAltText);
         $media->setCustomProperty('caption', $this->editCaption);
         $media->save();
+
+        $activity = activity('media')
+            ->causedBy(Auth::user())
+            ->performedOn($libraryMedia)
+            ->event('updated')
+            ->withProperties(['file_name' => $media->file_name])
+            ->log("Metadata media \"{$media->file_name}\" diperbarui");
+
+        /** @var \Spatie\Activitylog\Models\Activity $activity */
+        $activity->attribute_changes = [
+            'old' => ['alt_text' => $oldAltText, 'caption' => $oldCaption],
+            'attributes' => ['alt_text' => $this->editAltText, 'caption' => $this->editCaption],
+        ];
+        $activity->save();
 
         $this->closeEditModal();
         unset($this->mediaItems);
@@ -238,7 +269,22 @@ class MediaLibraryManager extends Component
             abort(403);
         }
 
+        $fileName = $media->file_name;
+
         $media->delete();
+
+        $activity = activity('media')
+            ->causedBy(Auth::user())
+            ->performedOn($libraryMedia)
+            ->event('deleted')
+            ->withProperties(['file_name' => $fileName])
+            ->log("Media \"{$fileName}\" dihapus");
+
+        /** @var \Spatie\Activitylog\Models\Activity $activity */
+        $activity->attribute_changes = [
+            'old' => ['file_name' => $fileName],
+        ];
+        $activity->save();
 
         $this->closeDeleteModal();
         unset($this->mediaItems);

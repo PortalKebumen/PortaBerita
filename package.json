@@ -18,6 +18,7 @@
         "@laravel/multiplex": "^0.4.1"
     },
     "dependencies": {
+        "flatpickr": "^4.6.13",
         "tinymce": "^8.9.0",
         "tinymce-i18n": "^26.8.2"
     }

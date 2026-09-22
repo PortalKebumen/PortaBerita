@@ -163,8 +163,9 @@ class UserManager extends Component
 
         if ($this->editingUserId) {
             $user = User::with('roles')->findOrFail($this->editingUserId);
+            $oldRole = $user->roles->first()?->name;
 
-            if ($user->id === Auth::id() && $validated['role'] !== $user->roles->first()?->name) {
+            if ($user->id === Auth::id() && $validated['role'] !== $oldRole) {
                 $this->addError('role', 'Anda tidak bisa mengubah role akun sendiri.');
 
                 return;
@@ -180,6 +181,17 @@ class UserManager extends Component
 
             $user->save();
             $user->syncRoles([$validated['role']]);
+
+            if ($oldRole !== $validated['role']) {
+                activity('user')
+                    ->causedBy(Auth::user())
+                    ->performedOn($user)
+                    ->withProperties([
+                        'old' => ['role' => $oldRole],
+                        'attributes' => ['role' => $validated['role']],
+                    ])
+                    ->log("Role pengguna \"{$user->name}\" diubah dari ".$this->roleLabel($oldRole ?? '-').' menjadi '.$this->roleLabel($validated['role']));
+            }
         } else {
             $user = User::create([
                 'name' => $validated['name'],
@@ -189,6 +201,12 @@ class UserManager extends Component
                 'email_verified_at' => now(),
             ]);
             $user->assignRole($validated['role']);
+
+            activity('user')
+                ->causedBy(Auth::user())
+                ->performedOn($user)
+                ->withProperties(['role' => $validated['role']])
+                ->log("Pengguna \"{$user->name}\" dibuat dengan role ".$this->roleLabel($validated['role']));
         }
 
         $this->showUserModal = false;

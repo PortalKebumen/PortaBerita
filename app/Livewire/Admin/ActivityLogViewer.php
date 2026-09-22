@@ -199,12 +199,25 @@ class ActivityLogViewer extends Component
             return $log->log_name === 'auth' ? 'Autentikasi' : '—';
         }
 
-        $labels = ['Article' => 'Artikel', 'Category' => 'Kategori', 'Tag' => 'Tag', 'User' => 'Pengguna'];
+        $labels = [
+            'Article' => 'Artikel',
+            'Category' => 'Kategori',
+            'Tag' => 'Tag',
+            'User' => 'Pengguna',
+            'LibraryMedia' => 'Media',
+        ];
         $modelLabel = $labels[class_basename($log->subject_type)] ?? class_basename($log->subject_type);
 
-        $name = $log->subject?->title ?? $log->subject?->name ?? null;
+        $name = $log->subject?->title
+            ?? $log->subject?->name
+            ?? $log->properties['file_name']
+            ?? null;
 
-        return $name ? "{$modelLabel} · {$name}" : "{$modelLabel} · #{$log->subject_id} (dihapus)";
+        if (! $log->subject) {
+            return "{$modelLabel} · #{$log->subject_id} (dihapus)";
+        }
+
+        return $name ? "{$modelLabel} · {$name}" : "{$modelLabel} · #{$log->subject_id}";
     }
 
     public function render()

@@ -1,3 +1,8 @@
+import flatpickr from 'flatpickr';
+import 'flatpickr/dist/flatpickr.min.css';
+
+window.flatpickr = flatpickr;
+
 document.addEventListener('DOMContentLoaded', function () {
     // ---------- Keyboard shortcut: Cmd/Ctrl + K fokus ke search ----------
     document.addEventListener('keydown', function (e) {
