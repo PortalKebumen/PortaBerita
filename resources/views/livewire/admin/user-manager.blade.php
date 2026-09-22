@@ -2,7 +2,11 @@
 
     <div class="flex flex-wrap items-center justify-between gap-3">
         <div class="flex flex-wrap items-center gap-3">
-            <input type="text" wire:model.live.debounce.400ms="search" placeholder="Cari nama atau email..." class="form-input w-64">
+            <div class="relative flex-1 max-w-[320px]">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#848CA3" stroke-width="2" class="absolute left-3.5 top-1/2 -translate-y-1/2"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+
+                <input type="text" wire:model.live.debounce.400ms="search" placeholder="Cari nama atau email..." class="form-input pl-9">
+            </div>
             <select wire:model.live="roleFilter" class="form-select w-56">
                 <option value="">Semua Role</option>
                 @foreach ($this->roleOptions as $opt)
