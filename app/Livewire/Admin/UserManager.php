@@ -19,10 +19,10 @@ class UserManager extends Component
 {
     use WithPagination;
 
-    #[Url(history: true)]
+    // #[Url(history: true)]
     public string $search = '';
 
-    #[Url(history: true)]
+    // #[Url(history: true)]
     public string $roleFilter = '';
 
     public bool $showUserModal = false;

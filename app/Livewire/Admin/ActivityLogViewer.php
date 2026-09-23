@@ -15,16 +15,16 @@ class ActivityLogViewer extends Component
 {
     use WithPagination;
 
-    #[Url(history: true)]
+    // #[Url(history: true)]
     public string $search = '';
 
-    #[Url(history: true)]
+    // #[Url(history: true)]
     public ?int $userId = null;
 
-    #[Url(history: true)]
+    // #[Url(history: true)]
     public ?string $actionFilter = null;
 
-    #[Url(history: true)]
+    // #[Url(history: true)]
     public ?string $date = null;
 
     public ?int $selectedLogId = null;
