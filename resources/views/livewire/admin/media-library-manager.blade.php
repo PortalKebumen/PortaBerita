@@ -131,13 +131,13 @@
     </div>
 
     {{-- Modal: Upload --}}
-    <div
-        class="modal-overlay {{ $showUploadModal ? 'flex' : 'hidden' }} fixed inset-0 z-50 items-center justify-center p-4 bg-black/40">
+    <div class="modal-overlay {{ $showUploadModal ? 'flex' : 'hidden' }} fixed inset-0 z-50 items-center justify-center p-4 bg-black/40"
+        x-data="{ preview: null }" x-on:flash-message.window="preview = null">
         <div class="bg-white rounded-card max-w-[500px] w-full p-6 shadow-xl">
             <form wire:submit="saveUpload">
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="text-[16px] font-bold">Unggah Media Baru</h3>
-                    <button type="button" wire:click="closeUploadModal" class="btn-icon bg-[#F1F3F7]"
+                    <button type="button" wire:click="closeUploadModal" @click="preview = null" class="btn-icon bg-[#F1F3F7]"
                         aria-label="Tutup">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                             stroke-width="2">
@@ -147,17 +147,30 @@
                 </div>
 
                 <label
-                    class="flex flex-col items-center justify-center gap-2 border border-dashed border-[#CDD3DF] rounded-lg py-10 cursor-pointer hover:bg-[#F8F9FB] transition-colors mb-4"
+                    class="flex flex-col items-center justify-center gap-2 border border-dashed border-[#CDD3DF] rounded-lg py-6 px-4 cursor-pointer hover:bg-[#F8F9FB] transition-colors mb-4 overflow-hidden"
                     wire:loading.class="opacity-50 pointer-events-none" wire:target="newFile">
-                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#848CA3"
-                        stroke-width="1.8">
-                        <path d="M12 16V4M12 4l-4 4M12 4l4 4"></path>
-                        <path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2"></path>
-                    </svg>
+
+                    <template x-if="preview">
+                        <img :src="preview" class="h-24 w-auto object-contain rounded-md">
+                    </template>
+
+                    <template x-if="!preview">
+                        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#848CA3"
+                            stroke-width="1.8">
+                            <path d="M12 16V4M12 4l-4 4M12 4l4 4"></path>
+                            <path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2"></path>
+                        </svg>
+                    </template>
+
                     <span class="text-[12.5px] text-[#6C7387]"><span class="font-semibold text-brand-600">Klik untuk
                             unggah</span> atau seret berkas ke sini</span>
                     <span class="text-[11px] text-[#848CA3]">JPG, PNG, WEBP, PDF hingga 10MB</span>
-                    <input type="file" wire:model="newFile" wire:key="media-upload-new-file" class="hidden">
+                    <input type="file" wire:model="newFile" wire:key="media-upload-new-file" class="hidden"
+                        x-on:change="
+                            if (preview) { URL.revokeObjectURL(preview); }
+                            const file = $event.target.files[0];
+                            preview = (file && file.type.startsWith('image/')) ? URL.createObjectURL(file) : null;
+                        ">
                 </label>
 
                 <div wire:loading wire:target="newFile"
@@ -190,7 +203,7 @@
                 </div>
 
                 <div class="flex justify-end gap-2.5">
-                    <button type="button" wire:click="closeUploadModal" class="btn-secondary">Batal</button>
+                    <button type="button" wire:click="closeUploadModal" @click="preview = null" class="btn-secondary">Batal</button>
                     <button type="submit" wire:loading.attr="disabled" wire:target="newFile,saveUpload"
                         class="btn-primary disabled:opacity-50 disabled:cursor-not-allowed">
                         <span wire:loading.remove wire:target="newFile,saveUpload">Unggah</span>
@@ -218,7 +231,16 @@
                     </button>
                 </div>
                 <div class="flex items-center gap-3 mb-5 bg-[#F8F9FB] border border-[#E4E8EF] rounded-lg p-3">
-                    <div class="w-12 h-12 rounded-lg bg-gradient-to-br from-brand-700 to-brand-500 shrink-0"></div>
+                    @if ($editIsImage && $editThumbUrl)
+                        <img src="{{ $editThumbUrl }}" alt="{{ $editAltText }}" class="w-12 h-12 rounded-lg object-cover shrink-0">
+                    @else
+                        <div class="w-12 h-12 rounded-lg bg-gradient-to-br from-brand-700 to-brand-500 shrink-0 flex items-center justify-center text-white">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"></path>
+                                <path d="M14 2v6h6"></path>
+                            </svg>
+                        </div>
+                    @endif
                     <div class="min-w-0">
                         <div class="text-[13px] font-semibold truncate">{{ $editFileName }}</div>
                         <div class="text-[11.5px] text-[#848CA3]">{{ $editSizeLabel }}</div>

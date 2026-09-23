@@ -39,6 +39,9 @@ class MediaLibraryManager extends Component
     public ?int $deletingMediaId = null;
     public string $deletingFileName = '';
 
+    public bool $editIsImage = false;
+    public ?string $editThumbUrl = null;
+
     public function updatingSearch(): void
     {
         $this->resetPage();
@@ -177,25 +180,26 @@ class MediaLibraryManager extends Component
     {
         $media = Media::findOrFail($mediaId);
         $libraryMedia = $this->resolveOwningLibraryMedia($media);
-
         if (! $this->canManage($libraryMedia, 'media.update-own', 'media.update-any')) {
             $this->dispatch('flash-message', type: 'error', text: 'Anda tidak punya izin mengubah media ini.');
-
             return;
         }
-
         $this->editingMediaId = $media->id;
         $this->editFileName = $media->file_name;
         $this->editSizeLabel = $this->formatSize($media->size);
         $this->editAltText = $media->getCustomProperty('alt_text', '');
         $this->editCaption = $media->getCustomProperty('caption', '');
+        $this->editIsImage = str_starts_with($media->mime_type, 'image/');
+        $this->editThumbUrl = $this->editIsImage
+            ? ($media->hasGeneratedConversion('small') ? $media->getUrl('small') : $media->getUrl())
+            : null;
         $this->showEditModal = true;
     }
 
     public function closeEditModal(): void
     {
         $this->showEditModal = false;
-        $this->reset(['editingMediaId', 'editFileName', 'editSizeLabel', 'editAltText', 'editCaption']);
+        $this->reset(['editingMediaId', 'editFileName', 'editSizeLabel', 'editAltText', 'editCaption', 'editIsImage', 'editThumbUrl']);
     }
 
     public function updateMedia(): void
