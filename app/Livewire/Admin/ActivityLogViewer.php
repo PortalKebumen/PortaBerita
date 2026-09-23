@@ -205,11 +205,13 @@ class ActivityLogViewer extends Component
             'Tag' => 'Tag',
             'User' => 'Pengguna',
             'LibraryMedia' => 'Media',
+            'Advertisement' => 'Iklan',
         ];
         $modelLabel = $labels[class_basename($log->subject_type)] ?? class_basename($log->subject_type);
 
         $name = $log->subject?->title
             ?? $log->subject?->name
+            ?? $log->subject?->advertiser_name
             ?? $log->properties['file_name']
             ?? null;
 

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Traits\LogsModelActivity;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -12,7 +13,19 @@ use Spatie\MediaLibrary\InteractsWithMedia;
 
 class Advertisement extends Model implements HasMedia
 {
-    use HasFactory, InteractsWithMedia;
+   use HasFactory, InteractsWithMedia, LogsModelActivity;
+
+    protected array $logAttributes = [
+        'advertiser_name',
+        'advertiser_contact',
+        'target_url',
+        'placement',
+        'status',
+        'start_date',
+        'end_date',
+    ];
+
+    protected string $logLabel = 'Iklan';
 
     protected $fillable = [
         'advertiser_name',
@@ -140,5 +153,10 @@ class Advertisement extends Model implements HasMedia
             return round($num / 1000, 1) . 'K';
         }
         return (string) $num;
+    }
+
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection('banner')->singleFile();
     }
 }

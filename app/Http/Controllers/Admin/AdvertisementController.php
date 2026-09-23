@@ -3,6 +3,9 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\LibraryMedia;
+use Illuminate\Support\Facades\Auth;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use App\Models\Advertisement;
 use App\Models\AdMetric;
 use Carbon\Carbon;
@@ -109,10 +112,9 @@ class AdvertisementController extends Controller
             'status' => ['required', 'string', 'in:active,inactive,scheduled,expired'],
             'start_date' => ['required', 'date'],
             'end_date' => ['required', 'date', 'after_or_equal:start_date'],
-            'banner' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp,gif', 'max:2048'],
+            'banner_media_id' => ['nullable', 'integer', 'exists:media,id'],
         ]);
 
-        // Buat record advertisement
         $ad = Advertisement::create([
             'advertiser_name' => $validated['advertiser_name'],
             'advertiser_contact' => $validated['advertiser_contact'] ?? null,
@@ -123,28 +125,8 @@ class AdvertisementController extends Controller
             'end_date' => $validated['end_date'],
         ]);
 
-        // Handle upload banner file ke storage/banners
-        if ($request->hasFile('banner') && $request->file('banner')->isValid()) {
-            $file = $request->file('banner');
-            $extension = $file->getClientOriginalExtension();
-            $fileName = "ad-{$ad->id}.{$extension}";
-
-            // Pastikan direktori banners di storage ada
-            $storageBannersPath = storage_path('app/public/banners');
-            if (!File::exists($storageBannersPath)) {
-                File::makeDirectory($storageBannersPath, 0755, true);
-            }
-
-            $file->move($storageBannersPath, $fileName);
-
-            // Jika symlink public/storage ada atau public/storage/banners bisa di-sync
-            $publicBannersPath = public_path('storage/banners');
-            if (!File::exists($publicBannersPath)) {
-                File::makeDirectory($publicBannersPath, 0755, true);
-            }
-            if (File::exists($storageBannersPath . '/' . $fileName)) {
-                File::copy($storageBannersPath . '/' . $fileName, $publicBannersPath . '/' . $fileName);
-            }
+        if (! empty($validated['banner_media_id'])) {
+            $this->attachBannerFromMedia($ad, (int) $validated['banner_media_id']);
         }
 
         return redirect()->route('admin.iklan.index')->with('success', 'Iklan berhasil ditambahkan!');
@@ -163,7 +145,7 @@ class AdvertisementController extends Controller
             'status' => ['required', 'string', 'in:active,inactive,scheduled,expired'],
             'start_date' => ['required', 'date'],
             'end_date' => ['required', 'date', 'after_or_equal:start_date'],
-            'banner' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp,gif', 'max:2048'],
+            'banner_media_id' => ['nullable', 'integer', 'exists:media,id'],
         ]);
 
         $advertisement->update([
@@ -176,37 +158,8 @@ class AdvertisementController extends Controller
             'end_date' => $validated['end_date'],
         ]);
 
-        // Handle upload banner baru
-        if ($request->hasFile('banner') && $request->file('banner')->isValid()) {
-            $file = $request->file('banner');
-            $extension = $file->getClientOriginalExtension();
-            $fileName = "ad-{$advertisement->id}.{$extension}";
-
-            $storageBannersPath = storage_path('app/public/banners');
-            if (!File::exists($storageBannersPath)) {
-                File::makeDirectory($storageBannersPath, 0755, true);
-            }
-
-            // Hapus file lama jika ada format beda
-            $oldFiles = File::glob($storageBannersPath . "/ad-{$advertisement->id}.*");
-            foreach ($oldFiles as $old) {
-                File::delete($old);
-            }
-
-            $file->move($storageBannersPath, $fileName);
-
-            // Sync ke public/storage/banners
-            $publicBannersPath = public_path('storage/banners');
-            if (!File::exists($publicBannersPath)) {
-                File::makeDirectory($publicBannersPath, 0755, true);
-            }
-            $oldPublicFiles = File::glob($publicBannersPath . "/ad-{$advertisement->id}.*");
-            foreach ($oldPublicFiles as $old) {
-                File::delete($old);
-            }
-            if (File::exists($storageBannersPath . '/' . $fileName)) {
-                File::copy($storageBannersPath . '/' . $fileName, $publicBannersPath . '/' . $fileName);
-            }
+        if (! empty($validated['banner_media_id'])) {
+            $this->attachBannerFromMedia($advertisement, (int) $validated['banner_media_id']);
         }
 
         return redirect()->route('admin.iklan.index')->with('success', 'Iklan berhasil diperbarui!');
@@ -231,5 +184,42 @@ class AdvertisementController extends Controller
         $advertisement->delete();
 
         return redirect()->route('admin.iklan.index')->with('success', 'Iklan berhasil dihapus!');
+    }
+
+    protected function attachBannerFromMedia(Advertisement $advertisement, int $mediaId): void
+    {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+
+        $media = Media::findOrFail($mediaId);
+
+        if (! $user->can('media.view-any')) {
+            $libraryMedia = $media->model_type === LibraryMedia::class ? $media->model : null;
+
+            abort_unless(
+                $user->can('media.view-own') && $libraryMedia && $libraryMedia->uploaded_by === $user->getKey(),
+                403,
+                'Anda tidak punya izin menggunakan gambar ini sebagai banner.'
+            );
+        }
+
+        $oldBannerName = $advertisement->getFirstMedia('banner')?->file_name;
+
+        $advertisement->clearMediaCollection('banner');
+        $newMedia = $media->copy($advertisement, 'banner');
+
+        $activity = activity('advertisement')
+            ->causedBy($user)
+            ->performedOn($advertisement)
+            ->event('updated')
+            ->withProperties(['file_name' => $newMedia->file_name])
+            ->log('Banner iklan "'.$advertisement->advertiser_name.'" '.($oldBannerName ? 'diganti' : 'dipasang'));
+
+        /** @var \Spatie\Activitylog\Models\Activity $activity */
+        $activity->attribute_changes = [
+            'old' => ['banner' => $oldBannerName],
+            'attributes' => ['banner' => $newMedia->file_name],
+        ];
+        $activity->save();
     }
 }

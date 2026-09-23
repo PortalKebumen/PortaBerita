@@ -241,7 +241,6 @@
                     <label class="block text-[12px] font-bold text-gray-700 mb-1.5">Banner Iklan</label>
                     <div class="border border-[#E4E8EF] rounded-xl p-3.5 flex items-center justify-between gap-3 bg-[#FAFBFC]">
                         <div class="flex items-center gap-3 min-w-0">
-                            {{-- Thumbnail Icon / Preview Box --}}
                             <div id="add-banner-preview-container" class="w-14 h-11 rounded-lg bg-[#EFF2F6] border border-[#E4E8EF] flex items-center justify-center shrink-0 overflow-hidden text-[#848CA3]">
                                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <rect x="3" y="3" width="18" height="18" rx="2" stroke-width="1.8"/>
@@ -255,9 +254,8 @@
                             </div>
                         </div>
 
-                        {{-- Tombol Pilih Gambar (Hidden file input) --}}
-                        <input type="file" name="banner" id="add-banner-file" accept="image/*" class="hidden" onchange="previewBanner(this, 'add-banner-preview-container', 'add-banner-label')">
-                        <button type="button" onclick="document.getElementById('add-banner-file').click()"
+                        <input type="hidden" name="banner_media_id" id="add-banner-media-id" value="">
+                        <button type="button" onclick="Livewire.dispatch('open-media-picker', { target: 'add-banner' })"
                             class="px-4 py-2 text-[12.5px] font-semibold text-gray-700 bg-[#E8EDF5] hover:bg-[#D9E1ED] rounded-xl transition shrink-0">
                             Pilih Gambar
                         </button>
@@ -352,7 +350,6 @@
                     <label class="block text-[12px] font-bold text-gray-700 mb-1.5">Banner Iklan</label>
                     <div class="border border-[#E4E8EF] rounded-xl p-3.5 flex items-center justify-between gap-3 bg-[#FAFBFC]">
                         <div class="flex items-center gap-3 min-w-0">
-                            {{-- Thumbnail Icon / Preview Box --}}
                             <div id="edit-banner-preview-container" class="w-14 h-11 rounded-lg bg-[#EFF2F6] border border-[#E4E8EF] flex items-center justify-center shrink-0 overflow-hidden text-[#848CA3]">
                                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <rect x="3" y="3" width="18" height="18" rx="2" stroke-width="1.8"/>
@@ -366,9 +363,8 @@
                             </div>
                         </div>
 
-                        {{-- Tombol Ganti Gambar --}}
-                        <input type="file" name="banner" id="edit-banner-file" accept="image/*" class="hidden" onchange="previewBanner(this, 'edit-banner-preview-container', 'edit-banner-label')">
-                        <button type="button" onclick="document.getElementById('edit-banner-file').click()"
+                        <input type="hidden" name="banner_media_id" id="edit-banner-media-id" value="">
+                        <button type="button" onclick="Livewire.dispatch('open-media-picker', { target: 'edit-banner' })"
                             class="px-4 py-2 text-[12.5px] font-semibold text-gray-700 bg-[#E8EDF5] hover:bg-[#D9E1ED] rounded-xl transition shrink-0">
                             Pilih Gambar
                         </button>
@@ -506,6 +502,15 @@
         }
 
         function openAddModal() {
+            document.getElementById('add-banner-media-id').value = '';
+            document.getElementById('add-banner-preview-container').innerHTML = `
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <rect x="3" y="3" width="18" height="18" rx="2" stroke-width="1.8"/>
+                    <circle cx="8.5" cy="8.5" r="1.5"/>
+                    <path d="M21 15l-5-5L5 21" stroke-width="1.8"/>
+                </svg>
+            `;
+            document.getElementById('add-banner-label').textContent = 'Belum ada banner dipilih';
             openModal('modal-add-ad');
         }
 
@@ -525,6 +530,9 @@
             if (ad.end_date) {
                 document.getElementById('edit-end-date').value = ad.end_date.substring(0, 10);
             }
+
+            // Kosongkan pilihan banner baru - biarkan banner lama dipakai kecuali user pilih ganti
+            document.getElementById('edit-banner-media-id').value = '';
 
             const previewContainer = document.getElementById('edit-banner-preview-container');
             const label = document.getElementById('edit-banner-label');
@@ -546,6 +554,20 @@
             openModal('modal-edit-ad');
         }
 
+        window.addEventListener('media-picker-selected', function (e) {
+            const { target, media } = e.detail;
+
+            if (target === 'add-banner') {
+                document.getElementById('add-banner-media-id').value = media.id;
+                document.getElementById('add-banner-preview-container').innerHTML = `<img src="${media.url}" class="w-full h-full object-cover">`;
+                document.getElementById('add-banner-label').textContent = 'Banner siap disimpan';
+            } else if (target === 'edit-banner') {
+                document.getElementById('edit-banner-media-id').value = media.id;
+                document.getElementById('edit-banner-preview-container').innerHTML = `<img src="${media.url}" class="w-full h-full object-cover">`;
+                document.getElementById('edit-banner-label').textContent = 'Banner baru siap disimpan';
+            }
+        });
+
         function confirmDeleteAd(id, name) {
             const form = document.getElementById('form-delete-ad');
             form.action = `/admin/advertisements/${id}`;
@@ -554,20 +576,20 @@
             openModal('modal-delete-ad');
         }
 
-        function previewBanner(input, containerId, labelId) {
-            if (input.files && input.files[0]) {
-                const file = input.files[0];
-                const reader = new FileReader();
+        // function previewBanner(input, containerId, labelId) {
+        //     if (input.files && input.files[0]) {
+        //         const file = input.files[0];
+        //         const reader = new FileReader();
 
-                reader.onload = function (e) {
-                    const container = document.getElementById(containerId);
-                    container.innerHTML = `<img src="${e.target.result}" class="w-full h-full object-cover">`;
-                    document.getElementById(labelId).textContent = file.name;
-                };
+        //         reader.onload = function (e) {
+        //             const container = document.getElementById(containerId);
+        //             container.innerHTML = `<img src="${e.target.result}" class="w-full h-full object-cover">`;
+        //             document.getElementById(labelId).textContent = file.name;
+        //         };
 
-                reader.readAsDataURL(file);
-            }
-        }
+        //         reader.readAsDataURL(file);
+        //     }
+        // }
 
         function showModalAlert(title, messageHtml, type = 'success') {
             const iconContainer = document.getElementById('alert-icon-container');
@@ -608,4 +630,5 @@
             @endif
         });
     </script>
+    <livewire:media-picker />
 </x-layouts.admin>

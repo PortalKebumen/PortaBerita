@@ -3,9 +3,11 @@
 namespace App\Livewire;
 
 use App\Models\LibraryMedia;
+use Illuminate\Support\Facades\Auth;
+use Livewire\Attributes\On;
 use Livewire\Component;
 use Livewire\WithFileUploads;
-use Livewire\Attributes\On;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 class MediaPicker extends Component
 {
@@ -14,6 +16,8 @@ class MediaPicker extends Component
     public bool $isOpen = false;
     public string $target = '';
     public string $activeTab = 'upload'; // 'upload' atau 'library'
+
+    public bool $canUpload = false;
 
     // Tab Pustaka Media
     public string $search = '';
@@ -27,9 +31,18 @@ class MediaPicker extends Component
     #[On('open-media-picker')]
     public function openFor(string $target): void
     {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+
+        $this->canUpload = (bool) $user?->can('media.upload');
+        $canViewAny = (bool) $user?->can('media.view-any');
+        $canViewOwn = (bool) $user?->can('media.view-own');
+
+        abort_unless($this->canUpload || $canViewAny || $canViewOwn, 403);
+
         $this->target = $target;
         $this->isOpen = true;
-        $this->activeTab = 'upload';
+        $this->activeTab = $this->canUpload ? 'upload' : 'library';
         $this->selectedMediaId = null;
         $this->resetUploadState();
     }
@@ -47,8 +60,32 @@ class MediaPicker extends Component
         $this->newCaption = '';
     }
 
+    protected function canUseMedia(Media $media): bool
+    {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+
+        if ($user->can('media.view-any')) {
+            return true;
+        }
+
+        if (! $user->can('media.view-own')) {
+            return false;
+        }
+
+        $libraryMedia = $media->model_type === LibraryMedia::class ? $media->model : null;
+
+        return $libraryMedia && $libraryMedia->uploaded_by === $user->getKey();
+    }
+
     public function selectMedia(int $mediaId): void
     {
+        $media = Media::find($mediaId);
+
+        if (! $media || ! $this->canUseMedia($media)) {
+            return;
+        }
+
         $this->selectedMediaId = $mediaId;
     }
 
@@ -58,7 +95,13 @@ class MediaPicker extends Component
             return;
         }
 
-        $media = \Spatie\MediaLibrary\MediaCollections\Models\Media::findOrFail($this->selectedMediaId);
+        $media = Media::findOrFail($this->selectedMediaId);
+
+        if (! $this->canUseMedia($media)) {
+            $this->selectedMediaId = null;
+            $this->dispatch('flash-message', type: 'error', text: 'Anda tidak punya izin menggunakan gambar ini.');
+            return;
+        }
 
         $this->dispatch('media-picker-selected', target: $this->target, media: [
             'id' => $media->id,
@@ -71,11 +114,13 @@ class MediaPicker extends Component
 
     public function uploadAndSelect(): void
     {
+        $this->authorize('media.upload');
+
         $this->validate([
-            'newFile' => 'required|file|max:10240',
+            'newFile' => 'required|file|max:5120',
         ]);
 
-        $libraryMedia = LibraryMedia::create();
+        $libraryMedia = LibraryMedia::create(['uploaded_by' => Auth::id()]);
 
         $media = $libraryMedia
             ->addMedia($this->newFile->getRealPath())
@@ -85,6 +130,19 @@ class MediaPicker extends Component
                 'caption' => $this->newCaption,
             ])
             ->toMediaCollection('library');
+
+        $activity = activity('media')
+            ->causedBy(Auth::user())
+            ->performedOn($libraryMedia)
+            ->event('created')
+            ->withProperties(['file_name' => $media->file_name, 'size' => $media->size])
+            ->log("Media \"{$media->file_name}\" diunggah melalui editor artikel");
+
+        /** @var \Spatie\Activitylog\Models\Activity $activity */
+        $activity->attribute_changes = [
+            'attributes' => ['file_name' => $media->file_name, 'alt_text' => $this->newAltText, 'caption' => $this->newCaption],
+        ];
+        $activity->save();
 
         $this->dispatch('media-picker-selected', target: $this->target, media: [
             'id' => $media->id,
@@ -97,19 +155,25 @@ class MediaPicker extends Component
 
     public function render()
     {
-        $mediaItems = LibraryMedia::query()
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+
+        $query = LibraryMedia::query()
             ->whereHas('media', function ($query) {
+                $query->where('mime_type', 'like', 'image/%');
                 if ($this->search) {
-                    $query->where('file_name', 'like', "%{$this->search}%")
-                        ->where('mime_type', 'like', 'image/%');
-                } else {
-                    $query->where('mime_type', 'like', 'image/%');
+                    $query->where('file_name', 'like', "%{$this->search}%");
                 }
             })
             ->with('media')
-            ->latest()
-            ->paginate(12);
+            ->latest();
 
-        return view('livewire.media-picker', compact('mediaItems'));
+        if (! $user->can('media.view-any')) {
+            $query->where('uploaded_by', $user->getKey());
+        }
+
+        return view('livewire.media-picker', [
+            'mediaItems' => $query->paginate(12),
+        ]);
     }
 }
