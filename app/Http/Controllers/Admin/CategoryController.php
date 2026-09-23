@@ -58,7 +58,7 @@ class CategoryController extends Controller
             ],
         ]);
 
-        Category::firstOrCreate($validated);
+        Category::firstOrCreate(['name' => $validated['name']], $validated);
         return redirect()->back()->with('success', 'Kategori berhasil dibuat');
     }
 

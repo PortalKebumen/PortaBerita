@@ -21,7 +21,7 @@ class Tag extends Model
     protected static function booted(): void
     {
         static::saving(function (Tag $tag) {
-            if (empty($tag->slug)) {
+            if (empty($tag->slug) || $tag->isDirty('name')) {
                 $tag->slug = Str::slug($tag->name);
             }
         });
