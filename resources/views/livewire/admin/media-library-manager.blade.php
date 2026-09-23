@@ -131,13 +131,15 @@
     </div>
 
     {{-- Modal: Upload --}}
-    <div class="modal-overlay {{ $showUploadModal ? 'flex' : 'hidden' }} fixed inset-0 z-50 items-center justify-center p-4 bg-black/40"
-        x-data="{ preview: null }" x-on:flash-message.window="preview = null">
+    <div
+        class="modal-overlay {{ $showUploadModal ? 'flex' : 'hidden' }} fixed inset-0 z-50 items-center justify-center p-4 bg-black/40"
+        x-data="{ preview: null, sizeError: null }"
+        x-on:flash-message.window="preview = null; sizeError = null">
         <div class="bg-white rounded-card max-w-[500px] w-full p-6 shadow-xl">
             <form wire:submit="saveUpload">
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="text-[16px] font-bold">Unggah Media Baru</h3>
-                    <button type="button" wire:click="closeUploadModal" @click="preview = null" class="btn-icon bg-[#F1F3F7]"
+                    <button type="button" wire:click="closeUploadModal" @click="preview = null; sizeError = null; $refs.fileInput.value = ''" class="btn-icon bg-[#F1F3F7]"
                         aria-label="Tutup">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                             stroke-width="2">
@@ -164,12 +166,25 @@
 
                     <span class="text-[12.5px] text-[#6C7387]"><span class="font-semibold text-brand-600">Klik untuk
                             unggah</span> atau seret berkas ke sini</span>
-                    <span class="text-[11px] text-[#848CA3]">JPG, PNG, WEBP, PDF hingga 10MB</span>
-                    <input type="file" wire:model="newFile" wire:key="media-upload-new-file" class="hidden"
+                    <span class="text-[11px] text-[#848CA3]">JPG, PNG, WEBP, PDF hingga 5MB</span>
+                    <input type="file" x-ref="fileInput" class="hidden"
                         x-on:change="
-                            if (preview) { URL.revokeObjectURL(preview); }
+                            sizeError = null;
                             const file = $event.target.files[0];
-                            preview = (file && file.type.startsWith('image/')) ? URL.createObjectURL(file) : null;
+                            if (!file) return;
+
+                            const maxBytes = 5 * 1024 * 1024;
+                            if (file.size > maxBytes) {
+                                sizeError = 'Ukuran berkas ' + (file.size / 1024 / 1024).toFixed(2) + ' MB, melebihi batas maksimal 5 MB.';
+                                preview = null;
+                                $refs.fileInput.value = '';
+                                return;
+                            }
+
+                            if (preview) { URL.revokeObjectURL(preview); }
+                            preview = file.type.startsWith('image/') ? URL.createObjectURL(file) : null;
+
+                            $wire.upload('newFile', file);
                         ">
                 </label>
 
@@ -182,6 +197,8 @@
                     </svg>
                     Mengunggah berkas ke server, mohon tunggu sebentar...
                 </div>
+
+                <p x-show="sizeError" x-text="sizeError" x-cloak class="text-[12px] text-danger mb-3"></p>
 
                 @if ($newFile)
                     <p class="text-[12px] text-[#6C7387] mb-3" wire:loading.remove wire:target="newFile">Berkas siap:
@@ -203,7 +220,7 @@
                 </div>
 
                 <div class="flex justify-end gap-2.5">
-                    <button type="button" wire:click="closeUploadModal" @click="preview = null" class="btn-secondary">Batal</button>
+                    <button type="button" wire:click="closeUploadModal" @click="preview = null; sizeError = null; $refs.fileInput.value = ''" class="btn-secondary">Batal</button>
                     <button type="submit" wire:loading.attr="disabled" wire:target="newFile,saveUpload"
                         class="btn-primary disabled:opacity-50 disabled:cursor-not-allowed">
                         <span wire:loading.remove wire:target="newFile,saveUpload">Unggah</span>

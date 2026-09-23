@@ -64,9 +64,7 @@ class MediaLibraryManager extends Component
 
     public function updatedNewFile(): void
     {
-        $this->validateOnly('newFile', [
-            'newFile' => 'required|file|max:10240',
-        ]);
+        $this->validateOnly('newFile', ['newFile' => 'required|file|max:5120']); // 5120 KB = 5 MB
     }
 
     #[Computed]
@@ -133,7 +131,7 @@ class MediaLibraryManager extends Component
         $this->authorize('media.upload');
 
         $this->validate([
-            'newFile' => 'required|file|max:10240',
+            'newFile' => 'required|file|max:5120',
             'newAltText' => 'nullable|string|max:255',
             'newCaption' => 'nullable|string|max:255',
         ]);
