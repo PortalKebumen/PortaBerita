@@ -10,34 +10,9 @@ use Illuminate\Validation\Rule;
 
 class CategoryController extends Controller
 {
-    public function index(Request $request)
+    public function index(): \Illuminate\View\View
     {
-        $categorySearch = $request->query('q_cat');
-        $tagSearch = $request->query('q_tag');
-
-        // Ambil semua kategori beserta parent & hitungan artikel
-        $categoriesQuery = Category::with('parent')->withCount('articles');
-        if ($categorySearch) {
-            $categoriesQuery->where('name', 'like', "%{$categorySearch}%")
-                ->orWhere('slug', 'like', "%{$categorySearch}%");
-        }
-        $categories = $categoriesQuery->orderByRaw('CASE WHEN parent_id IS NULL THEN 0 ELSE 1 END')
-            ->orderBy('name')
-            ->paginate(15, ['*'], 'cat_page')
-            ->withQueryString();
-
-        // Daftar kategori utama untuk dropdown parent di modal
-        $parentCategories = Category::whereNull('parent_id')->orderBy('name')->get();
-
-        // Ambil daftar tags dengan hitungan artikel
-        $tagsQuery = Tag::withCount('articles');
-        if ($tagSearch) {
-            $tagsQuery->where('name', 'like', "%{$tagSearch}%")
-                ->orWhere('slug', 'like', "%{$tagSearch}%");
-        }
-        $tags = $tagsQuery->latest()->paginate(20, ['*'], 'tag_page')->withQueryString();
-
-        return view('admin.kategori-tag', compact('categories', 'parentCategories', 'tags'));
+        return view('admin.kategori-tag');
     }
 
     public function store(Request $request)

@@ -31,6 +31,10 @@ class AppServiceProvider extends ServiceProvider
         Event::listen(Logout::class, LogSuccessfulLogout::class);
         Event::listen(Failed::class, LogFailedLogin::class);
 
+        \Illuminate\Support\Facades\Gate::before(function ($user, $ability) {
+            return $user->hasRole('Super Admin') ? true : null;
+        });
+
         // PK-39: suntik alamat IP ke SEMUA activity log (otomatis maupun manual),
         // karena spatie/laravel-activitylog v5.1.0 tidak punya hook tapActivity()
         // untuk logging otomatis lewat trait LogsModelActivity.
