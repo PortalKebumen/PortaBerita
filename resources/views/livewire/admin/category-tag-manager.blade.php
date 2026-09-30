@@ -134,7 +134,7 @@
                     class="form-input pl-9">
             </div>
 
-            @can('categories.create')
+            @can('tags.create')
                 <button type="button" wire:click="openAddTag" class="btn-primary shrink-0">
                     + Tambah Tag
                 </button>
@@ -166,7 +166,7 @@
                             </td>
                             <td class="px-5 py-3.5 text-right">
                                 <div class="flex items-center justify-end gap-1.5">
-                                    @can('categories.update')
+                                    @can('tags.update')
                                         <button type="button"
                                             wire:click="openEditTag({{ $t->id }})"
                                             class="btn-icon text-[#6C7387] hover:text-brand-600 hover:bg-brand-50"
@@ -178,7 +178,7 @@
                                         </button>
                                     @endcan
 
-                                    @can('categories.delete')
+                                    @can('tags.delete')
                                         <button type="button"
                                             wire:click="confirmDeleteTag({{ $t->id }})"
                                             class="btn-icon text-danger hover:bg-danger-bg"

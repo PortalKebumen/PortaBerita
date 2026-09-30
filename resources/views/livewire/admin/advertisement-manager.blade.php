@@ -265,22 +265,24 @@
                                     @endif
                                 </div>
                                 <div class="text-[11px] text-[#848CA3]">
-                                    Pilih dari Pustaka Media atau unggah berkas (JPG/PNG/WEBP).
+                                    @canany(['media.upload', 'media.view-own', 'media.view-any'])
+                                        Pilih dari Pustaka Media, atau unggah langsung di bawah ini.
+                                    @else
+                                        Unggah berkas banner langsung (JPG/PNG/WEBP, maks 5MB).
+                                    @endcanany
                                 </div>
                             </div>
                         </div>
 
-                        <div class="flex items-center gap-2 shrink-0">
-                            {{-- Tombol Buka Media Picker --}}
+                        @canany(['media.upload', 'media.view-own', 'media.view-any'])
                             <button type="button"
                                 wire:click="$dispatch('open-media-picker', { target: 'ad-banner' })"
-                                class="btn-secondary btn-sm">
+                                class="btn-secondary btn-sm shrink-0">
                                 Pustaka Media
                             </button>
-                        </div>
+                        @endcanany
                     </div>
 
-                    {{-- Upload file banner langsung opsional --}}
                     <div class="mt-2 flex items-center gap-2 text-xs text-[#6C7387]">
                         <span>Atau unggah file langsung:</span>
                         <input type="file" wire:model="directBannerFile" accept="image/*" class="text-xs text-[#6C7387]">

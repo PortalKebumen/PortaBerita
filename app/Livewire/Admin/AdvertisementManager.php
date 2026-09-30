@@ -7,23 +7,23 @@ use App\Models\Advertisement;
 use App\Models\LibraryMedia;
 use Carbon\Carbon;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\File;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\On;
 use Livewire\Component;
-use Livewire\WithFileUploads;
 use Livewire\WithPagination;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
+use Livewire\WithFileUploads;
 
 class AdvertisementManager extends Component
 {
     use WithPagination, WithFileUploads;
 
-    // Filter & Search (Tanpa query string agar URL tetap bersih)
     public string $search = '';
     public string $placementFilter = 'all';
     public string $statusFilter = '';
 
-    // Modal Form State (Tambah & Edit)
     public bool $showAdModal = false;
     public ?int $editingAdId = null;
 
@@ -35,12 +35,11 @@ class AdvertisementManager extends Component
     public string $startDate = '';
     public string $endDate = '';
 
-    // Banner Media Library / Upload
+    // Banner — sepenuhnya lewat Media Library (via MediaPicker)
     public ?int $bannerMediaId = null;
     public ?string $bannerPreviewUrl = null;
-    public $directBannerFile = null; // Fallback jika upload langsung
+    public $directBannerFile = null; // Fallback untuk role tanpa akses Media Library (mis. Ads Manager)
 
-    // Modal Delete State
     public bool $showDeleteModal = false;
     public ?int $deletingAdId = null;
     public string $deletingAdName = '';
@@ -66,9 +65,6 @@ class AdvertisementManager extends Component
         $this->resetPage();
     }
 
-    /**
-     * Listener saat media dipilih dari MediaPicker
-     */
     #[On('media-picker-selected')]
     public function handleMediaSelected(string $target, array $media): void
     {
@@ -78,9 +74,6 @@ class AdvertisementManager extends Component
         }
     }
 
-    /**
-     * KPI Stats Widget
-     */
     #[Computed]
     public function stats(): array
     {
@@ -110,9 +103,6 @@ class AdvertisementManager extends Component
         ];
     }
 
-    /**
-     * Dataset Iklan Paginasi
-     */
     #[Computed]
     public function advertisements(): LengthAwarePaginator
     {
@@ -124,7 +114,7 @@ class AdvertisementManager extends Component
         ]);
 
         if (! empty(trim($this->search))) {
-            $term = '%' . trim($this->search) . '%';
+            $term = '%'.trim($this->search).'%';
             $query->where(function ($q) use ($term) {
                 $q->where('advertiser_name', 'like', $term)
                   ->orWhere('advertiser_contact', 'like', $term)
@@ -184,7 +174,7 @@ class AdvertisementManager extends Component
 
     public function openEditModal(int $id): void
     {
-        $this->authorize('ads.edit');
+        $this->authorize('ads.update');
 
         $ad = Advertisement::findOrFail($id);
 
@@ -207,7 +197,7 @@ class AdvertisementManager extends Component
     public function save(): void
     {
         if ($this->editingAdId) {
-            $this->authorize('ads.edit');
+            $this->authorize('ads.update');
         } else {
             $this->authorize('ads.create');
         }
@@ -244,7 +234,6 @@ class AdvertisementManager extends Component
         if ($this->editingAdId) {
             $ad = Advertisement::findOrFail($this->editingAdId);
             $ad->update($payload);
-
             $this->attachBanner($ad);
 
             $this->showAdModal = false;
@@ -253,7 +242,6 @@ class AdvertisementManager extends Component
             $this->dispatch('flash-message', type: 'success', text: 'Iklan berhasil diupdate');
         } else {
             $ad = Advertisement::create($payload);
-
             $this->attachBanner($ad);
 
             $this->showAdModal = false;
@@ -263,46 +251,65 @@ class AdvertisementManager extends Component
         }
     }
 
+    /**
+     * Salin media yang dipilih/diupload via MediaPicker menjadi banner iklan ini.
+     * Pakai copy(), bukan move, supaya media aslinya tetap ada & reusable di Pustaka Media.
+     */
     protected function attachBanner(Advertisement $ad): void
     {
-        // 1. Jika dipilih dari Media Library
         if ($this->bannerMediaId) {
-            $libraryItem = LibraryMedia::find($this->bannerMediaId);
-            if ($libraryItem && $libraryItem->getFirstMedia('library')) {
-                $spatieMedia = $libraryItem->getFirstMedia('library');
-                $ad->clearMediaCollection('banner');
-                $spatieMedia->copy($ad, 'banner');
-                return;
-            }
+            $media = Media::find($this->bannerMediaId);
 
-            // Jika id langsung mereferensikan Spatie Media model
-            $directSpatie = \Spatie\MediaLibrary\MediaCollections\Models\Media::find($this->bannerMediaId);
-            if ($directSpatie) {
-                $ad->clearMediaCollection('banner');
-                $directSpatie->copy($ad, 'banner');
-                return;
-            }
-        }
+            if ($media) {
+                /** @var \App\Models\User $user */
+                $user = Auth::user();
 
-        // 2. Jika diunggah langsung via file input
-        if ($this->directBannerFile) {
-            $extension = $this->directBannerFile->getClientOriginalExtension();
-            $bannerDir = public_path('storage/banners');
-            if (! File::isDirectory($bannerDir)) {
-                File::makeDirectory($bannerDir, 0755, true, true);
-            }
+                if (! $user->can('media.view-any')) {
+                    $libraryMedia = $media->model_type === LibraryMedia::class ? $media->model : null;
 
-            // Hapus file lama jika ada
-            foreach (['jpg', 'jpeg', 'png', 'webp', 'gif'] as $ext) {
-                $oldPath = "{$bannerDir}/ad-{$ad->id}.{$ext}";
-                if (File::exists($oldPath)) {
-                    File::delete($oldPath);
+                    abort_unless(
+                        $user->can('media.view-own') && $libraryMedia && $libraryMedia->uploaded_by === $user->getKey(),
+                        403,
+                        'Anda tidak punya izin menggunakan gambar ini sebagai banner.'
+                    );
                 }
-            }
 
-            $fileName = "ad-{$ad->id}.{$extension}";
-            $this->directBannerFile->storeAs('banners', $fileName, 'public');
+                $oldBannerName = $ad->getFirstMedia('banner')?->file_name;
+                $ad->clearMediaCollection('banner');
+                $newMedia = $media->copy($ad, 'banner');
+
+                $this->logBannerChange($ad, $oldBannerName, $newMedia->file_name);
+                return;
+            }
         }
+
+        if ($this->directBannerFile) {
+            $oldBannerName = $ad->getFirstMedia('banner')?->file_name;
+            $ad->clearMediaCollection('banner');
+
+            $newMedia = $ad->addMedia($this->directBannerFile->getRealPath())
+                ->usingFileName($this->directBannerFile->getClientOriginalName())
+                ->toMediaCollection('banner');
+
+            $this->logBannerChange($ad, $oldBannerName, $newMedia->file_name);
+        }
+    }
+
+    protected function logBannerChange(Advertisement $ad, ?string $oldName, string $newName): void
+    {
+        $activity = activity('advertisement')
+            ->causedBy(Auth::user())
+            ->performedOn($ad)
+            ->event('updated')
+            ->withProperties(['file_name' => $newName])
+            ->log('Banner iklan "'.$ad->advertiser_name.'" '.($oldName ? 'diganti' : 'dipasang'));
+
+        /** @var \Spatie\Activitylog\Models\Activity $activity */
+        $activity->attribute_changes = [
+            'old' => ['banner' => $oldName],
+            'attributes' => ['banner' => $newName],
+        ];
+        $activity->save();
     }
 
     public function confirmDelete(int $id): void
@@ -325,12 +332,11 @@ class AdvertisementManager extends Component
 
         $ad = Advertisement::findOrFail($this->deletingAdId);
 
-        // Hapus file banner lokal jika ada
-        $bannerDir = public_path('storage/banners');
+        // Bersihkan file banner legacy (dari sebelum fitur ini pakai Media Library), kalau ada
         foreach (['jpg', 'jpeg', 'png', 'webp', 'gif'] as $ext) {
-            $filePath = "{$bannerDir}/ad-{$ad->id}.{$ext}";
-            if (File::exists($filePath)) {
-                File::delete($filePath);
+            $legacyPath = public_path("storage/banners/ad-{$ad->id}.{$ext}");
+            if (File::exists($legacyPath)) {
+                File::delete($legacyPath);
             }
         }
 

@@ -42,7 +42,8 @@ Route::middleware(['auth', 'can:dashboard.view'])->prefix('admin')->name('admin.
     Route::get('artikel', fn () => view('admin.coming-soon', ['title' => 'Artikel']))->can('articles.view')->name('artikel.index');
 
     // rute utama kategori & tag diarahin langsung ke CategoryController
-    Route::get('kategori-tag', [CategoryController::class, 'index'])->can('categories.view')->name('kategori-tag.index');
+    // Route::get('kategori-tag', [CategoryController::class, 'index'])->can('categories.view')->name('kategori-tag.index');
+    Route::get('kategori-tag', fn () => view('admin.kategori-tag'))->can('categories.view')->name('kategori-tag.index');
 
     // Media Library — versi lama berbasis Controller (PK-27), digantikan Livewire component MediaLibraryManager.
     // Route::get('media-library', [MediaLibraryController::class, 'index'])->can('media.view')->name('media-library.index');
@@ -51,15 +52,17 @@ Route::middleware(['auth', 'can:dashboard.view'])->prefix('admin')->name('admin.
     // Route::delete('media-library/{media}', [MediaLibraryController::class, 'destroy'])->name('media-library.destroy');
     Route::get('media-library', fn () => view('admin.media-library'))->can('media.view')->name('media-library.index');
     
-    Route::get('iklan', [AdvertisementController::class, 'index'])->can('ads.view')->name('iklan.index');
+    // Route::get('iklan', [AdvertisementController::class, 'index'])->can('ads.view')->name('iklan.index');
+    Route::get('iklan', fn () => view('admin.iklan'))->can('ads.view')->name('iklan.index');
+
     Route::get('pengguna-role', fn () => view('admin.pengguna-role'))->can('users.view')->name('pengguna-role.index');
     Route::get('activity-log', fn () => view('admin.activity-log'))->can('activity-log.view')->name('activity-log.index');
     Route::get('pengaturan', fn () => view('admin.coming-soon', ['title' => 'Pengaturan']))->can('settings.view')->name('pengaturan.index');
 
     // resource rute untuk operasi CRUD kategori & tag
-    Route::resource('categories', CategoryController::class)->except(['create', 'show', 'edit', 'index']);
-    Route::resource('tags', TagController::class)->except(['create', 'show', 'edit']);
-    Route::resource('advertisements', AdvertisementController::class)->except(['create', 'show', 'edit']);
+    // Route::resource('categories', CategoryController::class)->except(['create', 'show', 'edit', 'index']);
+    // Route::resource('tags', TagController::class)->except(['create', 'show', 'edit']);
+    // Route::resource('advertisements', AdvertisementController::class)->except(['create', 'show', 'edit']);
 
     // rute uji-coba sementara komponen x-editor & Media Picker (PK-28/PK-29)
     // TODO: hapus setelah x-editor benar-benar dipasang di form Artikel yang sesungguhnya

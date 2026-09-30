@@ -14,33 +14,24 @@ class CategoryTagManager extends Component
 {
     use WithPagination;
 
-    // Tab aktif: 'kategori' atau 'tag' (Dilarang query string URL agar URL tetap bersih)
     public string $tab = 'kategori';
-
-    // Search bar reaktif (Livewire debounce, tanpa query string URL)
     public string $search = '';
-
-    // Filter Kategori: all, main (kategori utama), sub (sub-kategori)
     public string $categoryTypeFilter = 'all';
 
-    // State Modal Kategori
     public bool $showCategoryModal = false;
     public ?int $editingCategoryId = null;
     public string $categoryName = '';
     public ?string $categoryParentId = '';
 
-    // State Modal Tag
     public bool $showTagModal = false;
     public ?int $editingTagId = null;
     public string $tagName = '';
 
-    // State Modal Delete
     public bool $showDeleteModal = false;
-    public string $deleteType = ''; // 'category' | 'tag'
+    public string $deleteType = '';
     public ?int $deletingId = null;
     public string $deletingName = '';
 
-    // Reset pagination ketika tab, search, atau filter berubah
     public function updatedTab(): void
     {
         $this->search = '';
@@ -65,9 +56,6 @@ class CategoryTagManager extends Component
         $this->updatedTab();
     }
 
-    /**
-     * Daftar Kategori Utama untuk opsi Parent di Form Kategori.
-     */
     #[Computed]
     public function parentCategories()
     {
@@ -77,17 +65,13 @@ class CategoryTagManager extends Component
             ->get();
     }
 
-    /**
-     * Dataset Kategori dengan paginasi dan filter search.
-     */
     #[Computed]
     public function categories(): LengthAwarePaginator
     {
-        $query = Category::with('parent')
-            ->withCount(['articles', 'children']);
+        $query = Category::with('parent')->withCount(['articles', 'children']);
 
         if (! empty(trim($this->search))) {
-            $term = '%' . trim($this->search) . '%';
+            $term = '%'.trim($this->search).'%';
             $query->where(function ($q) use ($term) {
                 $q->where('name', 'like', $term)
                   ->orWhere('slug', 'like', $term);
@@ -105,30 +89,28 @@ class CategoryTagManager extends Component
             ->paginate(15, ['*'], 'cat_page');
     }
 
-    /**
-     * Dataset Tag dengan paginasi dan filter search.
-     */
     #[Computed]
     public function tags(): LengthAwarePaginator
     {
         $query = Tag::withCount('articles');
 
         if (! empty(trim($this->search))) {
-            $term = '%' . trim($this->search) . '%';
+            $term = '%'.trim($this->search).'%';
             $query->where(function ($q) use ($term) {
                 $q->where('name', 'like', $term)
                   ->orWhere('slug', 'like', $term);
             });
         }
 
-        return $query->latest()
-            ->paginate(20, ['*'], 'tag_page');
+        return $query->latest()->paginate(20, ['*'], 'tag_page');
     }
 
     // ==================== KATEGORI CRUD ====================
 
     public function openAddCategory(): void
     {
+        $this->authorize('categories.create');
+
         $this->editingCategoryId = null;
         $this->categoryName = '';
         $this->categoryParentId = '';
@@ -138,6 +120,8 @@ class CategoryTagManager extends Component
 
     public function openEditCategory(int $id): void
     {
+        $this->authorize('categories.update');
+
         $category = Category::withCount('children')->findOrFail($id);
         $this->editingCategoryId = $category->id;
         $this->categoryName = $category->name;
@@ -148,6 +132,12 @@ class CategoryTagManager extends Component
 
     public function saveCategory(): void
     {
+        if ($this->editingCategoryId) {
+            $this->authorize('categories.update');
+        } else {
+            $this->authorize('categories.create');
+        }
+
         $parentIdValue = ! empty($this->categoryParentId) ? (int) $this->categoryParentId : null;
 
         $validated = $this->validate([
@@ -220,6 +210,8 @@ class CategoryTagManager extends Component
 
     public function openAddTag(): void
     {
+        $this->authorize('tags.create');
+
         $this->editingTagId = null;
         $this->tagName = '';
         $this->resetErrorBag();
@@ -228,6 +220,8 @@ class CategoryTagManager extends Component
 
     public function openEditTag(int $id): void
     {
+        $this->authorize('tags.update');
+
         $tag = Tag::findOrFail($id);
         $this->editingTagId = $tag->id;
         $this->tagName = $tag->name;
@@ -237,6 +231,12 @@ class CategoryTagManager extends Component
 
     public function saveTag(): void
     {
+        if ($this->editingTagId) {
+            $this->authorize('tags.update');
+        } else {
+            $this->authorize('tags.create');
+        }
+
         $validated = $this->validate([
             'tagName' => [
                 'required',
@@ -269,6 +269,8 @@ class CategoryTagManager extends Component
 
     public function confirmDeleteCategory(int $id): void
     {
+        $this->authorize('categories.delete');
+
         $category = Category::withCount('articles')->findOrFail($id);
 
         if ($category->articles_count > 0) {
@@ -284,6 +286,8 @@ class CategoryTagManager extends Component
 
     public function confirmDeleteTag(int $id): void
     {
+        $this->authorize('tags.delete');
+
         $tag = Tag::findOrFail($id);
 
         $this->deleteType = 'tag';
@@ -294,7 +298,9 @@ class CategoryTagManager extends Component
 
     public function deleteConfirmed(): void
     {
+
         if ($this->deleteType === 'category') {
+            $this->authorize('categories.delete');
             $category = Category::withCount('articles')->findOrFail($this->deletingId);
 
             if ($category->articles_count > 0) {
@@ -307,6 +313,7 @@ class CategoryTagManager extends Component
             unset($this->categories);
             $this->dispatch('flash-message', type: 'success', text: 'Kategori berhasil dihapus');
         } elseif ($this->deleteType === 'tag') {
+            $this->authorize('tags.delete');
             $tag = Tag::findOrFail($this->deletingId);
             $tag->articles()->detach();
             $tag->delete();
