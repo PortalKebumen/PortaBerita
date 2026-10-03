@@ -16,6 +16,9 @@ class ArticleList extends Component
     public ?string $status = null;
     public ?int $category_id = null;
     public int $perPage = 15;
+
+    // Bulk actions state
+    public array $selectedIds = [];
     
     // Delete modal state
     public bool $showDeleteModal = false;
@@ -71,6 +74,53 @@ class ArticleList extends Component
     public function updatingCategoryId()
     {
         $this->resetPage();
+    }
+
+    /**
+     * FR-ART-06: seleksi massal hanya berlaku untuk baris yang terlihat.
+     * Pindah halaman / ubah filter membuang seleksi agar aksi tidak
+     * mengenai artikel yang sudah tidak tampil.
+     */
+    public function updatedPage(): void
+    {
+        $this->selectedIds = [];
+    }
+
+    #[\Livewire\Attributes\Computed]
+    public function hasActiveFilters(): bool
+    {
+        return $this->search !== '' || $this->status !== null || $this->category_id !== null;
+    }
+
+    public function resetFilters(): void
+    {
+        $this->search = '';
+        $this->status = null;
+        $this->category_id = null;
+        $this->resetPage();
+    }
+
+    /** @return array<int> */
+    #[\Livewire\Attributes\Computed]
+    public function pageIds(): array
+    {
+        return $this->articles->pluck('id')->map(fn ($id) => (int) $id)->all();
+    }
+
+    #[\Livewire\Attributes\Computed]
+    public function allPageSelected(): bool
+    {
+        $pageIds = $this->pageIds;
+
+        return $pageIds !== []
+            && count(array_intersect($pageIds, $this->selectedIds)) === count($pageIds);
+    }
+
+    public function toggleSelectAll(): void
+    {
+        $this->selectedIds = $this->allPageSelected
+            ? array_values(array_diff($this->selectedIds, $this->pageIds))
+            : array_values(array_unique(array_merge($this->selectedIds, $this->pageIds)));
     }
 
     public function view(Article $article)
@@ -187,61 +237,84 @@ class ArticleList extends Component
         }
     }
 
-    public function bulkApprove(array $ids)
+    public function bulkApprove(): void
     {
-        $articles = Article::whereIn('id', $ids)->get();
-
-        foreach ($articles as $article) {
-            $this->authorize('approve', $article);
+        $this->runBulk('approve', function (Article $article): void {
             $article->update(['status' => ArticleStatus::Approved->value]);
-
-            activity('artikel')
-                ->causedBy(auth()->user())
-                ->performedOn($article)
-                ->log('Artikel disetujui (bulk)');
-        }
-
-        session()->flash('success', 'Artikel berhasil disetujui.');
+        }, 'Artikel berhasil disetujui.');
     }
 
-    public function bulkPublish(array $ids)
+    public function bulkPublish(): void
     {
-        $articles = Article::whereIn('id', $ids)->get();
-
-        foreach ($articles as $article) {
-            $this->authorize('publish', $article);
+        $this->runBulk('publish', function (Article $article): void {
             $article->update([
                 'status' => ArticleStatus::Published->value,
                 'published_at' => \Carbon\Carbon::now(),
+                'scheduled_at' => null,
             ]);
-
-            activity('artikel')
-                ->causedBy(auth()->user())
-                ->performedOn($article)
-                ->log('Artikel dipublikasikan (bulk)');
-        }
-
-        session()->flash('success', 'Artikel berhasil dipublikasikan.');
+        }, 'Artikel berhasil dipublikasikan.');
     }
 
-    public function bulkArchive(array $ids)
+    public function bulkArchive(): void
     {
-        $articles = Article::whereIn('id', $ids)->get();
-
-        foreach ($articles as $article) {
-            $this->authorize('archive', $article);
+        $this->runBulk('archive', function (Article $article): void {
             $article->update([
                 'status' => ArticleStatus::Archived->value,
                 'archived_at' => \Carbon\Carbon::now(),
             ]);
+        }, 'Artikel berhasil diarsipkan.');
+    }
+
+    public function bulkDelete(): void
+    {
+        $this->runBulk('delete', function (Article $article): void {
+            $article->delete();
+        }, 'Artikel berhasil dihapus.', 'Artikel dihapus (bulk)');
+    }
+
+    /**
+     * Terapkan aksi massal ke artikel terpilih.
+     *
+     * Setiap artikel diotorisasi satu per satu; artikel yang tidak lolos
+     * kebijakan dilewati (bukan menggagalkan seluruh aksi) dan dilaporkan.
+     */
+    private function runBulk(string $ability, callable $action, string $successMessage, ?string $logMessage = null): void
+    {
+        $ids = array_values(array_unique(array_map('intval', $this->selectedIds)));
+
+        if ($ids === []) {
+            session()->flash('error', 'Pilih minimal satu artikel terlebih dahulu.');
+            return;
+        }
+
+        $articles = Article::whereIn('id', $ids)->get();
+        $skipped = $ids === [] ? 0 : count($ids) - $articles->count();
+        $done = 0;
+
+        foreach ($articles as $article) {
+            if (! auth()->user()->can($ability, $article)) {
+                $skipped++;
+                continue;
+            }
+
+            $action($article);
+            $done++;
 
             activity('artikel')
                 ->causedBy(auth()->user())
                 ->performedOn($article)
-                ->log('Artikel diarsipkan (bulk)');
+                ->log($logMessage ?? "Artikel {$ability} (bulk)");
         }
 
-        session()->flash('success', 'Artikel berhasil diarsipkan.');
+        unset($this->articles);
+        $this->selectedIds = [];
+
+        if ($done === 0) {
+            session()->flash('error', 'Tidak ada artikel yang dapat diproses. Anda mungkin tidak memiliki izin untuk aksi ini.');
+            return;
+        }
+
+        session()->flash('success', $successMessage.($skipped > 0 ? " {$skipped} artikel dilewati (tidak memenuhi syarat/izin)." : ''));
     }
 
     public function render()

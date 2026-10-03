@@ -21,6 +21,17 @@ enum ArticleStatus: string
     case Rejected = 'rejected';
     case Published = 'published';
     case Archived = 'archived';
+
+    public function badge(): string
+    {
+        return match ($this) {
+            self::Draft, self::Archived => 'neutral',
+            self::Submitted => 'warning',
+            self::Approved => 'info',
+            self::Rejected => 'danger',
+            self::Published => 'success',
+        };
+    }
 }
 
 #[Fillable(['title', 'slug', 'excerpt', 'content', 'status', 'author_id', 'category_id', 'is_breaking', 'is_advertorial', 'scheduled_at', 'published_at', 'archived_at'])]

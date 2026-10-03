@@ -1,21 +1,16 @@
 <div class="space-y-6">
     {{-- Flash Messages --}}
     @if (session('success'))
-        <div class="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg mb-4 flex items-center gap-3">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M20 6L9 17l-5-5"></path>
-            </svg>
-            <span>{{ session('success') }}</span>
+        <div class="alert-success">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="shrink-0 mt-0.5"><path d="M20 6L9 17l-5-5"></path></svg>
+            <div><strong class="font-semibold">Berhasil:</strong> {{ session('success') }}</div>
         </div>
     @endif
 
     @if (session('error'))
-        <div class="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg mb-4 flex items-center gap-3">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="10"></circle>
-                <path d="M12 8v4M12 16h.01"></path>
-            </svg>
-            <span>{{ session('error') }}</span>
+        <div class="alert-danger">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="shrink-0 mt-0.5"><circle cx="12" cy="12" r="9"></circle><path d="M15 9l-6 6M9 9l6 6"></path></svg>
+            <div><strong class="font-semibold">Gagal:</strong> {{ session('error') }}</div>
         </div>
     @endif
 
@@ -51,27 +46,59 @@
 
         <div class="flex gap-2.5 lg:ml-auto">
             {{-- Bulk Actions Dropdown --}}
-            <div class="relative inline-block group">
-                <button type="button" class="btn-secondary flex items-center gap-2">
+            <div class="relative inline-block" data-dropdown>
+                <button type="button" data-dropdown-btn class="btn-secondary flex items-center gap-2">
                     Aksi Massal
+                    @if (count($selectedIds) > 0)
+                        <span class="ml-0.5 text-[10.5px] font-bold text-white bg-brand-600 rounded-full px-1.5 py-0.5">{{ count($selectedIds) }}</span>
+                    @endif
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M6 9l6 6 6-6"></path>
                     </svg>
                 </button>
-                <div class="absolute right-0 top-full mt-1 hidden group-hover:block bg-white rounded-lg shadow-lg border border-[#E4E8EF] min-w-[180px] z-10">
-                    <button type="button" class="w-full text-left px-4 py-2.5 text-sm text-[#171B28] hover:bg-[#F1F3F7] flex items-center gap-2 border-b border-[#E4E8EF]">
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M20 6L9 17l-5-5"></path>
-                        </svg>
-                        Setujui Terpilih
-                    </button>
-                    <button type="button" class="w-full text-left px-4 py-2.5 text-sm text-[#171B28] hover:bg-[#F1F3F7] flex items-center gap-2">
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"></path>
-                            <path d="M7 10l5 5 5-5M12 15V3"></path>
-                        </svg>
-                        Hapus Terpilih
-                    </button>
+                <div class="hidden absolute right-0 top-full mt-1 bg-white rounded-lg shadow-lg border border-[#E4E8EF] min-w-[180px] z-10" data-dropdown-menu>
+                    @if (count($selectedIds) === 0)
+                        <div class="px-4 py-2.5 text-[12px] text-[#848CA3]">
+                            Pilih artikel terlebih dahulu.
+                        </div>
+                    @else
+                        @can('articles.approve')
+                            <button type="button" wire:click="bulkApprove" class="w-full text-left px-4 py-2.5 text-sm text-[#171B28] hover:bg-[#F1F3F7] flex items-center gap-2 border-b border-[#E4E8EF]">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M20 6L9 17l-5-5"></path>
+                                </svg>
+                                Setujui Terpilih
+                            </button>
+                        @endcan
+                        @can('articles.publish')
+                            <button type="button" wire:click="bulkPublish" class="w-full text-left px-4 py-2.5 text-sm text-[#171B28] hover:bg-[#F1F3F7] flex items-center gap-2 border-b border-[#E4E8EF]">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <path d="M12 6v6l4 2"></path>
+                                </svg>
+                                Terbitkan Terpilih
+                            </button>
+                        @endcan
+                        @can('articles.archive')
+                            <button type="button" wire:click="bulkArchive" class="w-full text-left px-4 py-2.5 text-sm text-[#171B28] hover:bg-[#F1F3F7] flex items-center gap-2 border-b border-[#E4E8EF]">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 8v13H3V8M1 3h22v5H1zM10 12h4"></path>
+                                </svg>
+                                Arsipkan Terpilih
+                            </button>
+                        @endcan
+                        @if (auth()->user()->can('articles.delete-any') || auth()->user()->can('articles.delete-own-draft'))
+                            <button type="button" wire:click="bulkDelete"
+                                wire:confirm="Hapus {{ count($selectedIds) }} artikel terpilih? Tindakan ini tidak dapat dibatalkan."
+                                class="w-full text-left px-4 py-2.5 text-sm text-danger hover:bg-danger-bg flex items-center gap-2">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"></path>
+                                    <path d="M7 10l5 5 5-5M12 15V3"></path>
+                                </svg>
+                                Hapus Terpilih
+                            </button>
+                        @endif
+                    @endif
                 </div>
             </div>
 
@@ -87,13 +114,52 @@
     </div>
 
     {{-- Articles Table --}}
+    @if ($this->articles->isEmpty())
+        <div class="card p-0">
+            <div class="flex flex-col items-center text-center py-12 px-6">
+                <div class="w-14 h-14 rounded-full bg-[#F1F3F7] flex items-center justify-center mb-4">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#848CA3" stroke-width="1.6">
+                        <path d="M6 3h9l5 5v13a1 1 0 01-1 1H6a1 1 0 01-1-1V4a1 1 0 011-1z"></path>
+                        <path d="M9 12h6M9 16h6M9 8h3"></path>
+                    </svg>
+                </div>
+                @if ($this->hasActiveFilters)
+                    <h3 class="text-[15px] font-bold mb-1.5">Tidak ada artikel yang cocok</h3>
+                    <p class="text-[13px] text-[#6C7387] max-w-[320px] mb-5">Tidak ada artikel yang cocok dengan filter yang dipilih. Coba ubah kata kunci atau reset filter.</p>
+                    <button type="button" wire:click="resetFilters" class="btn-secondary">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M3 12a9 9 0 019-9 9 9 0 018 5"></path>
+                            <path d="M3 4v5h5"></path>
+                            <path d="M21 12a9 9 0 01-9 9 9 9 0 01-8-5"></path>
+                            <path d="M21 20v-5h-5"></path>
+                        </svg>
+                        Reset Filter
+                    </button>
+                @else
+                    <h3 class="text-[15px] font-bold mb-1.5">Belum ada artikel</h3>
+                    <p class="text-[13px] text-[#6C7387] max-w-[320px] mb-5">Artikel yang kamu buat akan muncul di sini. Mulai dengan menulis artikel pertamamu.</p>
+                    @can('articles.create')
+                        <a href="{{ route('admin.artikel.create') }}" class="btn-primary">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 5v14M5 12h14"></path>
+                            </svg>
+                            Tulis Artikel Baru
+                        </a>
+                    @endcan
+                @endif
+            </div>
+        </div>
+    @else
     <div class="card overflow-hidden">
         <div class="overflow-x-auto">
             <table class="w-full min-w-[820px] border-collapse">
                 <thead>
                     <tr>
                         <th class="px-4 py-2.5 border-b border-[#CDD3DF] w-10">
-                            <input type="checkbox" class="form-checkbox">
+                            <input type="checkbox" class="form-checkbox"
+                                wire:click="toggleSelectAll"
+                                @checked($this->allPageSelected)
+                                title="Pilih semua di halaman ini">
                         </th>
                         <th class="text-left text-[11px] uppercase tracking-wide text-[#848CA3] font-bold px-4 py-2.5 border-b border-[#CDD3DF]">JUDUL</th>
                         <th class="text-left text-[11px] uppercase tracking-wide text-[#848CA3] font-bold px-4 py-2.5 border-b border-[#CDD3DF]">PENULIS</th>
@@ -105,10 +171,12 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @forelse ($this->articles as $article)
-                        <tr class="border-b border-[#E4E8EF] hover:bg-gray-50/50">
+                    @foreach ($this->articles as $article)
+                        <tr class="border-b border-[#E4E8EF]">
                             <td class="px-4 py-3">
-                                <input type="checkbox" class="form-checkbox">
+                                <input type="checkbox" class="form-checkbox"
+                                    wire:model.live="selectedIds"
+                                    value="{{ $article->id }}">
                             </td>
                             <td class="px-4 py-3">
                                 <div class="flex items-center gap-2 flex-wrap">
@@ -133,12 +201,12 @@
                                 <span class="block truncate">{{ $article->category?->name ?? '-' }}</span>
                             </td>
                             <td class="px-3 py-3 whitespace-nowrap">
-                                <span class="badge-{{ match($article->status->value) { 'draft' => 'neutral', 'submitted' => 'info', 'approved' => 'success', 'rejected' => 'danger', 'published' => 'primary', 'archived' => 'neutral', default => 'neutral' } }}">
+                                <span class="badge-{{ $article->status->badge() }}">
                                     <span class="badge-dot"></span>{{ ucfirst($article->status->value) }}
                                 </span>
                             </td>
                             <td class="px-3 py-3 font-mono text-sm whitespace-nowrap">
-                                {{ $article->views_count ?? 0 }}
+                                {{ ($article->views_count ?? 0) > 0 ? number_format($article->views_count, 0, ',', '.') : '—' }}
                             </td>
                             <td class="px-3 py-3 font-mono text-sm whitespace-nowrap">
                                 {{ $article->created_at->format('d/m') }}
@@ -197,30 +265,22 @@
                                     @endcan
                             </td>
                         </tr>
-                    @empty
-                        <tr>
-                            <td colspan="8" class="px-5 py-10 text-center text-[#848CA3]">
-                                Belum ada artikel yang ditambahkan.
-                            </td>
-                        </tr>
-                    @endforelse
+                    @endforeach
                 </tbody>
             </table>
         </div>
 
         {{-- Pagination Footer --}}
-        <div class="flex flex-wrap items-center justify-between gap-3 px-5 py-4 border-t border-[#CDD3DF]">
-            <span class="text-[12.5px] text-[#6C7387]">Menampilkan hasil artikel</span>
-            <div>
-                {{ $this->articles->links() }}
-            </div>
-        </div>
+        {{ $this->articles->links('pagination.portal') }}
     </div>
+    @endif
 
     {{-- Modal: Hapus Artikel --}}
     @if ($showDeleteModal)
-        <div class="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
-            <div class="bg-white rounded-lg max-w-[420px] w-full p-6 shadow-xl">
+        <div class="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40"
+            wire:click.self="closeDeleteModal"
+            wire:keydown.escape.window="closeDeleteModal">
+            <div class="bg-white rounded-card max-w-[420px] w-full p-6 shadow-xl">
                 <div class="w-11 h-11 rounded-full bg-danger-bg text-danger flex items-center justify-center mb-4">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M3 6h18"></path>
@@ -242,8 +302,10 @@
 
     {{-- Modal: Terbitkan Artikel --}}
     @if ($showPublishModal)
-        <div class="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
-            <div class="bg-white rounded-2xl max-w-[480px] w-full p-6 shadow-xl">
+        <div class="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40"
+            wire:click.self="closePublishModal"
+            wire:keydown.escape.window="closePublishModal">
+            <div class="bg-white rounded-card max-w-[480px] w-full p-6 shadow-xl">
                 <div class="flex items-start gap-4 mb-4">
                     <div class="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -287,8 +349,10 @@
 
     {{-- Modal: Setujui Artikel --}}
     @if ($showApproveModal)
-        <div class="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
-            <div class="bg-white rounded-2xl max-w-[480px] w-full p-6 shadow-xl">
+        <div class="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40"
+            wire:click.self="closeApproveModal"
+            wire:keydown.escape.window="closeApproveModal">
+            <div class="bg-white rounded-card max-w-[480px] w-full p-6 shadow-xl">
                 <div class="flex items-start gap-4 mb-4">
                     <div class="w-12 h-12 rounded-full bg-green-100 text-green-600 flex items-center justify-center shrink-0">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">

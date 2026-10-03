@@ -21,73 +21,44 @@
 
     {{-- Flash Messages --}}
     @if (session('success'))
-        <div class="bg-green-50 border-l-4 border-green-500 p-4 rounded-lg mb-4 flex items-start gap-3">
-            <div class="w-6 h-6 rounded-full bg-green-100 text-green-600 flex items-center justify-center shrink-0 mt-0.5">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                    <path d="M20 6L9 17l-5-5"></path>
-                </svg>
-            </div>
-            <div class="flex-1 text-[13.5px] text-green-800 font-medium">{{ session('success') }}</div>
+        <div class="alert-success">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="shrink-0 mt-0.5"><path d="M20 6L9 17l-5-5"></path></svg>
+            <div><strong class="font-semibold">Berhasil:</strong> {{ session('success') }}</div>
         </div>
     @endif
 
     @if (session('error'))
-        <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded-lg mb-4 flex items-start gap-3">
-            <div class="w-6 h-6 rounded-full bg-red-100 text-red-600 flex items-center justify-center shrink-0 mt-0.5">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <path d="M12 8v4M12 16h.01"></path>
-                </svg>
-            </div>
-            <div class="flex-1 text-[13.5px] text-red-800 font-medium">{{ session('error') }}</div>
+        <div class="alert-danger">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="shrink-0 mt-0.5"><circle cx="12" cy="12" r="9"></circle><path d="M15 9l-6 6M9 9l6 6"></path></svg>
+            <div><strong class="font-semibold">Gagal:</strong> {{ session('error') }}</div>
         </div>
     @endif
 
     {{-- Revision Alert for Rejected/Resubmitted Articles --}}
     @if ($status === 'rejected' && $this->revisions->isNotEmpty())
-        <div class="bg-orange-50 border-l-4 border-orange-400 p-4 rounded-lg">
-            <div class="flex items-start gap-3">
-                <div class="w-10 h-10 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center shrink-0">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="12" cy="12" r="10"></circle>
-                        <path d="M12 8v4M12 16h.01"></path>
-                    </svg>
-                </div>
-                <div class="flex-1">
-                    <h4 class="text-[14px] font-bold text-orange-900 mb-1">Artikel Ditolak - Perlu Revisi</h4>
-                    <p class="text-[13px] text-orange-800 mb-2">Artikel ini ditolak oleh redaktur. Silakan periksa catatan revisi di bawah, perbaiki artikel, lalu kirim ulang untuk review.</p>
-                    <div class="text-[12px] text-orange-700 font-medium">{{ $this->revisions->count() }} catatan revisi tersedia</div>
-                </div>
+        <div class="alert-warning">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="shrink-0 mt-0.5"><path d="M12 9v4M12 17h.01"></path><path d="M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"></path></svg>
+            <div>
+                <h4 class="text-[14px] font-bold mb-1">Artikel Ditolak - Perlu Revisi</h4>
+                <p class="text-[13px] mb-2">Artikel ini ditolak oleh redaktur. Silakan periksa catatan revisi di bawah, perbaiki artikel, lalu kirim ulang untuk review.</p>
+                <div class="text-[12px] font-medium">{{ $this->revisions->count() }} catatan revisi tersedia</div>
             </div>
         </div>
     @elseif ($status === 'submitted' && $this->revisions->isNotEmpty())
-        <div class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-lg">
-            <div class="flex items-start gap-3">
-                <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center shrink-0">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M9 11l3 3L22 4"></path>
-                        <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"></path>
-                    </svg>
-                </div>
-                <div class="flex-1">
-                    <h4 class="text-[14px] font-bold text-blue-900 mb-1">Pengajuan Ulang Setelah Revisi</h4>
-                    <p class="text-[13px] text-blue-800 mb-2">Artikel ini telah diperbaiki dan dikirim ulang untuk review. Redaktur dapat melihat riwayat revisi sebelumnya di bawah.</p>
-                    <div class="text-[12px] text-blue-700 font-medium">{{ $this->revisions->count() }} riwayat revisi</div>
-                </div>
+        <div class="alert-info">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="shrink-0 mt-0.5"><circle cx="12" cy="12" r="9"></circle><path d="M12 16v-5M12 8h.01"></path></svg>
+            <div>
+                <h4 class="text-[14px] font-bold mb-1">Pengajuan Ulang Setelah Revisi</h4>
+                <p class="text-[13px] mb-2">Artikel ini telah diperbaiki dan dikirim ulang untuk review. Redaktur dapat melihat riwayat revisi sebelumnya di bawah.</p>
+                <div class="text-[12px] font-medium">{{ $this->revisions->count() }} riwayat revisi</div>
             </div>
         </div>
     @elseif ($status === 'submitted')
-        <div class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-lg">
-            <div class="flex items-start gap-3">
-                <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center shrink-0">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
-                </div>
-                <div class="flex-1">
-                    <h4 class="text-[14px] font-bold text-blue-900 mb-1">✅ Artikel Sedang Direview</h4>
-                    <p class="text-[13px] text-blue-800">Artikel telah dikirim ke redaktur untuk direview. Anda akan menerima notifikasi jika artikel disetujui atau memerlukan revisi.</p>
-                </div>
+        <div class="alert-info">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="shrink-0 mt-0.5"><circle cx="12" cy="12" r="9"></circle><path d="M12 16v-5M12 8h.01"></path></svg>
+            <div>
+                <h4 class="text-[14px] font-bold mb-1">✅ Artikel Sedang Direview</h4>
+                <p class="text-[13px]">Artikel telah dikirim ke redaktur untuk direview. Anda akan menerima notifikasi jika artikel disetujui atau memerlukan revisi.</p>
             </div>
         </div>
     @endif
@@ -133,7 +104,7 @@
             <div>
                 <label class="form-label">Status</label>
                 <div class="flex items-center gap-2">
-                    <span class="badge-{{ match($status) { 'draft' => 'neutral', 'submitted' => 'info', 'approved' => 'success', 'rejected' => 'danger', 'published' => 'primary', 'archived' => 'neutral', default => 'neutral' } }} text-[13px]">
+                    <span class="badge-{{ $article->status->badge() }} text-[13px]">
                         <span class="badge-dot"></span>{{ ucfirst($status) }}
                     </span>
                     @if ($status === 'submitted')
@@ -350,7 +321,7 @@
                 <div class="flex flex-wrap gap-2">
                     @if ($canSubmit)
                         <button type="button"
-                            onclick="document.getElementById('modal-submit').classList.remove('hidden')"
+                            onclick="window.pkModal.open('modal-submit')"
                             class="btn-primary btn-sm">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="inline">
                                 <path d="M22 2L11 13"></path>
@@ -373,7 +344,7 @@
                     @endif
 
                     @if ($canReject)
-                        <button type="button" onclick="document.getElementById('modal-reject').classList.remove('hidden')" class="btn-sm bg-red-600 hover:bg-red-700 text-white rounded-lg px-4 py-2 text-[13px] font-medium transition-colors">
+                        <button type="button" onclick="window.pkModal.open('modal-reject')" class="btn-sm bg-red-600 hover:bg-red-700 text-white rounded-lg px-4 py-2 text-[13px] font-medium transition-colors">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="inline">
                                 <path d="M18 6L6 18M6 6l12 12"></path>
                             </svg>
@@ -383,7 +354,7 @@
 
                     @if ($canPublish)
                         <button type="button"
-                            onclick="document.getElementById('modal-publish').classList.remove('hidden')"
+                            onclick="window.pkModal.open('modal-publish')"
                             class="btn-primary btn-sm bg-emerald-600 hover:bg-emerald-700">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="inline">
                                 <circle cx="12" cy="12" r="10"></circle>
@@ -394,7 +365,7 @@
                     @endif
 
                     @if ($canSchedule)
-                        <button type="button" onclick="document.getElementById('modal-schedule').classList.remove('hidden')" class="btn-secondary btn-sm">
+                        <button type="button" onclick="window.pkModal.open('modal-schedule')" class="btn-secondary btn-sm">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="inline">
                                 <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
                                 <path d="M16 2v4M8 2v4M3 10h18"></path>
@@ -422,8 +393,8 @@
     @endif
 
     {{-- Modal: Reject Article --}}
-    <div id="modal-reject" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
-        <div class="bg-white rounded-2xl max-w-[480px] w-full p-6 shadow-xl">
+    <div id="modal-reject" class="modal-overlay hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
+        <div class="bg-white rounded-card max-w-[480px] w-full p-6 shadow-xl">
             <h3 class="text-[17px] font-bold mb-4">Tolak Artikel</h3>
             <form action="{{ route('admin.artikel.reject', $article) }}" method="POST">
                 @csrf
@@ -432,7 +403,7 @@
                     <textarea name="reason" rows="4" class="form-textarea" placeholder="Jelaskan alasan penolakan dan saran revisi..." required></textarea>
                 </div>
                 <div class="flex gap-2.5">
-                    <button type="button" onclick="document.getElementById('modal-reject').classList.add('hidden')" class="btn-secondary flex-1">Batal</button>
+                    <button type="button" onclick="window.pkModal.close('modal-reject')" class="btn-secondary flex-1">Batal</button>
                     <button type="submit" class="flex-1 bg-red-600 hover:bg-red-700 text-white rounded-lg px-4 py-2.5 text-[13px] font-medium transition-colors">Tolak Artikel</button>
                 </div>
             </form>
@@ -440,8 +411,8 @@
     </div>
 
     {{-- Modal: Submit/Resubmit Confirmation --}}
-    <div id="modal-submit" class="hidden fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40">
-        <div class="bg-white rounded-2xl max-w-[520px] w-full p-6 shadow-xl">
+    <div id="modal-submit" class="modal-overlay hidden fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40">
+        <div class="bg-white rounded-card max-w-[520px] w-full p-6 shadow-xl">
             <div class="flex items-start gap-4 mb-4">
                 <div class="w-12 h-12 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center shrink-0">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -493,7 +464,7 @@
             @endif
 
             <div class="flex gap-3">
-                <button type="button" onclick="document.getElementById('modal-submit').classList.add('hidden')" class="flex-1 btn-secondary">
+                <button type="button" onclick="window.pkModal.close('modal-submit')" class="flex-1 btn-secondary">
                     Batal
                 </button>
                 <form action="{{ route('admin.artikel.submit', $article) }}" method="POST" class="flex-1">
@@ -507,8 +478,8 @@
     </div>
 
     {{-- Modal: Publish Confirmation (Redaktur) --}}
-    <div id="modal-publish" class="hidden fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40">
-        <div class="bg-white rounded-2xl max-w-[500px] w-full p-6 shadow-xl">
+    <div id="modal-publish" class="modal-overlay hidden fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40">
+        <div class="bg-white rounded-card max-w-[500px] w-full p-6 shadow-xl">
             <div class="flex items-start gap-4 mb-4">
                 <div class="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -555,7 +526,7 @@
             </div>
 
             <div class="flex gap-3">
-                <button type="button" onclick="document.getElementById('modal-publish').classList.add('hidden')" class="flex-1 btn-secondary">
+                <button type="button" onclick="window.pkModal.close('modal-publish')" class="flex-1 btn-secondary">
                     Batal
                 </button>
                 <form action="{{ route('admin.artikel.publish', $article) }}" method="POST" class="flex-1">
@@ -569,8 +540,8 @@
     </div>
 
     {{-- Modal: Schedule Article --}}
-    <div id="modal-schedule" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
-        <div class="bg-white rounded-2xl max-w-[420px] w-full p-6 shadow-xl">
+    <div id="modal-schedule" class="modal-overlay hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
+        <div class="bg-white rounded-card max-w-[420px] w-full p-6 shadow-xl">
             <h3 class="text-[17px] font-bold mb-4">Jadwalkan Publikasi</h3>
             <form action="{{ route('admin.artikel.schedule', $article) }}" method="POST">
                 @csrf
@@ -580,7 +551,7 @@
                     <p class="text-[11px] text-[#848CA3] mt-1">Artikel akan otomatis dipublikasikan pada waktu yang ditentukan</p>
                 </div>
                 <div class="flex gap-2.5">
-                    <button type="button" onclick="document.getElementById('modal-schedule').classList.add('hidden')" class="btn-secondary flex-1">Batal</button>
+                    <button type="button" onclick="window.pkModal.close('modal-schedule')" class="btn-secondary flex-1">Batal</button>
                     <button type="submit" class="btn-primary flex-1">Jadwalkan</button>
                 </div>
             </form>

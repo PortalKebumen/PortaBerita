@@ -143,7 +143,17 @@ return [
     |
     */
 
-    'path' => env('SESSION_PATH', '/'),
+    // Git Bash/MSYS rewrites an exported SESSION_PATH=/ into "C:/Program Files/Git/" and
+    // Laravel's immutable dotenv lets that OS value shadow .env, which makes Symfony's
+    // Cookie reject the path and 500s every session-booting route. Keep only RFC-valid
+    // cookie paths; anything else falls back to root.
+    'path' => once(function (): string {
+        $path = env('SESSION_PATH', '/');
+
+        return (is_string($path) && $path !== '' && str_starts_with($path, '/') && ! str_contains($path, ':'))
+            ? $path
+            : '/';
+    }),
 
     /*
     |--------------------------------------------------------------------------
