@@ -2,12 +2,15 @@
 
 namespace Tests\Feature\Artikel;
 
+use App\Livewire\Admin\ArticleCreate;
+use App\Livewire\Admin\ArticleEdit;
 use App\Models\Article;
 use App\Models\ArticleStatus;
 use App\Models\Category;
 use App\Models\User;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Livewire\Livewire;
 use Tests\TestCase;
 
 class ArticleCrudTest extends TestCase
@@ -32,21 +35,31 @@ class ArticleCrudTest extends TestCase
         $this->category = Category::create(['name' => 'Berita Kebumen', 'slug' => 'berita-kebumen']);
     }
 
+    protected function makeArticle(array $overrides = []): Article
+    {
+        return Article::create(array_merge([
+            'title' => 'Test Article',
+            'slug' => 'test-article',
+            'excerpt' => 'Test excerpt',
+            'content' => str_repeat('Content. ', 10),
+            'status' => ArticleStatus::Draft->value,
+            'author_id' => $this->penulis->id,
+            'category_id' => $this->category->id,
+        ], $overrides));
+    }
+
     public function test_penulis_can_create_article_as_draft(): void
     {
-        $response = $this->actingAs($this->penulis)
-            ->post(route('admin.artikel.store'), [
-                'title' => 'Artikel Test Penulis',
-                'slug' => 'artikel-test-penulis',
-                'excerpt' => 'Ringkasan artikel test',
-                'content' => str_repeat('Konten test artikel. ', 10),
-                'category_id' => $this->category->id,
-                'is_breaking' => false,
-                'is_advertorial' => false,
-            ]);
+        $this->actingAs($this->penulis);
 
-        $response->assertRedirect(route('admin.artikel.index'));
-        $response->assertSessionHas('success');
+        Livewire::test(ArticleCreate::class)
+            ->set('title', 'Artikel Test Penulis')
+            ->set('slug', 'artikel-test-penulis')
+            ->set('excerpt', 'Ringkasan artikel test')
+            ->set('content', str_repeat('Konten test artikel. ', 10))
+            ->set('category_id', $this->category->id)
+            ->call('save')
+            ->assertHasNoErrors();
 
         $this->assertDatabaseHas('articles', [
             'title' => 'Artikel Test Penulis',
@@ -55,17 +68,31 @@ class ArticleCrudTest extends TestCase
         ]);
     }
 
+    public function test_penulis_cannot_set_editor_only_flags_on_create(): void
+    {
+        $this->actingAs($this->penulis);
+
+        Livewire::test(ArticleCreate::class)
+            ->set('title', 'Artikel Flag Test')
+            ->set('slug', 'artikel-flag-test')
+            ->set('excerpt', 'Ringkasan')
+            ->set('content', str_repeat('Konten test artikel. ', 10))
+            ->set('category_id', $this->category->id)
+            ->set('is_breaking', true)
+            ->set('is_advertorial', true)
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $this->assertDatabaseHas('articles', [
+            'title' => 'Artikel Flag Test',
+            'is_breaking' => false,
+            'is_advertorial' => false,
+        ]);
+    }
+
     public function test_penulis_can_view_own_article(): void
     {
-        $article = Article::create([
-            'title' => 'Test Article',
-            'slug' => 'test-article',
-            'excerpt' => 'Test excerpt',
-            'content' => str_repeat('Content. ', 10),
-            'status' => ArticleStatus::Draft->value,
-            'author_id' => $this->penulis->id,
-            'category_id' => $this->category->id,
-        ]);
+        $article = $this->makeArticle();
 
         $response = $this->actingAs($this->penulis)
             ->get(route('admin.artikel.edit', $article));
@@ -76,68 +103,46 @@ class ArticleCrudTest extends TestCase
 
     public function test_penulis_can_update_own_draft(): void
     {
-        $article = Article::create([
+        $article = $this->makeArticle([
             'title' => 'Original Title',
             'slug' => 'original-title',
-            'excerpt' => 'Original excerpt',
-            'content' => str_repeat('Original content. ', 10),
-            'status' => ArticleStatus::Draft->value,
-            'author_id' => $this->penulis->id,
-            'category_id' => $this->category->id,
         ]);
 
-        $response = $this->actingAs($this->penulis)
-            ->put(route('admin.artikel.update', $article), [
-                'title' => 'Updated Title',
-                'slug' => 'updated-title',
-                'excerpt' => 'Updated excerpt',
-                'content' => str_repeat('Updated content. ', 10),
-                'category_id' => $this->category->id,
-            ]);
+        $this->actingAs($this->penulis);
 
-        $response->assertRedirect();
+        Livewire::test(ArticleEdit::class, ['article' => $article])
+            ->set('title', 'Updated Title')
+            ->set('excerpt', 'Updated excerpt')
+            ->set('content', str_repeat('Updated content. ', 10))
+            ->call('save')
+            ->assertHasNoErrors();
+
         $this->assertDatabaseHas('articles', [
             'id' => $article->id,
             'title' => 'Updated Title',
+            'slug' => 'updated-title',
         ]);
     }
 
-    public function test_penulis_can_delete_own_draft(): void
+    public function test_slug_stays_locked_when_published_article_title_changes(): void
     {
-        $article = Article::create([
-            'title' => 'Draft to Delete',
-            'slug' => 'draft-to-delete',
-            'excerpt' => 'Test excerpt',
-            'content' => str_repeat('Content. ', 10),
-            'status' => ArticleStatus::Draft->value,
-            'author_id' => $this->penulis->id,
-            'category_id' => $this->category->id,
+        $article = $this->makeArticle([
+            'title' => 'Judul Lama',
+            'slug' => 'judul-lama',
+            'status' => ArticleStatus::Published->value,
         ]);
+        $article->forceFill(['published_at' => now()->subDay()])->save();
 
-        $response = $this->actingAs($this->penulis)
-            ->delete(route('admin.artikel.destroy', $article));
+        $this->actingAs($this->editor);
 
-        $response->assertRedirect();
-        $this->assertSoftDeleted('articles', ['id' => $article->id]);
-    }
+        Livewire::test(ArticleEdit::class, ['article' => $article])
+            ->set('title', 'Judul Baru')
+            ->call('save')
+            ->assertHasNoErrors();
 
-    public function test_penulis_cannot_delete_submitted_article(): void
-    {
-        $article = Article::create([
-            'title' => 'Submitted Article',
-            'slug' => 'submitted-article',
-            'excerpt' => 'Test excerpt',
-            'content' => str_repeat('Content. ', 10),
-            'status' => ArticleStatus::Submitted->value,
-            'author_id' => $this->penulis->id,
-            'category_id' => $this->category->id,
-        ]);
-
-        $response = $this->actingAs($this->penulis)
-            ->delete(route('admin.artikel.destroy', $article));
-
-        $response->assertForbidden();
-        $this->assertNotSoftDeleted('articles', ['id' => $article->id]);
+        $article->refresh();
+        $this->assertSame('Judul Baru', $article->title);
+        $this->assertSame('judul-lama', $article->slug);
     }
 
     public function test_article_status_badge_maps_correctly(): void

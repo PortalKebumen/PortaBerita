@@ -14,7 +14,9 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withSchedule(function (Schedule $schedule): void {
-        $schedule->job(PublishScheduledArticles::class)->everyMinute();
+        $schedule->job(PublishScheduledArticles::class, connection: 'sync')
+            ->everyMinute()
+            ->withoutOverlapping();
     })
     ->withMiddleware(function (Middleware $middleware): void {
         //

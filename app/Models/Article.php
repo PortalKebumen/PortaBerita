@@ -13,27 +13,6 @@ use Illuminate\Support\Str;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 
-enum ArticleStatus: string
-{
-    case Draft = 'draft';
-    case Submitted = 'submitted';
-    case Approved = 'approved';
-    case Rejected = 'rejected';
-    case Published = 'published';
-    case Archived = 'archived';
-
-    public function badge(): string
-    {
-        return match ($this) {
-            self::Draft, self::Archived => 'neutral',
-            self::Submitted => 'warning',
-            self::Approved => 'info',
-            self::Rejected => 'danger',
-            self::Published => 'success',
-        };
-    }
-}
-
 #[Fillable(['title', 'slug', 'excerpt', 'content', 'status', 'author_id', 'category_id', 'is_breaking', 'is_advertorial', 'scheduled_at', 'published_at', 'archived_at'])]
 class Article extends Model implements HasMedia
 {
@@ -118,12 +97,6 @@ class Article extends Model implements HasMedia
 
         static::creating(function ($article) {
             if (empty($article->slug)) {
-                $article->slug = Str::slug($article->title);
-            }
-        });
-
-        static::updating(function ($article) {
-            if ($article->isDirty('title') && !$article->isDirty('slug')) {
                 $article->slug = Str::slug($article->title);
             }
         });

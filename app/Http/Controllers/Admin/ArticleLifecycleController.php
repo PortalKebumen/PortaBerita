@@ -8,6 +8,7 @@ use App\Models\ArticleStatus;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Auth;
 
 class ArticleLifecycleController extends Controller
 {
@@ -30,7 +31,7 @@ class ArticleLifecycleController extends Controller
             
         activity()
             ->performedOn($article)
-            ->causedBy(auth()->user())
+            ->causedBy(Auth::user())
             ->log($logMessage);
 
         $successMessage = $wasRejected
@@ -55,7 +56,7 @@ class ArticleLifecycleController extends Controller
         $article->update(['status' => ArticleStatus::Approved]);
         activity()
             ->performedOn($article)
-            ->causedBy(auth()->user())
+            ->causedBy(Auth::user())
             ->log('Artikel disetujui untuk publikasi');
 
         return back()->with('success', 'Artikel berhasil disetujui.');
@@ -77,16 +78,16 @@ class ArticleLifecycleController extends Controller
             return back()->with('error', 'Alasan penolakan wajib diisi.');
         }
 
-        $article->update(['status' => ArticleStatus::Rejected]);
+        $article->update(['status' => ArticleStatus::Rejected, 'scheduled_at' => null]);
         
         $article->revisions()->create([
-            'editor_id' => auth()->id(),
+            'editor_id' => Auth::id(),
             'content' => $reason,
         ]);
 
         activity()
             ->performedOn($article)
-            ->causedBy(auth()->user())
+            ->causedBy(Auth::user())
             ->log('Artikel ditolak: ' . $reason);
 
         return back()->with('success', 'Artikel ditolak dengan catatan revisi.');
@@ -110,7 +111,7 @@ class ArticleLifecycleController extends Controller
 
         activity()
             ->performedOn($article)
-            ->causedBy(auth()->user())
+            ->causedBy(Auth::user())
             ->log('Artikel dipublikasikan');
 
         return back()->with('success', 'Artikel berhasil dipublikasikan.');
@@ -139,7 +140,7 @@ class ArticleLifecycleController extends Controller
 
         activity()
             ->performedOn($article)
-            ->causedBy(auth()->user())
+            ->causedBy(Auth::user())
             ->log('Artikel dijadwalkan untuk publikasi: ' . $scheduledAt->format('d M Y H:i'));
 
         return back()->with('success', 'Artikel dijadwalkan untuk publikasi pada ' . $scheduledAt->format('d M Y, H:i') . ' WIB');
@@ -162,7 +163,7 @@ class ArticleLifecycleController extends Controller
 
         activity()
             ->performedOn($article)
-            ->causedBy(auth()->user())
+            ->causedBy(Auth::user())
             ->log('Artikel diarsipkan');
 
         return back()->with('success', 'Artikel berhasil diarsipkan.');

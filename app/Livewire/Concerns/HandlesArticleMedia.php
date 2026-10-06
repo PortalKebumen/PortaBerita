@@ -4,17 +4,15 @@ namespace App\Livewire\Concerns;
 
 use App\Models\Article;
 use App\Models\LibraryMedia;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 use Livewire\Attributes\On;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 /**
  * Logika bersama untuk pemilihan media (gambar sampul & OG) di form Artikel.
- *
- * Menyimpan ID media yang dipilih plus URL pratinjaunya, sehingga:
- *  - pratinjau bisa langsung ditampilkan di form, dan
- *  - media fisik disalin ke koleksi artikel saat form disimpan
- *    (lihat syncArticleMedia()), bukan saat dipilih — agar tidak ada
- *    media yatim bila pengguna membatalkan form.
+ * Media fisik disalin ke koleksi artikel saat form disimpan (syncArticleMedia()),
+ * bukan saat dipilih, agar tidak ada media yatim bila form dibatalkan.
  */
 trait HandlesArticleMedia
 {
@@ -49,9 +47,20 @@ trait HandlesArticleMedia
     }
 
     /**
-     * Salin media terpilih (gambar sampul/OG) dari Pustaka Media ke koleksi
-     * media artikel. Media yang sudah ada diganti sepenuhnya (single file).
+     * Panggil SEBELUM menulis apa pun ke database. Menolak (403) bila media
+     * terpilih dari Pustaka Media bukan milik user dan user tidak punya media.view-any.
      */
+    protected function authorizeArticleMedia(): void
+    {
+        foreach ([$this->featured_image_id, $this->og_image_id] as $mediaId) {
+            $libraryMedia = $this->findLibraryMedia($mediaId);
+
+            if ($libraryMedia) {
+                $this->authorizeLibraryMedia($libraryMedia);
+            }
+        }
+    }
+
     protected function syncArticleMedia(Article $article): void
     {
         $this->syncSingleCollection($article, 'featured', $this->featured_image_id);
@@ -71,7 +80,7 @@ trait HandlesArticleMedia
             return;
         }
 
-        $article->clearMediaCollection($collection);
+        // Koleksi singleFile() otomatis mengganti file lama setelah yang baru berhasil ditambahkan.
         $article->copyMedia($sourceMedia->getPath())
             ->usingFileName($sourceMedia->file_name)
             ->toMediaCollection($collection);
@@ -87,9 +96,31 @@ trait HandlesArticleMedia
         $media = Media::find($mediaId);
 
         if (! $media || $media->model_type !== LibraryMedia::class) {
-            return null;
+            return null; // mis. media milik artikel itu sendiri (sudah terpasang) — tidak perlu disalin ulang
         }
 
-        return $media->model;
+        /** @var LibraryMedia|null $libraryMedia */
+        $libraryMedia = $media->model;
+
+        return $libraryMedia;
+    }
+
+    private function authorizeLibraryMedia(LibraryMedia $libraryMedia): void
+    {
+        $user = Auth::user();
+
+        if (! $user) {
+            abort(403, 'Anda harus login untuk menggunakan gambar ini.');
+        }
+
+        if (Gate::forUser($user)->check('media.view-any')) {
+            return;
+        }
+
+        abort_unless(
+            Gate::forUser($user)->check('media.view-own') && (int) $libraryMedia->uploaded_by === (int) $user->id,
+            403,
+            'Anda tidak punya izin menggunakan gambar ini.'
+        );
     }
 }

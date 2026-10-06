@@ -33,7 +33,7 @@
             <div class="md:col-span-2">
                 <label class="form-label">Slug (URL Artikel)</label>
                 <div class="flex items-center gap-2">
-                    <span class="text-[13px] text-[#848CA3] shrink-0">/berita/</span>
+                    <span class="text-[13px] text-[#848CA3] shrink-0">/artikel/</span>
                     <input type="text"
                         wire:model.live="slug"
                         placeholder="slug-artikel-otomatis-dari-judul"
@@ -106,27 +106,35 @@
             @error('content') <p class="form-error-text">{{ $message }}</p> @enderror
         </div>
 
-        <div class="flex flex-wrap gap-x-8 gap-y-3 mb-6">
-            <label class="flex items-center gap-2.5 cursor-pointer">
-                <input type="checkbox" wire:model="is_breaking" class="form-checkbox">
-                <span class="text-[13px]">Tandai sebagai Breaking News</span>
-            </label>
-            <label class="flex items-center gap-2.5 cursor-pointer">
-                <input type="checkbox" wire:model="is_advertorial" class="form-checkbox">
-                <span class="text-[13px]">Advertorial</span>
-            </label>
-        </div>
+        @canany(['articles.mark-breaking', 'articles.mark-advertorial'])
+            <div class="flex flex-wrap gap-x-8 gap-y-3 mb-6">
+                @can('articles.mark-breaking')
+                    <label class="flex items-center gap-2.5 cursor-pointer">
+                        <input type="checkbox" wire:model="is_breaking" class="form-checkbox">
+                        <span class="text-[13px]">Tandai sebagai Breaking News</span>
+                    </label>
+                @endcan
+                @can('articles.mark-advertorial')
+                    <label class="flex items-center gap-2.5 cursor-pointer">
+                        <input type="checkbox" wire:model="is_advertorial" class="form-checkbox">
+                        <span class="text-[13px]">Advertorial</span>
+                    </label>
+                @endcan
+            </div>
+        @endcanany
 
         {{-- Scheduling Section --}}
-        <div class="mb-5">
-            <label class="form-label">Jadwal Publikasi (Opsional)</label>
-            <input type="datetime-local"
-                wire:model="scheduled_at"
-                class="form-input @error('scheduled_at') is-error @enderror"
-                min="{{ now()->format('Y-m-d\TH:i') }}">
-            <p class="text-[11px] text-[#848CA3] mt-1">Biarkan kosong untuk menyimpan sebagai Draft. Artikel akan otomatis dipublikasikan setelah disetujui.</p>
-            @error('scheduled_at') <p class="form-error-text">{{ $message }}</p> @enderror
-        </div>
+        @can('articles.schedule')
+            <div class="mb-5">
+                <label class="form-label">Jadwal Publikasi (Opsional)</label>
+                <input type="datetime-local"
+                    wire:model="scheduled_at"
+                    class="form-input @error('scheduled_at') is-error @enderror"
+                    min="{{ now()->format('Y-m-d\TH:i') }}">
+                <p class="text-[11px] text-[#848CA3] mt-1">Biarkan kosong untuk menyimpan sebagai Draft. Artikel akan otomatis dipublikasikan setelah disetujui.</p>
+                @error('scheduled_at') <p class="form-error-text">{{ $message }}</p> @enderror
+            </div>
+        @endcan
 
         {{-- SEO Section (Collapsible) --}}
         <details class="border border-[#E4E8EF] rounded-lg mb-5">
@@ -185,16 +193,18 @@
                     <p class="text-[11px] text-[#848CA3] mt-1">Biarkan kosong untuk menggunakan gambar sampul</p>
                 </div>
 
-                <div class="flex gap-6">
-                    <label class="flex items-center gap-2.5 cursor-pointer">
-                        <input type="checkbox" wire:model="noindex" class="form-checkbox">
-                        <span class="text-[13px]">No Index (jangan tampilkan di hasil pencarian)</span>
-                    </label>
-                    <label class="flex items-center gap-2.5 cursor-pointer">
-                        <input type="checkbox" wire:model="nofollow" class="form-checkbox">
-                        <span class="text-[13px]">No Follow (jangan ikuti link)</span>
-                    </label>
-                </div>
+                @can('seo.set-indexing')
+                    <div class="flex gap-6">
+                        <label class="flex items-center gap-2.5 cursor-pointer">
+                            <input type="checkbox" wire:model="noindex" class="form-checkbox">
+                            <span class="text-[13px]">No Index (jangan tampilkan di hasil pencarian)</span>
+                        </label>
+                        <label class="flex items-center gap-2.5 cursor-pointer">
+                            <input type="checkbox" wire:model="nofollow" class="form-checkbox">
+                            <span class="text-[13px]">No Follow (jangan ikuti link)</span>
+                        </label>
+                    </div>
+                @endcan
             </div>
         </details>
 

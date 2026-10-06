@@ -7,6 +7,8 @@ use App\Models\Article;
 use App\Models\ArticleStatus;
 use App\Models\Category;
 use App\Models\SeoMeta;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
 use Livewire\Component;
 
@@ -73,6 +75,9 @@ class ArticleCreate extends Component
     {
         $this->authorize('create', Article::class);
         $this->validate();
+        $this->authorizeArticleMedia();
+
+        $user = Auth::user();
 
         $article = Article::create([
             'title' => $this->title,
@@ -80,11 +85,11 @@ class ArticleCreate extends Component
             'excerpt' => $this->excerpt,
             'content' => $this->content,
             'status' => ArticleStatus::Draft,
-            'author_id' => auth()->id(),
+            'author_id' => $user->id,
             'category_id' => $this->category_id,
-            'is_breaking' => $this->is_breaking,
-            'is_advertorial' => $this->is_advertorial,
-            'scheduled_at' => $this->scheduled_at
+            'is_breaking' => Gate::check('articles.mark-breaking') ? $this->is_breaking : false,
+            'is_advertorial' => Gate::check('articles.mark-advertorial') ? $this->is_advertorial : false,
+            'scheduled_at' => (Gate::check('articles.schedule') && $this->scheduled_at)
                 ? \Carbon\Carbon::createFromFormat('Y-m-d H:i', $this->scheduled_at)
                 : null,
         ]);
@@ -96,8 +101,8 @@ class ArticleCreate extends Component
             'meta_title' => $this->meta_title ?: null,
             'meta_description' => $this->meta_description ?: null,
             'og_image' => $this->og_image_id ? $article->getFirstMedia('og')?->getUrl() : null,
-            'noindex' => $this->noindex,
-            'nofollow' => $this->nofollow,
+            'noindex' => Gate::check('seo.set-indexing') ? $this->noindex : false,
+            'nofollow' => Gate::check('seo.set-indexing') ? $this->nofollow : false,
         ]);
 
         return redirect()

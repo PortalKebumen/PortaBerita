@@ -4,7 +4,7 @@ namespace App\Livewire\Admin;
 
 use App\Livewire\Concerns\HandlesArticleMedia;
 use App\Models\Article;
-use App\Models\ArticleStatus;
+use Illuminate\Support\Facades\Gate;
 use App\Models\Category;
 use App\Models\SeoMeta;
 use Illuminate\Support\Str;
@@ -41,7 +41,9 @@ class ArticleEdit extends Component
             'category_id' => 'required|exists:categories,id',
             'is_breaking' => 'nullable|boolean',
             'is_advertorial' => 'nullable|boolean',
-            'scheduled_at' => 'nullable|date_format:Y-m-d H:i|after:now',
+            'scheduled_at' => $this->canEditSchedule()
+                ? 'nullable|date_format:Y-m-d H:i|after:now'
+                : 'nullable',
             'meta_title' => 'nullable|string|max:60',
             'meta_description' => 'nullable|string|max:160',
             'featured_image_id' => 'nullable|exists:media,id',
@@ -102,40 +104,51 @@ class ArticleEdit extends Component
         }
     }
 
+    protected function canEditSchedule(): bool
+    {
+        return Gate::check('articles.schedule')
+            && in_array($this->article->status->value, ['draft', 'rejected']);
+    }
+
     public function updatedTitle(): void
     {
-        $this->slug = Str::slug($this->title);
+        // Slug artikel yang sudah pernah terbit dikunci agar URL publik tidak berubah.
+        if ($this->article->published_at === null) {
+            $this->slug = Str::slug($this->title);
+        }
     }
 
     public function save()
     {
         $this->authorize('update', $this->article);
         $this->validate();
+        $this->authorizeArticleMedia();
 
         $this->article->update([
             'title' => $this->title,
-            'slug' => $this->slug,
+            'slug' => $this->article->published_at ? $this->article->slug : $this->slug,
             'excerpt' => $this->excerpt,
             'content' => $this->content,
             'category_id' => $this->category_id,
-            'is_breaking' => $this->is_breaking,
-            'is_advertorial' => $this->is_advertorial,
-            'scheduled_at' => $this->scheduled_at
-                ? \Carbon\Carbon::createFromFormat('Y-m-d H:i', $this->scheduled_at)
-                : null,
+            'is_breaking' => Gate::check('articles.mark-breaking') ? $this->is_breaking : $this->article->is_breaking,
+            'is_advertorial' => Gate::check('articles.mark-advertorial') ? $this->is_advertorial : $this->article->is_advertorial,
+            'scheduled_at' => $this->canEditSchedule()
+                ? ($this->scheduled_at ? \Carbon\Carbon::createFromFormat('Y-m-d H:i', $this->scheduled_at) : null)
+                : $this->article->scheduled_at,
         ]);
 
         $this->syncArticleMedia($this->article);
 
         $seoMeta = $this->article->seoMeta ?: new SeoMeta(['article_id' => $this->article->id]);
+        $canIndex = Gate::check('seo.set-indexing');
 
         $seoMeta->fill([
             'article_id' => $this->article->id,
             'meta_title' => $this->meta_title ?: null,
             'meta_description' => $this->meta_description ?: null,
             'og_image' => $this->og_image_id ? $this->article->getFirstMedia('og')?->getUrl() : null,
-            'noindex' => $this->noindex,
-            'nofollow' => $this->nofollow,
+            'noindex' => $canIndex ? $this->noindex : (bool) $seoMeta->noindex,
+            'nofollow' => $canIndex ? $this->nofollow : (bool) $seoMeta->nofollow,
         ]);
 
         $seoMeta->save();

@@ -85,8 +85,7 @@ class ArticlePolicy
 
     public function viewRevisions(User $user, Article $article): bool
     {
-        return $user->can('articles.view-revisions')
-            || ($this->owns($user, $article) && $user->can('articles.view-own-revisions'));
+        return $user->can('articles.view-history') || $this->owns($user, $article);
     }
 
     private function owns(User $user, Article $article): bool
