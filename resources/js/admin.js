@@ -68,22 +68,43 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // ---------- Modal ----------
-    document.querySelectorAll('[data-modal-open]').forEach(function (btn) {
-        btn.addEventListener('click', function () {
-            var modal = document.getElementById(btn.getAttribute('data-modal-open'));
+    // Livewire mengganti markup modal setiap render; semua handler diikat lewat
+    // delegasi di document agar tetap berlaku untuk node yang baru dibuat.
+    window.pkModal = {
+        open: function (id) {
+            var modal = document.getElementById(id);
+            if (!modal) return;
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        },
+        close: function (id) {
+            var modal = document.getElementById(id);
+            if (!modal) return;
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+    };
+    document.addEventListener('click', function (e) {
+        if (!(e.target instanceof Element)) return;
+
+        var opener = e.target.closest('[data-modal-open]');
+        if (opener) {
+            var modal = document.getElementById(opener.getAttribute('data-modal-open'));
             if (modal) {
                 modal.classList.remove('hidden');
                 modal.classList.add('flex');
             }
-        });
-    });
-    document.querySelectorAll('.modal-overlay').forEach(function (overlay) {
-        overlay.addEventListener('click', function (e) {
-            if (e.target === overlay) closeModal(overlay);
-        });
-        overlay.querySelectorAll('[data-modal-close]').forEach(function (btn) {
-            btn.addEventListener('click', function () { closeModal(overlay); });
-        });
+            return;
+        }
+
+        var closer = e.target.closest('[data-modal-close]');
+        if (closer) {
+            var target = closer.closest('.modal-overlay');
+            if (target) closeModal(target);
+            return;
+        }
+
+        if (e.target.classList.contains('modal-overlay')) closeModal(e.target);
     });
     function closeModal(modal) {
         modal.classList.add('hidden');

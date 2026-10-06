@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\ArticleLifecycleController;
 use App\Http\Controllers\Admin\AdvertisementController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\DashboardController;
@@ -39,7 +40,17 @@ Route::middleware('auth')->group(function () {
 Route::middleware(['auth', 'can:dashboard.view'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 
-    Route::get('artikel', fn () => view('admin.coming-soon', ['title' => 'Artikel']))->can('articles.view')->name('artikel.index');
+    Route::get('artikel', fn () => view('admin.artikel'))->can('articles.view')->name('artikel.index');
+    Route::get('artikel/create', fn () => view('admin.artikel-create'))->can('articles.create')->name('artikel.create');
+    Route::get('artikel/{article}/edit', fn (\App\Models\Article $article) => view('admin.artikel-edit', ['article' => $article]))->can('update', 'article')->name('artikel.edit');
+
+    // Lifecycle routes
+    Route::post('artikel/{article}/submit', [ArticleLifecycleController::class, 'submit'])->name('artikel.submit');
+    Route::post('artikel/{article}/approve', [ArticleLifecycleController::class, 'approve'])->name('artikel.approve');
+    Route::post('artikel/{article}/reject', [ArticleLifecycleController::class, 'reject'])->name('artikel.reject');
+    Route::post('artikel/{article}/publish', [ArticleLifecycleController::class, 'publish'])->name('artikel.publish');
+    Route::post('artikel/{article}/schedule', [ArticleLifecycleController::class, 'schedule'])->name('artikel.schedule');
+    Route::post('artikel/{article}/archive', [ArticleLifecycleController::class, 'archive'])->name('artikel.archive');
 
     // rute utama kategori & tag diarahin langsung ke CategoryController
     // Route::get('kategori-tag', [CategoryController::class, 'index'])->can('categories.view')->name('kategori-tag.index');

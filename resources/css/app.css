@@ -33,6 +33,8 @@
 }
 
 @layer base {
+    [x-cloak] { display: none !important; }
+
     body {
         @apply bg-[#F1F3F7] text-[#171B28] font-body;
     }
@@ -95,4 +97,48 @@
     .badge-accent { @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11.5px] font-semibold bg-accent-100 text-accent-600; }
     .badge-dot { @apply h-1.5 w-1.5 shrink-0 rounded-full bg-current; }
     .code-block { @apply rounded-lg bg-brand-900 p-4 font-mono text-[12px] leading-relaxed text-brand-100 whitespace-pre overflow-x-auto; }
+}
+
+/* ===== TinyMCE brand theming: match PortalKebumen admin design system ===== */
+.tox {
+  --tox-private-button-primary-background-color: #1E398E;
+  --tox-private-button-primary-border-color: #1E398E;
+  --tox-private-button-primary-text-color: #fff;
+  --tox-private-keyboard-focus-outline-color: #1E398E;
+  --tox-private-checkbox-selected-color: #1E398E;
+  --tox-private-checkbox-indeterminate-color: #1E398E;
+  font-family: "Inter", sans-serif !important;
+}
+.tox.tox-tinymce {
+  border-color: #CDD3DF !important;
+  border-radius: 14px !important;
+  overflow: hidden;
+}
+.tox .tox-editor-header,
+.tox .tox-menubar,
+.tox .tox-toolbar,
+.tox .tox-toolbar__primary,
+.tox .tox-toolbar-overlord {
+  background: #F8F9FB !important;
+}
+.tox .tox-tbtn--enabled,
+.tox .tox-tbtn--enabled:hover,
+.tox .tox-tbtn--enabled:focus {
+  background: #DCE2F5 !important;
+  color: #1E398E !important;
+}
+.tox .tox-tbtn--enabled svg { fill: #1E398E !important; }
+.tox .tox-collection--list .tox-collection__item--active:not(.tox-collection__item--state-disabled),
+.tox .tox-collection__item--active:not(.tox-collection__item--state-disabled) {
+  background-color: #1E398E !important;
+}
+.tox .tox-dialog {
+  border-radius: 14px !important;
+}
+.tox .tox-dialog__header {
+  font-family: "Poppins", serif !important;
+}
+.tox .tox-statusbar {
+  background: #F8F9FB !important;
+  border-color: #E4E8EF !important;
 }
