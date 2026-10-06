@@ -115,16 +115,20 @@ class ArticlePolicyTest extends TestCase
         }
     }
 
-    public function test_super_admin_can_delete_another_authors_published_article(): void
+    public function test_super_admin_has_full_access_but_still_respects_article_status(): void
     {
         $this->seed(RolePermissionSeeder::class);
         $admin = User::factory()->create();
         $admin->assignRole('Super Admin');
         $author = User::factory()->create();
-        $article = new Article(['author_id' => $author->id, 'status' => 'published']);
+        $article = new Article(['author_id' => $author->id, 'status' => ArticleStatus::Published]);
+        $gate = Gate::forUser($admin);
 
-        foreach (['view', 'update', 'delete', 'approve', 'reject', 'publish'] as $ability) {
-            $this->assertTrue(Gate::forUser($admin)->allows($ability, $article), $ability);
+        foreach (['view', 'update', 'delete'] as $ability) {
+            $this->assertTrue($gate->allows($ability, $article), $ability);
+        }
+        foreach (['approve', 'reject', 'publish'] as $ability) {
+            $this->assertFalse($gate->allows($ability, $article), $ability);
         }
     }
 

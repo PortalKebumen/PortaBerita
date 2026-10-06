@@ -32,7 +32,16 @@ class AppServiceProvider extends ServiceProvider
         Event::listen(Failed::class, LogFailedLogin::class);
 
         \Illuminate\Support\Facades\Gate::before(function ($user, $ability) {
-            return $user->hasRole('Super Admin') ? true : null;
+            if (! $user->hasRole('Super Admin')) {
+                return null;
+            }
+
+            // Bypass hanya untuk permission yang benar-benar terdaftar. Ability
+            // sembarang/typo tidak lolos diam-diam, dan policy berbasis model
+            // (status artikel, kepemilikan) tetap berlaku untuk Super Admin.
+            return app(\Spatie\Permission\PermissionRegistrar::class)
+                ->getPermissions(['name' => $ability])
+                ->isNotEmpty() ? true : null;
         });
 
         // PK-39: suntik alamat IP ke SEMUA activity log (otomatis maupun manual),
