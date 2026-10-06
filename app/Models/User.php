@@ -37,4 +37,14 @@ class User extends Authenticatable
 
     protected array $logAttributes = ['name', 'email', 'bio', 'is_active'];
     protected string $logLabel = 'Pengguna';
+
+    /**
+     * Kirim email reset password memakai template PortalKebumen.
+     */
+    public function sendPasswordResetNotification(#[\SensitiveParameter] $token): void
+    {
+        Mail::to($this->getEmailForPasswordReset())->send(
+            new ResetPasswordMail($this, $token)
+        );
+    }
 }
