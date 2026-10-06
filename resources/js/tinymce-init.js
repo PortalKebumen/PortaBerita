@@ -67,7 +67,6 @@ export function initRichEditor(selector, opts = {}) {
     return tinymce.init({
         selector,
         license_key: 'gpl',
-        language: 'id',
         skin: false,
         content_css: false,
         plugins: PLUGINS,

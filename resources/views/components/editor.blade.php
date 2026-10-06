@@ -49,7 +49,6 @@
 @push('scripts')
 @once('tinymce-core')
 <script src="{{ asset('vendor/tinymce/tinymce.min.js') }}" referrerpolicy="origin"></script>
-<script src="{{ asset('vendor/tinymce/langs/id.js') }}"></script>
 <script>
 // Global TinyMCE configuration helper
 window.TINYMCE_CONTENT_STYLE = "body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,Cantarell,'Open Sans','Helvetica Neue',sans-serif;line-height:1.4;margin:1rem}table{border-collapse:collapse}table:not([cellpadding]) td,table:not([cellpadding]) th{padding:.4rem}";
@@ -59,7 +58,6 @@ window.initRichEditor = function(selector, opts) {
     return tinymce.init({
         selector: selector,
         license_key: 'gpl',
-        language: 'id',
         content_css: false,
         content_style: window.TINYMCE_CONTENT_STYLE,
         height: opts.height || 420,
