@@ -1,23 +1,105 @@
 <div class="space-y-6">
-    {{-- Header dengan tombol kembali --}}
-    <div class="flex items-start gap-3">
-        <a href="{{ route('admin.artikel.index') }}" class="btn-icon bg-[#F1F3F7] shrink-0 mt-0.5" aria-label="Kembali ke Artikel">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M19 12H5"></path>
-                <path d="M12 19l-7-7 7-7"></path>
-            </svg>
-        </a>
-        <div class="min-w-0">
-            <div class="text-[12px] text-[#848CA3] mb-1">
-                <a href="{{ route('admin.artikel.index') }}" class="hover:text-brand-600 hover:underline">Artikel</a>
-                <span class="mx-1">/</span>
-                <span class="text-[#171B28] font-medium">Edit Artikel</span>
-            </div>
-            <h2 class="text-[20px] font-bold leading-tight">Edit Artikel</h2>
-            <p class="text-[13px] text-[#6C7387] mt-1">Perbarui detail artikel di bawah, lalu simpan perubahannya.</p>
-        </div>
-    </div>
+    @php
+        // Flag aksi workflow. Dihitung di atas karena dipakai oleh header.
+        $canSubmit   = in_array($status, ['draft', 'rejected']) && auth()->user()->can('submit', $article);
+        $canApprove  = $status === 'submitted' && auth()->user()->can('approve', $article);
+        $canReject   = in_array($status, ['submitted', 'approved']) && auth()->user()->can('reject', $article);
+        $canPublish  = $status === 'approved' && auth()->user()->can('publish', $article);
+        $canSchedule = $status === 'approved' && auth()->user()->can('schedule', $article);
+        $canArchive  = $status === 'published' && auth()->user()->can('archive', $article);
+        $hasWorkflowActions = $canSubmit || $canApprove || $canReject || $canPublish || $canSchedule || $canArchive;
+    @endphp
 
+    {{-- Header: judul (kiri) + aksi workflow (kanan) --}}
+    <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div class="flex items-start gap-3 min-w-0">
+            <a href="{{ route('admin.artikel.index') }}" class="btn-icon bg-[#F1F3F7] shrink-0 mt-0.5" aria-label="Kembali ke Artikel">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M19 12H5"></path>
+                    <path d="M12 19l-7-7 7-7"></path>
+                </svg>
+            </a>
+            <div class="min-w-0">
+                <div class="text-[12px] text-[#848CA3] mb-1">
+                    <a href="{{ route('admin.artikel.index') }}" class="hover:text-brand-600 hover:underline">Artikel</a>
+                    <span class="mx-1">/</span>
+                    <span class="text-[#171B28] font-medium">Edit Artikel</span>
+                </div>
+                <h2 class="text-[20px] font-bold leading-tight">Edit Artikel</h2>
+                <p class="text-[13px] text-[#6C7387] mt-1">Perbarui detail artikel di bawah, lalu simpan perubahannya.</p>
+            </div>
+        </div>
+
+        {{-- Aksi workflow (di luar form Livewire agar tidak saling mengganggu) --}}
+        @if ($hasWorkflowActions)
+            <div class="flex flex-wrap items-center gap-2 sm:justify-end sm:shrink-0">
+                @if ($canSubmit)
+                    <button type="button" onclick="window.pkModal.open('modal-submit')" class="btn-primary btn-sm">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="inline">
+                            <path d="M22 2L11 13"></path>
+                            <path d="M22 2l-7 20-4-9-9-4 20-7z"></path>
+                        </svg>
+                        {{ $status === 'rejected' ? 'Kirim Review Ulang' : 'Kirim Review' }}
+                    </button>
+                @endif
+
+                @if ($canApprove)
+                    <form action="{{ route('admin.artikel.approve', $article) }}" method="POST" class="inline">
+                        @csrf
+                        <button type="submit" class="btn-sm bg-green-600 hover:bg-green-700 text-white rounded-lg px-4 py-2 text-[13px] font-medium transition-colors">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="inline">
+                                <path d="M20 6L9 17l-5-5"></path>
+                            </svg>
+                            Setujui
+                        </button>
+                    </form>
+                @endif
+
+                @if ($canReject)
+                    <button type="button" onclick="window.pkModal.open('modal-reject')" class="btn-sm bg-red-600 hover:bg-red-700 text-white rounded-lg px-4 py-2 text-[13px] font-medium transition-colors">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="inline">
+                            <path d="M18 6L6 18M6 6l12 12"></path>
+                        </svg>
+                        Tolak
+                    </button>
+                @endif
+
+                @if ($canPublish)
+                    <button type="button" onclick="window.pkModal.open('modal-publish')" class="btn-primary btn-sm bg-emerald-600 hover:bg-emerald-700">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="inline">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <path d="M12 6v6l4 2"></path>
+                        </svg>
+                        Terbitkan Sekarang
+                    </button>
+                @endif
+
+                @if ($canSchedule)
+                    <button type="button" onclick="window.pkModal.open('modal-schedule')" class="btn-secondary btn-sm">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="inline">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                            <path d="M16 2v4M8 2v4M3 10h18"></path>
+                        </svg>
+                        Jadwalkan
+                    </button>
+                @endif
+
+                @if ($canArchive)
+                    <form action="{{ route('admin.artikel.archive', $article) }}" method="POST" class="inline" onsubmit="return confirm('Arsipkan artikel ini?')">
+                        @csrf
+                        <button type="submit" class="btn-sm bg-gray-600 hover:bg-gray-700 text-white rounded-lg px-4 py-2 text-[13px] font-medium transition-colors">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="inline">
+                                <path d="M21 8v13H3V8"></path>
+                                <path d="M1 3h22v5H1z"></path>
+                                <path d="M10 12h4"></path>
+                            </svg>
+                            Arsipkan
+                        </button>
+                    </form>
+                @endif
+            </div>
+        @endif
+    </div>
 
     {{-- Flash Messages --}}
     @if (session('success'))
@@ -34,7 +116,7 @@
         </div>
     @endif
 
-    {{-- Revision Alert for Rejected/Resubmitted Articles --}}
+    {{-- Alert status revisi --}}
     @if ($status === 'rejected' && $this->revisions->isNotEmpty())
         <div class="alert-warning">
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="shrink-0 mt-0.5"><path d="M12 9v4M12 17h.01"></path><path d="M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"></path></svg>
@@ -63,9 +145,8 @@
         </div>
     @endif
 
-
-    {{-- Form dalam 1 card --}}
-    <form wire:submit.prevent="save" class="card p-6 max-w-[880px]">
+    {{-- Form artikel --}}
+    <form wire:submit.prevent="save" class="card p-6">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
             <div class="md:col-span-2">
                 <label class="form-label">Judul Artikel</label>
@@ -80,7 +161,7 @@
                 <label class="form-label">Slug (URL Artikel)</label>
                 <div class="flex items-center gap-2">
                     <span class="text-[13px] text-[#848CA3] shrink-0">/artikel/</span>
-                      <input type="text"
+                    <input type="text"
                         wire:model.live="slug"
                         placeholder="slug-artikel"
                         @disabled($article->published_at)
@@ -106,7 +187,6 @@
                 </select>
                 @error('category_id') <p class="form-error-text">{{ $message }}</p> @enderror
             </div>
-
 
             <div>
                 <label class="form-label">Status</label>
@@ -182,7 +262,7 @@
             </div>
         @endcanany
 
-        {{-- Scheduling Section (for Draft/Rejected only) --}}
+        {{-- Jadwal publikasi (Draft/Rejected saja) --}}
         @if (in_array($status, ['draft', 'rejected']))
             @can('articles.schedule')
                 <div class="mb-5">
@@ -204,7 +284,7 @@
             </div>
         @endif
 
-        {{-- SEO Section (Collapsible) --}}
+        {{-- Pengaturan SEO (collapsible) --}}
         <details class="border border-[#E4E8EF] rounded-lg mb-5">
             <summary class="cursor-pointer px-4 py-3 text-[13px] font-semibold text-[#171B28] hover:bg-[#F7F8FA] transition-colors rounded-t-lg">
                 Pengaturan SEO
@@ -262,7 +342,7 @@
                 </div>
 
                 @can('seo.set-indexing')
-                    <div class="flex gap-6">
+                    <div class="flex flex-wrap gap-x-6 gap-y-3">
                         <label class="flex items-center gap-2.5 cursor-pointer">
                             <input type="checkbox" wire:model="noindex" class="form-checkbox">
                             <span class="text-[13px]">No Index (jangan tampilkan di hasil pencarian)</span>
@@ -276,8 +356,7 @@
             </div>
         </details>
 
-
-        {{-- Revision History - More Prominent --}}
+        {{-- Riwayat revisi --}}
         @if ($this->revisions->isNotEmpty())
             <div class="bg-gradient-to-br from-red-50 to-orange-50 border-2 border-red-200 rounded-xl p-5 mb-5">
                 <div class="flex items-center gap-2 mb-4">
@@ -293,12 +372,12 @@
                 </div>
                 <div class="space-y-3">
                     @foreach ($this->revisions as $revision)
-                        <div class="flex gap-3 pb-3 border-b border-red-200 last:border-b-0 last:pb-0 bg-white rounded-lg p-3">
+                        <div class="flex gap-3 bg-white rounded-lg p-3">
                             <div class="w-9 h-9 rounded-full bg-red-100 text-red-600 flex items-center justify-center shrink-0 text-[12px] font-bold">
                                 {{ strtoupper(substr($revision->editor->name ?? 'E', 0, 1)) }}
                             </div>
                             <div class="flex-1 min-w-0">
-                                <div class="flex items-center gap-2 mb-1.5">
+                                <div class="flex flex-wrap items-center gap-2 mb-1.5">
                                     <span class="text-[13px] font-bold text-red-900">{{ $revision->editor->name ?? 'Editor' }}</span>
                                     <span class="text-[11px] text-red-600 bg-red-100 px-2 py-0.5 rounded">{{ $revision->created_at->diffForHumans() }}</span>
                                 </div>
@@ -319,98 +398,10 @@
         </div>
     </form>
 
-    {{-- Lifecycle Action Buttons - MOVED OUTSIDE form --}}
+    {{-- ===================== MODALS (di luar form Livewire) ===================== --}}
 
-    {{-- Lifecycle Action Buttons - OUTSIDE form to prevent Livewire interference --}}
-    @php
-        $canSubmit = in_array($status, ['draft', 'rejected']) && auth()->user()->can('submit', $article);
-        $canApprove = $status === 'submitted' && auth()->user()->can('approve', $article);
-        $canReject = in_array($status, ['submitted', 'approved']) && auth()->user()->can('reject', $article);
-        $canPublish = $status === 'approved' && auth()->user()->can('publish', $article);
-        $canSchedule = $status === 'approved' && auth()->user()->can('schedule', $article);
-        $canArchive = $status === 'published' && auth()->user()->can('archive', $article);
-    @endphp
-
-    @if ($canSubmit || $canApprove || $canReject || $canPublish || $canSchedule || $canArchive)
-        <div class="card p-6 max-w-[880px]">
-            <div class="bg-[#F7F8FA] border border-[#E4E8EF] rounded-lg p-4">
-                <div class="text-[13px] font-semibold text-[#171B28] mb-3">Aksi Workflow</div>
-                <div class="flex flex-wrap gap-2">
-                    @if ($canSubmit)
-                        <button type="button"
-                            onclick="window.pkModal.open('modal-submit')"
-                            class="btn-primary btn-sm">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="inline">
-                                <path d="M22 2L11 13"></path>
-                                <path d="M22 2l-7 20-4-9-9-4 20-7z"></path>
-                            </svg>
-                            {{ $status === 'rejected' ? 'Kirim Review Ulang' : 'Kirim Review' }}
-                        </button>
-                    @endif
-
-                    @if ($canApprove)
-                        <form action="{{ route('admin.artikel.approve', $article) }}" method="POST" class="inline">
-                            @csrf
-                            <button type="submit" class="btn-sm bg-green-600 hover:bg-green-700 text-white rounded-lg px-4 py-2 text-[13px] font-medium transition-colors">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="inline">
-                                    <path d="M20 6L9 17l-5-5"></path>
-                                </svg>
-                                Setujui
-                            </button>
-                        </form>
-                    @endif
-
-                    @if ($canReject)
-                        <button type="button" onclick="window.pkModal.open('modal-reject')" class="btn-sm bg-red-600 hover:bg-red-700 text-white rounded-lg px-4 py-2 text-[13px] font-medium transition-colors">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="inline">
-                                <path d="M18 6L6 18M6 6l12 12"></path>
-                            </svg>
-                            Tolak
-                        </button>
-                    @endif
-
-                    @if ($canPublish)
-                        <button type="button"
-                            onclick="window.pkModal.open('modal-publish')"
-                            class="btn-primary btn-sm bg-emerald-600 hover:bg-emerald-700">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="inline">
-                                <circle cx="12" cy="12" r="10"></circle>
-                                <path d="M12 6v6l4 2"></path>
-                            </svg>
-                            Terbitkan Sekarang
-                        </button>
-                    @endif
-
-                    @if ($canSchedule)
-                        <button type="button" onclick="window.pkModal.open('modal-schedule')" class="btn-secondary btn-sm">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="inline">
-                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                                <path d="M16 2v4M8 2v4M3 10h18"></path>
-                            </svg>
-                            Jadwalkan
-                        </button>
-                    @endif
-
-                    @if ($canArchive)
-                        <form action="{{ route('admin.artikel.archive', $article) }}" method="POST" class="inline" onsubmit="return confirm('Arsipkan artikel ini?')">
-                            @csrf
-                            <button type="submit" class="btn-sm bg-gray-600 hover:bg-gray-700 text-white rounded-lg px-4 py-2 text-[13px] font-medium transition-colors">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="inline">
-                                    <path d="M21 8v13H3V8"></path>
-                                    <path d="M1 3h22v5H1z"></path>
-                                    <path d="M10 12h4"></path>
-                                </svg>
-                                Arsipkan
-                            </button>
-                        </form>
-                    @endif
-                </div>
-            </div>
-        </div>
-    @endif
-
-    {{-- Modal: Reject Article --}}
-    <div id="modal-reject" class="modal-overlay hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
+    {{-- Modal: Tolak Artikel --}}
+    <div id="modal-reject" class="modal-overlay hidden fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40">
         <div class="bg-white rounded-card max-w-[480px] w-full p-6 shadow-xl">
             <h3 class="text-[17px] font-bold mb-4">Tolak Artikel</h3>
             <form action="{{ route('admin.artikel.reject', $article) }}" method="POST">
@@ -427,7 +418,7 @@
         </div>
     </div>
 
-    {{-- Modal: Submit/Resubmit Confirmation --}}
+    {{-- Modal: Kirim / Kirim Ulang untuk Review --}}
     <div id="modal-submit" class="modal-overlay hidden fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40">
         <div class="bg-white rounded-card max-w-[520px] w-full p-6 shadow-xl">
             <div class="flex items-start gap-4 mb-4">
@@ -442,10 +433,9 @@
                         {{ $status === 'rejected' ? '📝 Kirim Review Ulang?' : '📤 Kirim Artikel untuk Review?' }}
                     </h3>
                     <p class="text-[14px] text-gray-600">
-                        {{ $status === 'rejected' 
-                            ? 'Artikel yang sudah diperbaiki akan dikirim kembali ke redaktur untuk direview.' 
-                            : 'Artikel ini akan dikirim ke redaktur untuk direview.'
-                        }}
+                        {{ $status === 'rejected'
+                            ? 'Artikel yang sudah diperbaiki akan dikirim kembali ke redaktur untuk direview.'
+                            : 'Artikel ini akan dikirim ke redaktur untuk direview.' }}
                     </p>
                 </div>
             </div>
@@ -454,24 +444,18 @@
                 <div class="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-4">
                     <div class="text-[13px] font-semibold text-orange-900 mb-2">Pastikan Anda sudah:</div>
                     <div class="space-y-1.5 text-[13px] text-orange-800">
-                        <div class="flex items-start gap-2">
-                            <svg class="w-4 h-4 text-orange-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                            </svg>
-                            <span>Membaca semua catatan revisi dari redaktur</span>
-                        </div>
-                        <div class="flex items-start gap-2">
-                            <svg class="w-4 h-4 text-orange-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                            </svg>
-                            <span>Memperbaiki artikel sesuai saran redaktur</span>
-                        </div>
-                        <div class="flex items-start gap-2">
-                            <svg class="w-4 h-4 text-orange-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                            </svg>
-                            <span>Menyimpan perubahan dengan klik "Simpan Perubahan"</span>
-                        </div>
+                        @foreach ([
+                            'Membaca semua catatan revisi dari redaktur',
+                            'Memperbaiki artikel sesuai saran redaktur',
+                            'Menyimpan perubahan dengan klik "Simpan Perubahan"',
+                        ] as $checkItem)
+                            <div class="flex items-start gap-2">
+                                <svg class="w-4 h-4 text-orange-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <span>{{ $checkItem }}</span>
+                            </div>
+                        @endforeach
                     </div>
                 </div>
             @else
@@ -481,9 +465,7 @@
             @endif
 
             <div class="flex gap-3">
-                <button type="button" onclick="window.pkModal.close('modal-submit')" class="flex-1 btn-secondary">
-                    Batal
-                </button>
+                <button type="button" onclick="window.pkModal.close('modal-submit')" class="flex-1 btn-secondary">Batal</button>
                 <form action="{{ route('admin.artikel.submit', $article) }}" method="POST" class="flex-1">
                     @csrf
                     <button type="submit" class="w-full btn-primary">
@@ -494,7 +476,7 @@
         </div>
     </div>
 
-    {{-- Modal: Publish Confirmation (Redaktur) --}}
+    {{-- Modal: Terbitkan Sekarang (Redaktur) --}}
     <div id="modal-publish" class="modal-overlay hidden fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40">
         <div class="bg-white rounded-card max-w-[500px] w-full p-6 shadow-xl">
             <div class="flex items-start gap-4 mb-4">
@@ -505,30 +487,26 @@
                     </svg>
                 </div>
                 <div class="flex-1">
-                    <h3 class="text-[17px] font-bold text-gray-900 mb-1">
-                        🚀 Terbitkan Artikel Sekarang?
-                    </h3>
-                    <p class="text-[14px] text-gray-600">
-                        Artikel ini telah disetujui (Approved) dan siap dipublikasikan ke publik.
-                    </p>
+                    <h3 class="text-[17px] font-bold text-gray-900 mb-1">🚀 Terbitkan Artikel Sekarang?</h3>
+                    <p class="text-[14px] text-gray-600">Artikel ini telah disetujui (Approved) dan siap dipublikasikan ke publik.</p>
                 </div>
             </div>
 
             <div class="bg-emerald-50 border border-emerald-200 rounded-lg p-4 mb-5 space-y-2">
                 <div class="text-[13px] font-semibold text-emerald-900">Konfirmasi Publikasi:</div>
                 <ul class="text-[12.5px] text-emerald-800 space-y-1.5">
-                    <li class="flex items-center gap-2">
-                        <svg class="w-4 h-4 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                        </svg>
-                        <span>Artikel akan langsung tayang secara publik di portal</span>
-                    </li>
-                    <li class="flex items-center gap-2">
-                        <svg class="w-4 h-4 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                        </svg>
-                        <span>Waktu publikasi akan otomatis dicatat saat ini</span>
-                    </li>
+                    @foreach ([
+                        'Artikel akan langsung tayang secara publik di portal',
+                        'Waktu publikasi akan otomatis dicatat saat ini',
+                    ] as $publishNote)
+                        <li class="flex items-center gap-2">
+                            <svg class="w-4 h-4 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            <span>{{ $publishNote }}</span>
+                        </li>
+                    @endforeach
+
                     @if ($article->scheduled_at)
                         <li class="flex items-center gap-2 text-amber-800">
                             <svg class="w-4 h-4 text-amber-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -543,27 +521,23 @@
             </div>
 
             <div class="flex gap-3">
-                <button type="button" onclick="window.pkModal.close('modal-publish')" class="flex-1 btn-secondary">
-                    Batal
-                </button>
+                <button type="button" onclick="window.pkModal.close('modal-publish')" class="flex-1 btn-secondary">Batal</button>
                 <form action="{{ route('admin.artikel.publish', $article) }}" method="POST" class="flex-1">
                     @csrf
-                    <button type="submit" class="w-full btn-primary bg-emerald-600 hover:bg-emerald-700">
-                        Ya, Terbitkan Sekarang
-                    </button>
+                    <button type="submit" class="w-full btn-primary bg-emerald-600 hover:bg-emerald-700">Ya, Terbitkan Sekarang</button>
                 </form>
             </div>
         </div>
     </div>
 
-    {{-- Modal: Schedule Article --}}
-    <div id="modal-schedule" class="modal-overlay hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
+    {{-- Modal: Jadwalkan Publikasi --}}
+    <div id="modal-schedule" class="modal-overlay hidden fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40">
         <div class="bg-white rounded-card max-w-[420px] w-full p-6 shadow-xl">
             <h3 class="text-[17px] font-bold mb-4">Jadwalkan Publikasi</h3>
             <form action="{{ route('admin.artikel.schedule', $article) }}" method="POST">
                 @csrf
                 <div class="mb-4">
-                    <label class="form-label">Tanggal & Waktu Publikasi</label>
+                    <label class="form-label">Tanggal &amp; Waktu Publikasi</label>
                     <input type="datetime-local" name="scheduled_at" class="form-input" required min="{{ now()->format('Y-m-d\TH:i') }}">
                     <p class="text-[11px] text-[#848CA3] mt-1">Artikel akan otomatis dipublikasikan pada waktu yang ditentukan</p>
                 </div>
@@ -575,6 +549,6 @@
         </div>
     </div>
 
-    {{-- Media Picker Component (required by x-editor for image insertion) --}}
+    {{-- Media Picker (dibutuhkan x-editor untuk sisip gambar) --}}
     <livewire:media-picker />
 </div>

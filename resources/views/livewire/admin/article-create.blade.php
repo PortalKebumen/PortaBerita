@@ -19,7 +19,7 @@
     </div>
 
     {{-- Form dalam 1 card --}}
-    <form wire:submit.prevent="save" class="card p-6 max-w-[880px]">
+    <form wire:submit.prevent="save" class="card p-6">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
             <div class="md:col-span-2">
                 <label class="form-label">Judul Artikel</label>

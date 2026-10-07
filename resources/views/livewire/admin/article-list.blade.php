@@ -88,12 +88,11 @@
                             </button>
                         @endcan
                         @if (auth()->user()->can('articles.delete-any') || auth()->user()->can('articles.delete-own-draft'))
-                            <button type="button" wire:click="bulkDelete"
-                                wire:confirm="Hapus {{ count($selectedIds) }} artikel terpilih? Tindakan ini tidak dapat dibatalkan."
+                            <button type="button" wire:click="openBulkDeleteModal"
                                 class="w-full text-left px-4 py-2.5 text-sm text-danger hover:bg-danger-bg flex items-center gap-2">
                                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"></path>
-                                    <path d="M7 10l5 5 5-5M12 15V3"></path>
+                                    <path d="M3 6h18"></path>
+                                    <path d="M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0l-1 14a2 2 0 01-2 2H7a2 2 0 01-2-2L4 6"></path>
                                 </svg>
                                 Hapus Terpilih
                             </button>
@@ -263,6 +262,7 @@
                                             </svg>
                                         </button>
                                     @endcan
+                                </div>
                             </td>
                         </tr>
                     @endforeach
@@ -294,6 +294,31 @@
                     <button type="button" class="btn-danger" wire:click="confirmDelete" wire:loading.attr="disabled">
                         <span wire:loading.remove wire:target="confirmDelete">Ya, Hapus</span>
                         <span wire:loading wire:target="confirmDelete">Menghapus...</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    {{-- Modal: Hapus Artikel Terpilih (Aksi Massal) --}}
+    @if ($showBulkDeleteModal)
+        <div class="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40"
+            wire:click.self="closeBulkDeleteModal"
+            wire:keydown.escape.window="closeBulkDeleteModal">
+            <div class="bg-white rounded-card max-w-[420px] w-full p-6 shadow-xl">
+                <div class="w-11 h-11 rounded-full bg-danger-bg text-danger flex items-center justify-center mb-4">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 6h18"></path>
+                        <path d="M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0l-1 14a2 2 0 01-2 2H7a2 2 0 01-2-2L4 6"></path>
+                    </svg>
+                </div>
+                <h3 class="text-[16px] font-bold mb-1.5">Hapus {{ count($selectedIds) }} artikel terpilih?</h3>
+                <p class="text-[13px] text-[#6C7387] mb-5">Artikel terpilih akan dihapus. Tindakan ini tidak dapat dibatalkan.</p>
+                <div class="flex justify-end gap-2.5">
+                    <button type="button" class="btn-secondary" wire:click="closeBulkDeleteModal">Batal</button>
+                    <button type="button" class="btn-danger" wire:click="confirmBulkDelete" wire:loading.attr="disabled">
+                        <span wire:loading.remove wire:target="confirmBulkDelete">Ya, Hapus</span>
+                        <span wire:loading wire:target="confirmBulkDelete">Menghapus...</span>
                     </button>
                 </div>
             </div>

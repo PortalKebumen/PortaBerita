@@ -4,6 +4,7 @@ namespace Tests\Feature\Artikel;
 
 use App\Livewire\Admin\ArticleCreate;
 use App\Livewire\Admin\ArticleEdit;
+use App\Livewire\Admin\ArticleList;
 use App\Models\Article;
 use App\Models\ArticleStatus;
 use App\Models\Category;
@@ -157,5 +158,21 @@ class ArticleCrudTest extends TestCase
         foreach (ArticleStatus::cases() as $status) {
             $this->assertNotSame('primary', $status->badge());
         }
+    }
+
+    public function test_bulk_delete_goes_through_modal_state_and_deletes_selected_drafts(): void
+    {
+        $article = $this->makeArticle(['title' => 'Bulk Draft', 'slug' => 'bulk-draft']);
+
+        $this->actingAs($this->penulis);
+
+        Livewire::test(ArticleList::class)
+            ->set('selectedIds', [$article->id])
+            ->call('openBulkDeleteModal')
+            ->assertSet('showBulkDeleteModal', true)
+            ->call('confirmBulkDelete')
+            ->assertSet('showBulkDeleteModal', false);
+
+        $this->assertSoftDeleted('articles', ['id' => $article->id]);
     }
 }

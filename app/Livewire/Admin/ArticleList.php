@@ -19,6 +19,8 @@ class ArticleList extends Component
 
     // Bulk actions state
     public array $selectedIds = [];
+
+    public bool $showBulkDeleteModal = false;
     
     // Delete modal state
     public bool $showDeleteModal = false;
@@ -155,6 +157,31 @@ class ArticleList extends Component
         $this->deleteTitle = '';
     }
 
+    public function openBulkDeleteModal(): void
+    {
+        if (count($this->selectedIds) === 0) {
+            return;
+        }
+
+        abort_unless(
+            auth()->user()->can('articles.delete-any') || auth()->user()->can('articles.delete-own-draft'),
+            403
+        );
+
+        $this->showBulkDeleteModal = true;
+    }
+
+    public function closeBulkDeleteModal(): void
+    {
+        $this->showBulkDeleteModal = false;
+    }
+
+    public function confirmBulkDelete(): void
+    {
+        $this->showBulkDeleteModal = false;
+        $this->bulkDelete();
+    }
+
     public function confirmDelete()
     {
         if ($this->deleteArticleId) {
@@ -191,7 +218,7 @@ class ArticleList extends Component
 
             activity()
                 ->performedOn($article)
-                ->causedBy(auth()->user())
+                ->causedBy(auth()->guard()->user())
                 ->log('Artikel dipublikasikan');
 
             unset($this->articles);

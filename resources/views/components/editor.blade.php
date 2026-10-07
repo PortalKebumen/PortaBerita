@@ -59,6 +59,8 @@ window.initRichEditor = function(selector, opts) {
         selector: selector,
         license_key: 'gpl',
         content_css: false,
+        toolbar_sticky: true,
+        toolbar_sticky_offset: 64,
         content_style: window.TINYMCE_CONTENT_STYLE,
         height: opts.height || 420,
         menubar: 'edit view insert format tools table help',

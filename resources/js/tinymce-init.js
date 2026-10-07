@@ -69,6 +69,8 @@ export function initRichEditor(selector, opts = {}) {
         license_key: 'gpl',
         skin: false,
         content_css: false,
+        toolbar_sticky: true,
+        toolbar_sticky_offset: 64,
         plugins: PLUGINS,
         toolbar: TOOLBAR,
         menubar: 'edit view insert format table tools help',
