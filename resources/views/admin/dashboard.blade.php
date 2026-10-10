@@ -1,19 +1,32 @@
 <x-layouts.admin title="Dashboard">
+    {{-- ===== Baris kartu statistik ===== --}}
     <div class="grid grid-cols-12 gap-5 sm:gap-6 mb-6">
         @can('articles.view')
         <div class="col-span-12 sm:col-span-6 lg:col-span-3 bg-white border border-[#E4E8EF] rounded-2xl px-5 py-5 shadow-sm">
-            <div class="text-[12.5px] text-[#6C7387] font-semibold">Total Artikel</div>
-            <div class="font-body text-[30px] font-semibold mt-2">0</div>
-            <div class="text-[11.5px] text-[#848CA3] mt-1.5">Menunggu modul Artikel</div>
+            <div class="text-[12.5px] text-[#6C7387] font-semibold">
+                {{ auth()->user()->can('articles.view-any') ? 'Total Artikel' : 'Artikel Saya' }}
+            </div>
+            <div class="font-body text-[30px] font-semibold mt-2">{{ number_format($articleStats['total']) }}</div>
+            <div class="text-[11.5px] text-[#848CA3] mt-1.5">
+                {{ number_format($articleStats['published']) }} terbit · {{ number_format($articleStats['draft']) }} draft
+            </div>
         </div>
-        @endcan
-        @can('articles.approve')
+
         <div class="col-span-12 sm:col-span-6 lg:col-span-3 bg-white border border-[#E4E8EF] rounded-2xl px-5 py-5 shadow-sm">
-            <div class="text-[12.5px] text-[#6C7387] font-semibold">Pending Review</div>
-            <div class="font-body text-[30px] font-semibold mt-2 text-warning">0</div>
-            <div class="text-[11.5px] text-[#848CA3] mt-1.5">Menunggu modul Artikel</div>
+            @can('articles.approve')
+                <div class="text-[12.5px] text-[#6C7387] font-semibold">Pending Review</div>
+                <div class="font-body text-[30px] font-semibold mt-2 text-warning">{{ number_format($articleStats['submitted']) }}</div>
+                <div class="text-[11.5px] text-[#848CA3] mt-1.5">Menunggu persetujuan redaktur</div>
+            @else
+                <div class="text-[12.5px] text-[#6C7387] font-semibold">Perlu Revisi</div>
+                <div class="font-body text-[30px] font-semibold mt-2 text-warning">{{ number_format($articleStats['rejected']) }}</div>
+                <div class="text-[11.5px] text-[#848CA3] mt-1.5">
+                    {{ number_format($articleStats['submitted']) }} sedang direview
+                </div>
+            @endcan
         </div>
         @endcan
+
         @can('ads.view')
         <div class="col-span-12 sm:col-span-6 lg:col-span-3 bg-white border border-[#E4E8EF] rounded-2xl px-5 py-5 shadow-sm">
             <div class="text-[12.5px] text-[#6C7387] font-semibold">Iklan Aktif</div>
@@ -21,6 +34,7 @@
             <div class="text-[11.5px] text-[#848CA3] mt-1.5">Sedang tayang saat ini</div>
         </div>
         @endcan
+
         @can('users.view')
         <div class="col-span-12 sm:col-span-6 lg:col-span-3 bg-white border border-[#E4E8EF] rounded-2xl px-5 py-5 shadow-sm">
             <div class="text-[12.5px] text-[#6C7387] font-semibold">Total Pengguna</div>
@@ -31,6 +45,7 @@
     </div>
 
     <div class="grid grid-cols-12 gap-5 sm:gap-6">
+        {{-- ===== Kolom kiri: Artikel Terbaru ===== --}}
         @can('articles.view')
         <div class="col-span-12 lg:col-span-8 bg-white border border-[#E4E8EF] rounded-2xl overflow-hidden shadow-sm">
             <div class="flex justify-between items-center px-5 py-4 border-b border-[#E4E8EF]">
@@ -48,18 +63,63 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <tr>
-                            <td colspan="4" class="px-5 py-10 text-center text-[13px] text-[#848CA3]">
-                                Belum ada artikel — tabel ini otomatis terisi begitu modul Artikel aktif.
-                            </td>
-                        </tr>
+                        @forelse ($recentArticles as $article)
+                            <tr class="border-b border-[#E4E8EF] last:border-0">
+                                <td class="px-5 py-3">
+                                    @can('update', $article)
+                                        <a href="{{ route('admin.artikel.edit', $article) }}" class="text-[13px] font-semibold leading-snug hover:text-brand-600">{{ $article->title }}</a>
+                                    @else
+                                        <span class="text-[13px] font-semibold leading-snug">{{ $article->title }}</span>
+                                    @endcan
+                                </td>
+                                <td class="px-3 py-3 text-[13px] whitespace-nowrap">{{ $article->author?->name ?? '-' }}</td>
+                                <td class="px-3 py-3 whitespace-nowrap">
+                                    <span class="badge-{{ $article->status->badge() }}">
+                                        <span class="badge-dot"></span>{{ ucfirst($article->status->value) }}
+                                    </span>
+                                </td>
+                                <td class="px-3 py-3 font-mono text-[12.5px] whitespace-nowrap">
+                                    {{ ($article->published_at ?? $article->created_at)->format('d/m') }}
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="4" class="px-5 py-10 text-center text-[13px] text-[#848CA3]">
+                                    Belum ada artikel.
+                                </td>
+                            </tr>
+                        @endforelse
                     </tbody>
                 </table>
             </div>
         </div>
-
         @endcan
+
+        {{-- ===== Kolom kanan ===== --}}
         <div class="col-span-12 lg:col-span-4 flex flex-col gap-5 sm:gap-6">
+            {{-- Antrean Review (redaktur) --}}
+            @can('articles.approve')
+            <div class="bg-white border border-[#E4E8EF] rounded-2xl shadow-sm">
+                <div class="flex justify-between items-center px-5 py-4 border-b border-[#E4E8EF]">
+                    <h2 class="text-[15px] font-bold">Antrean Review</h2>
+                    <a href="{{ route('admin.artikel.index', ['status' => 'submitted']) }}" class="text-[12.5px] font-semibold text-brand-600">Lihat Semua</a>
+                </div>
+                @forelse ($pendingReview as $article)
+                    <a href="{{ route('admin.artikel.edit', $article) }}" class="block px-5 py-3 hover:bg-[#F7F8FA] {{ !$loop->last ? 'border-b border-[#E4E8EF]' : '' }}">
+                        <div class="text-[13px] font-semibold leading-snug truncate">{{ $article->title }}</div>
+                        <div class="text-[11px] text-[#848CA3] mt-1">
+                            {{ $article->author?->name ?? '-' }} · dikirim {{ $article->updated_at->diffForHumans() }}
+                        </div>
+                    </a>
+                @empty
+                    <div class="px-5 py-8 text-center text-[13px] text-[#848CA3]">
+                        Tidak ada artikel yang menunggu review.
+                    </div>
+                @endforelse
+            </div>
+            @endcan
+
+            {{-- Iklan Akan Berakhir --}}
             @can('ads.view')
             <div class="bg-white border border-[#E4E8EF] rounded-2xl shadow-sm">
                 <div class="flex justify-between items-center px-5 py-4 border-b border-[#E4E8EF]">
@@ -86,8 +146,9 @@
                     </div>
                 @endif
             </div>
-
             @endcan
+
+            {{-- Aktivitas Terbaru --}}
             @can('activity-log.view')
             <div class="bg-white border border-[#E4E8EF] rounded-2xl shadow-sm">
                 <div class="flex justify-between items-center px-5 py-4 border-b border-[#E4E8EF]">

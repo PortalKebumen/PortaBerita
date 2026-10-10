@@ -14,7 +14,7 @@ class ArticleList extends Component
     use WithPagination;
 
     public string $search = '';
-    public ?string $status = null;
+    
     public ?int $category_id = null;
     public int $perPage = 15;
 
@@ -22,6 +22,9 @@ class ArticleList extends Component
     public array $selectedIds = [];
 
     public bool $showBulkDeleteModal = false;
+
+    #[\Livewire\Attributes\Url(as: 'status')]
+    public ?string $status = null;
     
     // Delete modal state
     public bool $showDeleteModal = false;
