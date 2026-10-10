@@ -68,7 +68,7 @@ Route::middleware(['auth', 'can:dashboard.view'])->prefix('admin')->name('admin.
 
     Route::get('pengguna-role', fn () => view('admin.pengguna-role'))->can('users.view')->name('pengguna-role.index');
     Route::get('activity-log', fn () => view('admin.activity-log'))->can('activity-log.view')->name('activity-log.index');
-    Route::get('pengaturan', fn () => view('admin.coming-soon', ['title' => 'Pengaturan']))->can('settings.view')->name('pengaturan.index');
+    Route::get('pengaturan', fn () => view('admin.pengaturan', ['title' => 'Pengaturan']))->can('settings.view')->name('pengaturan.index');
 
     // resource rute untuk operasi CRUD kategori & tag
     // Route::resource('categories', CategoryController::class)->except(['create', 'show', 'edit', 'index']);

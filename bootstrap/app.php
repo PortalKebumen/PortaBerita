@@ -1,5 +1,6 @@
 <?php
 
+use App\Jobs\GenerateSitemap;
 use App\Jobs\PublishScheduledArticles;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Application;
@@ -16,6 +17,11 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withSchedule(function (Schedule $schedule): void {
         $schedule->job(PublishScheduledArticles::class, connection: 'sync')
             ->everyMinute()
+            ->withoutOverlapping();
+
+        // Sitemap XML diperbarui tiap 30 menit
+        $schedule->job(GenerateSitemap::class, connection: 'sync')
+            ->everyThirtyMinutes()
             ->withoutOverlapping();
     })
     ->withMiddleware(function (Middleware $middleware): void {

@@ -91,6 +91,11 @@ class Article extends Model implements HasMedia
             ->sharpen(10);
     }
 
+    public function publicUrl(): string
+    {
+        return url('/artikel/' . $this->slug);
+    }
+
     protected static function boot(): void
     {
         parent::boot();
