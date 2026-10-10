@@ -5,6 +5,7 @@ namespace App\Livewire\Admin;
 use App\Models\Article;
 use App\Models\ArticleStatus;
 use App\Models\Category;
+use App\Services\ArticleNotifier;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -36,6 +37,8 @@ class ArticleList extends Component
     public bool $showApproveModal = false;
     public ?int $approveArticleId = null;
     public string $approveTitle = '';
+
+    public ?string $bulkConfirmAction = null;
 
     #[\Livewire\Attributes\Computed]
     public function articles()
@@ -120,9 +123,15 @@ class ArticleList extends Component
 
     public function toggleSelectAll(): void
     {
-        $this->selectedIds = $this->allPageSelected
-            ? array_values(array_diff($this->selectedIds, $this->pageIds))
-            : array_values(array_unique(array_merge($this->selectedIds, $this->pageIds)));
+        $pageIds = $this->pageIds;
+        $selectAll = ! $this->allPageSelected;
+
+        $this->selectedIds = $selectAll
+            ? array_values(array_unique(array_merge($this->selectedIds, $pageIds)))
+            : array_values(array_diff($this->selectedIds, $pageIds));
+
+        // Computed di-cache per request, jadi buang supaya render memakai nilai terbaru.
+        unset($this->allPageSelected);
     }
 
     public function view(Article $article)
@@ -130,17 +139,20 @@ class ArticleList extends Component
         return redirect()->route('admin.artikel.edit', $article);
     }
 
+    private function toast(string $type, string $text): void
+    {
+        $this->dispatch('flash-message', type: $type, text: $text);
+    }
+
     public function delete($articleId)
     {
         $article = Article::findOrFail($articleId);
         $this->authorize('delete', $article);
-        
+
         $article->delete();
-        
-        // Force refresh the articles list
+
         unset($this->articles);
-        
-        session()->flash('success', 'Artikel berhasil dihapus.');
+        $this->toast('success', 'Artikel berhasil dihapus.');
     }
 
     public function openDeleteModal($articleId, $title)
@@ -221,10 +233,10 @@ class ArticleList extends Component
                 ->causedBy(auth()->guard()->user())
                 ->log('Artikel dipublikasikan');
 
+            ArticleNotifier::notify($article, 'published', auth()->user());
             unset($this->articles);
             $this->closePublishModal();
-            $this->dispatch('flash-message', type: 'success', text: 'Artikel berhasil dipublikasikan.');
-            session()->flash('success', 'Artikel berhasil dipublikasikan.');
+            $this->toast('success', 'Artikel berhasil dipublikasikan.');
         }
     }
 
@@ -257,6 +269,7 @@ class ArticleList extends Component
                 ->causedBy(auth()->user())
                 ->log('Artikel disetujui');
 
+            ArticleNotifier::notify($article, 'approved', auth()->user());
             unset($this->articles);
             $this->closeApproveModal();
             $this->dispatch('flash-message', type: 'success', text: 'Artikel berhasil disetujui.');
@@ -268,6 +281,7 @@ class ArticleList extends Component
     {
         $this->runBulk('approve', function (Article $article): void {
             $article->update(['status' => ArticleStatus::Approved->value]);
+            ArticleNotifier::notify($article, 'approved', auth()->user());
         }, 'Artikel berhasil disetujui.');
     }
 
@@ -279,6 +293,7 @@ class ArticleList extends Component
                 'published_at' => \Carbon\Carbon::now(),
                 'scheduled_at' => null,
             ]);
+            ArticleNotifier::notify($article, 'published', auth()->user());
         }, 'Artikel berhasil dipublikasikan.');
     }
 
@@ -289,6 +304,7 @@ class ArticleList extends Component
                 'status' => ArticleStatus::Archived->value,
                 'archived_at' => \Carbon\Carbon::now(),
             ]);
+            ArticleNotifier::notify($article, 'archived', auth()->user());
         }, 'Artikel berhasil diarsipkan.');
     }
 
@@ -310,7 +326,7 @@ class ArticleList extends Component
         $ids = array_values(array_unique(array_map('intval', $this->selectedIds)));
 
         if ($ids === []) {
-            session()->flash('error', 'Pilih minimal satu artikel terlebih dahulu.');
+            $this->toast('error', 'Pilih minimal satu artikel terlebih dahulu.');
             return;
         }
 
@@ -337,11 +353,46 @@ class ArticleList extends Component
         $this->selectedIds = [];
 
         if ($done === 0) {
-            session()->flash('error', 'Tidak ada artikel yang dapat diproses. Anda mungkin tidak memiliki izin untuk aksi ini.');
+            $this->toast('error', 'Tidak ada artikel yang dapat diproses. Anda mungkin tidak memiliki izin untuk aksi ini.');
             return;
         }
 
-        session()->flash('success', $successMessage.($skipped > 0 ? " {$skipped} artikel dilewati (tidak memenuhi syarat/izin)." : ''));
+        $this->toast(
+            $skipped > 0 ? 'warning' : 'success',
+            $successMessage . ($skipped > 0 ? " {$skipped} artikel dilewati (tidak memenuhi syarat/izin)." : '')
+        );
+    }
+
+    public function openBulkConfirm(string $action): void
+    {
+        if (! in_array($action, ['approve', 'publish', 'archive'], true)) {
+            return;
+        }
+
+        if (count($this->selectedIds) === 0) {
+            $this->dispatch('flash-message', type: 'error', text: 'Pilih minimal satu artikel terlebih dahulu.');
+            return;
+        }
+
+        $this->bulkConfirmAction = $action;
+    }
+
+    public function closeBulkConfirm(): void
+    {
+        $this->bulkConfirmAction = null;
+    }
+
+    public function confirmBulkAction(): void
+    {
+        $action = $this->bulkConfirmAction;
+        $this->bulkConfirmAction = null;
+
+        match ($action) {
+            'approve' => $this->bulkApprove(),
+            'publish' => $this->bulkPublish(),
+            'archive' => $this->bulkArchive(),
+            default => null,
+        };
     }
 
     public function render()

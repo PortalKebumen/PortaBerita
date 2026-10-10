@@ -1,12 +1,30 @@
+@php
+    $initialToast = null;
+    foreach (['success', 'error', 'warning', 'info'] as $flashType) {
+        if (session()->has($flashType)) {
+            $initialToast = ['type' => $flashType, 'text' => (string) session($flashType)];
+            break;
+        }
+    }
+@endphp
+
 <div
-    x-data="{ show: false, type: 'success', text: '', timer: null }"
-    x-on:flash-message.window="
-        type = $event.detail.type || 'success';
-        text = $event.detail.text;
-        show = true;
-        clearTimeout(timer);
-        timer = setTimeout(() => show = false, 4000);
-    "
+    x-data="{
+        show: false, type: 'success', text: '', timer: null,
+        fire(type, text) {
+            this.type = type || 'success';
+            this.text = text;
+            this.show = true;
+            clearTimeout(this.timer);
+            this.timer = setTimeout(() => this.show = false, 4500);
+        },
+        init() {
+            @if ($initialToast)
+                this.fire(@js($initialToast['type']), @js($initialToast['text']));
+            @endif
+        }
+    }"
+    x-on:flash-message.window="fire($event.detail.type, $event.detail.text)"
     x-show="show"
     x-transition.opacity.duration.300ms
     :class="{
@@ -15,7 +33,8 @@
         'alert-warning': type === 'warning',
         'alert-info': type === 'info'
     }"
-    class="mb-5 items-center"
+    class="fixed right-4 top-20 sm:right-6 z-[10000] w-[calc(100%-2rem)] max-w-md items-center shadow-lg"
+    role="alert"
     style="display: none;"
 >
     <template x-if="type === 'success'">

@@ -9,6 +9,8 @@ use App\Models\Category;
 use App\Models\SeoMeta;
 use Illuminate\Support\Str;
 use Livewire\Component;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class ArticleEdit extends Component
 {
@@ -118,44 +120,63 @@ class ArticleEdit extends Component
         }
     }
 
-    public function save()
+    public function save(): void
     {
         $this->authorize('update', $this->article);
-        $this->validate();
+
+        try {
+            $this->validate();
+        } catch (ValidationException $e) {
+            $this->dispatch('flash-message', type: 'error', text: 'Artikel belum bisa disimpan. Periksa isian yang ditandai merah.');
+            throw $e;
+        }
+
         $this->authorizeArticleMedia();
 
-        $this->article->update([
-            'title' => $this->title,
-            'slug' => $this->article->published_at ? $this->article->slug : $this->slug,
-            'excerpt' => $this->excerpt,
-            'content' => $this->content,
-            'category_id' => $this->category_id,
-            'is_breaking' => Gate::check('articles.mark-breaking') ? $this->is_breaking : $this->article->is_breaking,
-            'is_advertorial' => Gate::check('articles.mark-advertorial') ? $this->is_advertorial : $this->article->is_advertorial,
-            'scheduled_at' => $this->canEditSchedule()
-                ? ($this->scheduled_at ? \Carbon\Carbon::createFromFormat('Y-m-d H:i', $this->scheduled_at) : null)
-                : $this->article->scheduled_at,
-        ]);
+        try {
+            DB::transaction(function () {
+                $this->article->update([
+                    'title' => $this->title,
+                    'slug' => $this->article->published_at ? $this->article->slug : $this->slug,
+                    'excerpt' => $this->excerpt,
+                    'content' => $this->content,
+                    'category_id' => $this->category_id,
+                    'is_breaking' => Gate::check('articles.mark-breaking') ? $this->is_breaking : $this->article->is_breaking,
+                    'is_advertorial' => Gate::check('articles.mark-advertorial') ? $this->is_advertorial : $this->article->is_advertorial,
+                    'scheduled_at' => $this->canEditSchedule()
+                        ? ($this->scheduled_at ? \Carbon\Carbon::createFromFormat('Y-m-d H:i', $this->scheduled_at) : null)
+                        : $this->article->scheduled_at,
+                ]);
 
-        $this->syncArticleMedia($this->article);
+                $this->syncArticleMedia($this->article);
 
-        $seoMeta = $this->article->seoMeta ?: new SeoMeta(['article_id' => $this->article->id]);
-        $canIndex = Gate::check('seo.set-indexing');
+                $seoMeta = $this->article->seoMeta ?: new SeoMeta(['article_id' => $this->article->id]);
+                $canIndex = Gate::check('seo.set-indexing');
 
-        $seoMeta->fill([
-            'article_id' => $this->article->id,
-            'meta_title' => $this->meta_title ?: null,
-            'meta_description' => $this->meta_description ?: null,
-            'og_image' => $this->og_image_id ? $this->article->getFirstMedia('og')?->getUrl() : null,
-            'noindex' => $canIndex ? $this->noindex : (bool) $seoMeta->noindex,
-            'nofollow' => $canIndex ? $this->nofollow : (bool) $seoMeta->nofollow,
-        ]);
+                $seoMeta->fill([
+                    'article_id' => $this->article->id,
+                    'meta_title' => $this->meta_title ?: null,
+                    'meta_description' => $this->meta_description ?: null,
+                    'og_image' => $this->og_image_id ? $this->article->getFirstMedia('og')?->getUrl() : null,
+                    'noindex' => $canIndex ? $this->noindex : (bool) $seoMeta->noindex,
+                    'nofollow' => $canIndex ? $this->nofollow : (bool) $seoMeta->nofollow,
+                ]);
+                $seoMeta->save();
+            });
+        } catch (\Throwable $e) {
+            report($e);
+            $this->dispatch('flash-message', type: 'error', text: 'Gagal menyimpan artikel. Silakan coba lagi.');
+            return;
+        }
 
-        $seoMeta->save();
+        // Muat ulang state dari database supaya halaman edit tetap akurat setelah simpan.
+        $this->article->refresh()->unsetRelation('media');
+        $this->slug = $this->article->slug;
+        $this->scheduled_at = $this->article->scheduled_at?->format('Y-m-d H:i');
+        $this->status = $this->article->status->value;
 
-        return redirect()
-            ->route('admin.artikel.index')
-            ->with('success', 'Artikel berhasil diperbarui.');
+        $this->resetErrorBag();
+        $this->dispatch('flash-message', type: 'success', text: 'Artikel berhasil diperbarui.');
     }
 
     public function render()

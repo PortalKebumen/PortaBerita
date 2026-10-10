@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Models\Article;
 use App\Models\ArticleStatus;
+use App\Services\ArticleNotifier;
 use Carbon\Carbon;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -34,7 +35,8 @@ class PublishScheduledArticles implements ShouldQueue
                     ->performedOn($article)
                     ->withProperties(['reason' => 'Otomatis dipublikasikan dari penjadwalan'])
                     ->log('Artikel dipublikasikan otomatis');
-
+                
+                ArticleNotifier::notify($article, 'published_auto');
                 Log::info("Artikel '{$article->title}' (ID: {$article->id}) dipublikasikan dari penjadwalan.");
             } catch (\Exception $e) {
                 Log::error("Gagal mempublikasikan artikel ID {$article->id}: {$e->getMessage()}");

@@ -11,6 +11,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
 use Livewire\Component;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class ArticleCreate extends Component
 {
@@ -74,36 +76,51 @@ class ArticleCreate extends Component
     public function save()
     {
         $this->authorize('create', Article::class);
-        $this->validate();
+
+        try {
+            $this->validate();
+        } catch (ValidationException $e) {
+            $this->dispatch('flash-message', type: 'error', text: 'Artikel belum bisa disimpan. Periksa isian yang ditandai merah.');
+            throw $e;
+        }
+
         $this->authorizeArticleMedia();
 
         $user = Auth::user();
 
-        $article = Article::create([
-            'title' => $this->title,
-            'slug' => $this->slug,
-            'excerpt' => $this->excerpt,
-            'content' => $this->content,
-            'status' => ArticleStatus::Draft,
-            'author_id' => $user->id,
-            'category_id' => $this->category_id,
-            'is_breaking' => Gate::check('articles.mark-breaking') ? $this->is_breaking : false,
-            'is_advertorial' => Gate::check('articles.mark-advertorial') ? $this->is_advertorial : false,
-            'scheduled_at' => (Gate::check('articles.schedule') && $this->scheduled_at)
-                ? \Carbon\Carbon::createFromFormat('Y-m-d H:i', $this->scheduled_at)
-                : null,
-        ]);
+        try {
+            DB::transaction(function () use ($user) {
+                $article = Article::create([
+                    'title' => $this->title,
+                    'slug' => $this->slug,
+                    'excerpt' => $this->excerpt,
+                    'content' => $this->content,
+                    'status' => ArticleStatus::Draft,
+                    'author_id' => $user->id,
+                    'category_id' => $this->category_id,
+                    'is_breaking' => Gate::check('articles.mark-breaking') ? $this->is_breaking : false,
+                    'is_advertorial' => Gate::check('articles.mark-advertorial') ? $this->is_advertorial : false,
+                    'scheduled_at' => (Gate::check('articles.schedule') && $this->scheduled_at)
+                        ? \Carbon\Carbon::createFromFormat('Y-m-d H:i', $this->scheduled_at)
+                        : null,
+                ]);
 
-        $this->syncArticleMedia($article);
+                $this->syncArticleMedia($article);
 
-        SeoMeta::create([
-            'article_id' => $article->id,
-            'meta_title' => $this->meta_title ?: null,
-            'meta_description' => $this->meta_description ?: null,
-            'og_image' => $this->og_image_id ? $article->getFirstMedia('og')?->getUrl() : null,
-            'noindex' => Gate::check('seo.set-indexing') ? $this->noindex : false,
-            'nofollow' => Gate::check('seo.set-indexing') ? $this->nofollow : false,
-        ]);
+                SeoMeta::create([
+                    'article_id' => $article->id,
+                    'meta_title' => $this->meta_title ?: null,
+                    'meta_description' => $this->meta_description ?: null,
+                    'og_image' => $this->og_image_id ? $article->getFirstMedia('og')?->getUrl() : null,
+                    'noindex' => Gate::check('seo.set-indexing') ? $this->noindex : false,
+                    'nofollow' => Gate::check('seo.set-indexing') ? $this->nofollow : false,
+                ]);
+            });
+        } catch (\Throwable $e) {
+            report($e);
+            $this->dispatch('flash-message', type: 'error', text: 'Gagal membuat artikel. Silakan coba lagi.');
+            return;
+        }
 
         return redirect()
             ->route('admin.artikel.index')

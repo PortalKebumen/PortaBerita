@@ -85,36 +85,18 @@
                 @endif
 
                 @if ($canArchive)
-                    <form action="{{ route('admin.artikel.archive', $article) }}" method="POST" class="inline" onsubmit="return confirm('Arsipkan artikel ini?')">
-                        @csrf
-                        <button type="submit" class="btn-sm bg-gray-600 hover:bg-gray-700 text-white rounded-lg px-4 py-2 text-[13px] font-medium transition-colors">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="inline">
-                                <path d="M21 8v13H3V8"></path>
-                                <path d="M1 3h22v5H1z"></path>
-                                <path d="M10 12h4"></path>
-                            </svg>
-                            Arsipkan
-                        </button>
-                    </form>
+                    <button type="button" onclick="window.pkModal.open('modal-archive')" class="btn-sm bg-gray-600 hover:bg-gray-700 text-white rounded-lg px-4 py-2 text-[13px] font-medium transition-colors">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="inline">
+                            <path d="M21 8v13H3V8"></path>
+                            <path d="M1 3h22v5H1z"></path>
+                            <path d="M10 12h4"></path>
+                        </svg>
+                        Arsipkan
+                    </button>
                 @endif
             </div>
         @endif
     </div>
-
-    {{-- Flash Messages --}}
-    @if (session('success'))
-        <div class="alert-success">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="shrink-0 mt-0.5"><path d="M20 6L9 17l-5-5"></path></svg>
-            <div><strong class="font-semibold">Berhasil:</strong> {{ session('success') }}</div>
-        </div>
-    @endif
-
-    @if (session('error'))
-        <div class="alert-danger">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="shrink-0 mt-0.5"><circle cx="12" cy="12" r="9"></circle><path d="M15 9l-6 6M9 9l6 6"></path></svg>
-            <div><strong class="font-semibold">Gagal:</strong> {{ session('error') }}</div>
-        </div>
-    @endif
 
     {{-- Alert status revisi --}}
     @if ($status === 'rejected' && $this->revisions->isNotEmpty())
@@ -548,6 +530,52 @@
             </form>
         </div>
     </div>
+
+    {{-- Modal: Arsipkan Artikel --}}
+    @if ($canArchive)
+        <div id="modal-archive" class="modal-overlay hidden fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40">
+            <div class="bg-white rounded-card max-w-[480px] w-full p-6 shadow-xl">
+                <div class="flex items-start gap-4 mb-4">
+                    <div class="w-12 h-12 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center shrink-0">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 8v13H3V8"></path>
+                            <path d="M1 3h22v5H1z"></path>
+                            <path d="M10 12h4"></path>
+                        </svg>
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="text-[17px] font-bold text-gray-900 mb-1">Arsipkan Artikel?</h3>
+                        <p class="text-[14px] text-gray-600">
+                            Artikel <strong class="text-gray-800">"{{ $article->title }}"</strong> akan diarsipkan.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-5 space-y-1.5 text-[12.5px] text-gray-700">
+                    <div class="flex items-start gap-2">
+                        <svg class="w-4 h-4 text-gray-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        <span>Artikel tidak lagi tampil di portal publik</span>
+                    </div>
+                    <div class="flex items-start gap-2">
+                        <svg class="w-4 h-4 text-gray-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        <span>Data artikel tetap tersimpan dan masih bisa dilihat di daftar artikel</span>
+                    </div>
+                </div>
+
+                <div class="flex gap-3">
+                    <button type="button" onclick="window.pkModal.close('modal-archive')" class="flex-1 btn-secondary">Batal</button>
+                    <form action="{{ route('admin.artikel.archive', $article) }}" method="POST" class="flex-1">
+                        @csrf
+                        <button type="submit" class="w-full bg-gray-700 hover:bg-gray-800 text-white rounded-lg px-4 py-2.5 text-[13px] font-medium transition-colors">Ya, Arsipkan</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    @endif
 
     {{-- Media Picker (dibutuhkan x-editor untuk sisip gambar) --}}
     <livewire:media-picker />

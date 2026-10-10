@@ -1,3 +1,3 @@
-<x-layouts.admin title="Tambah Artikel">
+<x-layouts.admin>
     <livewire:admin.article-create />
 </x-layouts.admin>

@@ -1,18 +1,4 @@
 <div class="space-y-6">
-    {{-- Flash Messages --}}
-    @if (session('success'))
-        <div class="alert-success">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="shrink-0 mt-0.5"><path d="M20 6L9 17l-5-5"></path></svg>
-            <div><strong class="font-semibold">Berhasil:</strong> {{ session('success') }}</div>
-        </div>
-    @endif
-
-    @if (session('error'))
-        <div class="alert-danger">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="shrink-0 mt-0.5"><circle cx="12" cy="12" r="9"></circle><path d="M15 9l-6 6M9 9l6 6"></path></svg>
-            <div><strong class="font-semibold">Gagal:</strong> {{ session('error') }}</div>
-        </div>
-    @endif
 
     {{-- Toolbar: Search & Filters --}}
     <div class="flex flex-col lg:flex-row lg:items-center gap-3">
@@ -63,7 +49,7 @@
                         </div>
                     @else
                         @can('articles.approve')
-                            <button type="button" wire:click="bulkApprove" class="w-full text-left px-4 py-2.5 text-sm text-[#171B28] hover:bg-[#F1F3F7] flex items-center gap-2 border-b border-[#E4E8EF]">
+                            <button type="button" wire:click="openBulkConfirm('approve')" class="w-full text-left px-4 py-2.5 text-sm text-[#171B28] hover:bg-[#F1F3F7] flex items-center gap-2 border-b border-[#E4E8EF]">
                                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <path d="M20 6L9 17l-5-5"></path>
                                 </svg>
@@ -71,7 +57,7 @@
                             </button>
                         @endcan
                         @can('articles.publish')
-                            <button type="button" wire:click="bulkPublish" class="w-full text-left px-4 py-2.5 text-sm text-[#171B28] hover:bg-[#F1F3F7] flex items-center gap-2 border-b border-[#E4E8EF]">
+                            <button type="button" wire:click="openBulkConfirm('publish')" class="w-full text-left px-4 py-2.5 text-sm text-[#171B28] hover:bg-[#F1F3F7] flex items-center gap-2 border-b border-[#E4E8EF]">
                                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <circle cx="12" cy="12" r="10"></circle>
                                     <path d="M12 6v6l4 2"></path>
@@ -80,7 +66,7 @@
                             </button>
                         @endcan
                         @can('articles.archive')
-                            <button type="button" wire:click="bulkArchive" class="w-full text-left px-4 py-2.5 text-sm text-[#171B28] hover:bg-[#F1F3F7] flex items-center gap-2 border-b border-[#E4E8EF]">
+                            <button type="button" wire:click="openBulkConfirm('archive')" class="w-full text-left px-4 py-2.5 text-sm text-[#171B28] hover:bg-[#F1F3F7] flex items-center gap-2 border-b border-[#E4E8EF]">
                                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <path d="M21 8v13H3V8M1 3h22v5H1zM10 12h4"></path>
                                 </svg>
@@ -156,6 +142,7 @@
                     <tr>
                         <th class="px-4 py-2.5 border-b border-[#CDD3DF] w-10">
                             <input type="checkbox" class="form-checkbox"
+                                wire:key="select-all-{{ $this->allPageSelected ? 'on' : 'off' }}"
                                 wire:click="toggleSelectAll"
                                 @checked($this->allPageSelected)
                                 title="Pilih semua di halaman ini">
@@ -401,6 +388,68 @@
                     <button type="button" class="btn-primary bg-green-600 hover:bg-green-700" wire:click="confirmApprove" wire:loading.attr="disabled">
                         <span wire:loading.remove wire:target="confirmApprove">Ya, Setujui</span>
                         <span wire:loading wire:target="confirmApprove">Menyetujui...</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    {{-- Modal: Konfirmasi Aksi Massal (Setujui / Terbitkan / Arsipkan) --}}
+    @if ($bulkConfirmAction)
+        @php
+            $bulkMeta = [
+                'approve' => [
+                    'title' => 'Setujui artikel terpilih?',
+                    'desc' => 'Artikel berstatus Submitted akan disetujui dan siap diterbitkan atau dijadwalkan. Penulis dan redaktur penerbit akan menerima email pemberitahuan.',
+                    'btn' => 'Ya, Setujui',
+                    'loading' => 'Menyetujui...',
+                    'icon' => 'bg-green-100 text-green-600',
+                    'btnClass' => 'btn-primary bg-green-600 hover:bg-green-700',
+                ],
+                'publish' => [
+                    'title' => 'Terbitkan artikel terpilih?',
+                    'desc' => 'Artikel berstatus Approved akan langsung tayang di portal publik. Penulis akan menerima email pemberitahuan.',
+                    'btn' => 'Ya, Terbitkan',
+                    'loading' => 'Menerbitkan...',
+                    'icon' => 'bg-emerald-100 text-emerald-600',
+                    'btnClass' => 'btn-primary bg-emerald-600 hover:bg-emerald-700',
+                ],
+                'archive' => [
+                    'title' => 'Arsipkan artikel terpilih?',
+                    'desc' => 'Artikel berstatus Published akan diarsipkan dan tidak lagi tampil di portal publik. Penulis akan menerima email pemberitahuan.',
+                    'btn' => 'Ya, Arsipkan',
+                    'loading' => 'Mengarsipkan...',
+                    'icon' => 'bg-gray-100 text-gray-600',
+                    'btnClass' => 'btn-primary bg-gray-700 hover:bg-gray-800',
+                ],
+            ][$bulkConfirmAction];
+        @endphp
+
+        <div class="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40"
+            wire:click.self="closeBulkConfirm"
+            wire:keydown.escape.window="closeBulkConfirm">
+            <div class="bg-white rounded-card max-w-[460px] w-full p-6 shadow-xl">
+                <div class="flex items-start gap-4 mb-4">
+                    <div class="w-12 h-12 rounded-full {{ $bulkMeta['icon'] }} flex items-center justify-center shrink-0">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M20 6L9 17l-5-5"></path>
+                        </svg>
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="text-[17px] font-bold text-gray-900 mb-1">{{ $bulkMeta['title'] }}</h3>
+                        <p class="text-[13px] text-[#6C7387]">{{ $bulkMeta['desc'] }}</p>
+                    </div>
+                </div>
+
+                <div class="bg-[#F7F8FA] border border-[#E4E8EF] rounded-lg p-3.5 mb-5 text-[12.5px] text-[#3B4152]">
+                    <strong>{{ count($selectedIds) }}</strong> artikel dipilih. Artikel yang statusnya tidak sesuai atau yang tidak Anda miliki izinnya akan dilewati otomatis.
+                </div>
+
+                <div class="flex justify-end gap-2.5">
+                    <button type="button" class="btn-secondary" wire:click="closeBulkConfirm">Batal</button>
+                    <button type="button" class="{{ $bulkMeta['btnClass'] }}" wire:click="confirmBulkAction" wire:loading.attr="disabled">
+                        <span wire:loading.remove wire:target="confirmBulkAction">{{ $bulkMeta['btn'] }}</span>
+                        <span wire:loading wire:target="confirmBulkAction">{{ $bulkMeta['loading'] }}</span>
                     </button>
                 </div>
             </div>
