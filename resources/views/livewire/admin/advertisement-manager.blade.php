@@ -183,7 +183,7 @@
                         {{-- Kolom Aksi --}}
                         <td class="px-5 py-3.5 text-right whitespace-nowrap">
                             <div class="flex items-center justify-end gap-1.5">
-                                @can('ads.edit')
+                                @can('ads.update')
                                     <button type="button"
                                         wire:click="openEditModal({{ $ad->id }})"
                                         title="Edit Iklan"
