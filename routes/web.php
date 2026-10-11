@@ -1,9 +1,10 @@
 <?php
 
-use App\Http\Controllers\Admin\ArticleLifecycleController;
 use App\Http\Controllers\Admin\AdvertisementController;
+use App\Http\Controllers\Admin\ArticleLifecycleController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\GlobalSearchController;
 use App\Http\Controllers\Admin\MediaLibraryController;
 use App\Http\Controllers\Admin\TagController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
@@ -43,6 +44,8 @@ Route::middleware(['auth', 'can:dashboard.view'])->prefix('admin')->name('admin.
     Route::get('artikel', fn () => view('admin.artikel'))->can('articles.view')->name('artikel.index');
     Route::get('artikel/create', fn () => view('admin.artikel-create'))->can('articles.create')->name('artikel.create');
     Route::get('artikel/{article}/edit', fn (\App\Models\Article $article) => view('admin.artikel-edit', ['article' => $article]))->can('update', 'article')->name('artikel.edit');
+
+    Route::get('/pencarian', GlobalSearchController::class)->middleware('can:articles.view')->name('pencarian');
 
     // Lifecycle routes
     Route::post('artikel/{article}/submit', [ArticleLifecycleController::class, 'submit'])->name('artikel.submit');

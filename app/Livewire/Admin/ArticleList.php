@@ -13,6 +13,7 @@ class ArticleList extends Component
 {
     use WithPagination;
 
+    #[\Livewire\Attributes\Url(as: 'q', except: '')]
     public string $search = '';
     
     public ?int $category_id = null;

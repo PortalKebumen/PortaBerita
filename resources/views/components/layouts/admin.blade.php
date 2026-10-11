@@ -144,20 +144,25 @@
                 </button>
 
                 @can('articles.view')
-                <form action="{{ route('admin.artikel.index') }}" method="GET" class="hidden md:flex items-center gap-2 bg-[#F1F3F7] rounded-lg px-3.5 py-2.5 flex-1 max-w-md">
-                    <svg class="shrink-0" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#848CA3" stroke-width="2">
-                        <circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-                    </svg>
-                    <input id="global-search" type="text" name="q" class="bg-transparent outline-none text-sm w-full placeholder:text-[#848CA3]" placeholder="Cari atau ketik perintah...">
-                    <kbd class="hidden sm:inline-flex items-center gap-0.5 text-[10.5px] font-semibold text-[#848CA3] bg-white border border-[#CDD3DF] rounded px-1.5 py-0.5 shrink-0">⌘K</kbd>
-                </form>
+                    <button type="button"
+                        onclick="window.dispatchEvent(new CustomEvent('open-command-palette'))"
+                        aria-label="Buka pencarian"
+                        class="hidden md:flex items-center gap-2 bg-[#F1F3F7] hover:bg-[#E9ECF2] transition-colors rounded-lg px-3.5 py-2.5 flex-1 max-w-md text-left">
+                        <svg class="shrink-0" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#848CA3" stroke-width="2">
+                            <circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                        </svg>
+                        <span class="text-sm text-[#848CA3] flex-1">Cari atau ketik perintah...</span>
+                        <kbd data-shortcut class="inline-flex items-center text-[10.5px] font-semibold text-[#848CA3] bg-white border border-[#CDD3DF] rounded px-1.5 py-0.5 shrink-0">Ctrl K</kbd>
+                    </button>
 
-                <button type="button" data-modal-open="modal-search" aria-label="Cari" class="md:hidden w-9 h-9 rounded-lg bg-[#F1F3F7] flex items-center justify-center shrink-0">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#171B28" stroke-width="2">
-                        <circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-                    </svg>
-                </button>
-
+                    <button type="button"
+                        onclick="window.dispatchEvent(new CustomEvent('open-command-palette'))"
+                        aria-label="Cari"
+                        class="md:hidden w-9 h-9 rounded-lg bg-[#F1F3F7] flex items-center justify-center shrink-0">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#171B28" stroke-width="2">
+                            <circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                        </svg>
+                    </button>
                 @endcan
                 <div class="flex items-center gap-2 sm:gap-3 ml-auto shrink-0">
                     <livewire:admin.notification-bell />
@@ -220,25 +225,7 @@
         </div>
     </div>
 
-    @can('articles.view')
-    <div class="modal-overlay hidden fixed inset-0 z-50 items-center justify-center p-4 bg-black/40" id="modal-search">
-        <div class="bg-white rounded-2xl max-w-[420px] w-full p-5 shadow-xl">
-            <h3 class="text-[15px] font-bold mb-3">Cari</h3>
-            <form action="{{ route('admin.artikel.index') }}" method="GET">
-                <div class="flex items-center gap-2 bg-[#F1F3F7] rounded-lg px-3 py-2.5 mb-4">
-                    <svg class="shrink-0" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#848CA3" stroke-width="2">
-                        <circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-                    </svg>
-                    <input type="text" name="q" class="bg-transparent outline-none text-sm w-full" placeholder="Cari artikel..." autofocus>
-                </div>
-                <div class="flex gap-2.5">
-                    <button type="button" data-modal-close class="btn-secondary flex-1">Batal</button>
-                    <button type="submit" class="btn-primary flex-1">Cari</button>
-                </div>
-            </form>
-        </div>
-    </div>
-    @endcan
+    <x-command-palette />
     
     @stack('scripts')
     @livewireScripts
