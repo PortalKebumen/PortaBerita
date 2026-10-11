@@ -5,6 +5,7 @@ namespace App\Jobs;
 use App\Models\Article;
 use App\Models\ArticleStatus;
 use App\Models\Category;
+use App\Services\SystemNotifier;
 use Carbon\Carbon;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -92,5 +93,13 @@ class GenerateSitemap implements ShouldQueue, ShouldBeUnique
     public function failed(\Throwable $e): void
     {
         Log::error('GenerateSitemap gagal: ' . $e->getMessage());
+
+        SystemNotifier::alert(
+            'sitemap_failed',
+            'Pembuatan sitemap gagal',
+            'Sitemap XML gagal diperbarui. Periksa storage/logs/laravel.log untuk detailnya.',
+            'settings.update',
+            route('admin.pengaturan.index'),
+        );
     }
 }

@@ -6,6 +6,7 @@ use App\Models\Article;
 use App\Models\User;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use Illuminate\Support\Facades\Gate;
 
 class ArticleWorkflowNotification extends Notification
 {
@@ -18,85 +19,131 @@ class ArticleWorkflowNotification extends Notification
 
     public function via(object $notifiable): array
     {
-        return ['mail'];
+        return ['mail', 'database'];
     }
 
     public function toMail(object $notifiable): MailMessage
     {
-        $title = $this->article->title;
-        $by = $this->actor?->name ?? 'Sistem';
-        $isAuthor = $notifiable->id === $this->article->author_id;
-        $url = route('admin.artikel.edit', $this->article);
+        $d = $this->describe($notifiable);
 
         $mail = (new MailMessage)
+            ->subject('[' . config('app.name') . '] ' . $d['heading'] . ': ' . $this->article->title)
             ->greeting('Halo, ' . $notifiable->name . '!')
             ->salutation('Salam, ' . config('app.name'));
 
-        switch ($this->event) {
-            case 'submitted':
-            case 'resubmitted':
-                $again = $this->event === 'resubmitted';
-                $mail->subject('[' . config('app.name') . '] Artikel menunggu review: ' . $title)
-                    ->line("{$by} " . ($again ? 'mengirim ulang artikel setelah revisi' : 'mengirim artikel') . " untuk direview:")
-                    ->line('"' . $title . '"')
-                    ->line('Kategori: ' . ($this->article->category?->name ?? '-'))
-                    ->action('Review Artikel', $url);
-                break;
-
-            case 'approved':
-                $mail->subject('[' . config('app.name') . '] Artikel disetujui: ' . $title);
-                if ($isAuthor) {
-                    $mail->line("Artikel Anda \"{$title}\" telah disetujui oleh {$by}.")
-                        ->line('Artikel akan diterbitkan atau dijadwalkan oleh redaktur.')
-                        ->action('Lihat Artikel', $url);
-                } else {
-                    $mail->line("Artikel \"{$title}\" telah disetujui oleh {$by} dan siap diterbitkan.")
-                        ->action('Terbitkan / Jadwalkan', $url);
-                }
-                break;
-
-            case 'rejected':
-                $mail->error()
-                    ->subject('[' . config('app.name') . '] Artikel perlu revisi: ' . $title)
-                    ->line("Artikel Anda \"{$title}\" dikembalikan oleh {$by} dan perlu direvisi.")
-                    ->line('Catatan revisi:')
-                    ->line('> ' . ($this->note ?: '-'))
-                    ->action('Perbaiki Artikel', $url);
-                break;
-
-            case 'published':
-                $mail->success()
-                    ->subject('[' . config('app.name') . '] Artikel diterbitkan: ' . $title)
-                    ->line("Artikel \"{$title}\" telah diterbitkan oleh {$by}.")
-                    ->action('Lihat Artikel', $url);
-                break;
-
-            case 'published_auto':
-                $mail->success()
-                    ->subject('[' . config('app.name') . '] Artikel terbit otomatis: ' . $title)
-                    ->line("Artikel \"{$title}\" telah diterbitkan otomatis sesuai jadwal.")
-                    ->action('Lihat Artikel', $url);
-                break;
-
-            case 'scheduled':
-                $mail->subject('[' . config('app.name') . '] Artikel dijadwalkan: ' . $title)
-                    ->line("Artikel \"{$title}\" dijadwalkan terbit oleh {$by}.")
-                    ->line('Waktu terbit: ' . $this->note . ' WIB')
-                    ->action('Lihat Artikel', $url);
-                break;
-
-            case 'archived':
-                $mail->subject('[' . config('app.name') . '] Artikel diarsipkan: ' . $title)
-                    ->line("Artikel \"{$title}\" telah diarsipkan oleh {$by}.")
-                    ->action('Lihat Artikel', $url);
-                break;
-
-            default:
-                $mail->subject('[' . config('app.name') . '] Pembaruan artikel: ' . $title)
-                    ->line("Ada pembaruan pada artikel \"{$title}\".")
-                    ->action('Buka Artikel', $url);
+        if ($d['kind'] === 'error') {
+            $mail->error();
+        } elseif ($d['kind'] === 'success') {
+            $mail->success();
         }
 
-        return $mail;
+        $mail->line($d['body']);
+        foreach ($d['extra'] as $line) {
+            $mail->line($line);
+        }
+
+        return $mail->action($d['action'], $this->url($notifiable));
+    }
+
+    public function toArray(object $notifiable): array
+    {
+        $d = $this->describe($notifiable);
+
+        return [
+            'event' => $this->event,
+            'kind' => $d['kind'],
+            'title' => $d['heading'],
+            'message' => $d['body'],
+            'url' => $this->url($notifiable),
+            'article_id' => $this->article->id,
+        ];
+    }
+
+    private function url(object $notifiable): string
+    {
+        return Gate::forUser($notifiable)->allows('update', $this->article)
+            ? route('admin.artikel.edit', $this->article)
+            : route('admin.artikel.index');
+    }
+
+    private function describe(object $notifiable): array
+    {
+        $title = $this->article->title;
+        $by = $this->actor?->name ?? 'Sistem';
+        $isAuthor = $notifiable->id === $this->article->author_id;
+
+        return match ($this->event) {
+            'submitted' => [
+                'kind' => 'info',
+                'heading' => 'Artikel menunggu review',
+                'action' => 'Review Artikel',
+                'body' => "{$by} mengirim artikel \"{$title}\" untuk direview.",
+                'extra' => ['Kategori: ' . ($this->article->category?->name ?? '-')],
+            ],
+            'resubmitted' => [
+                'kind' => 'info',
+                'heading' => 'Artikel dikirim ulang',
+                'action' => 'Review Artikel',
+                'body' => "{$by} mengirim ulang artikel \"{$title}\" setelah revisi.",
+                'extra' => ['Kategori: ' . ($this->article->category?->name ?? '-')],
+            ],
+            'approved' => $isAuthor
+                ? [
+                    'kind' => 'success',
+                    'heading' => 'Artikel disetujui',
+                    'action' => 'Lihat Artikel',
+                    'body' => "Artikel Anda \"{$title}\" telah disetujui oleh {$by}.",
+                    'extra' => ['Artikel akan diterbitkan atau dijadwalkan oleh redaktur.'],
+                ]
+                : [
+                    'kind' => 'info',
+                    'heading' => 'Artikel siap diterbitkan',
+                    'action' => 'Terbitkan / Jadwalkan',
+                    'body' => "Artikel \"{$title}\" telah disetujui oleh {$by} dan siap diterbitkan.",
+                    'extra' => [],
+                ],
+            'rejected' => [
+                'kind' => 'error',
+                'heading' => 'Artikel perlu revisi',
+                'action' => 'Perbaiki Artikel',
+                'body' => "Artikel Anda \"{$title}\" dikembalikan oleh {$by} dan perlu direvisi.",
+                'extra' => ['Catatan revisi:', '> ' . ($this->note ?: '-')],
+            ],
+            'published' => [
+                'kind' => 'success',
+                'heading' => 'Artikel diterbitkan',
+                'action' => 'Lihat Artikel',
+                'body' => "Artikel \"{$title}\" telah diterbitkan oleh {$by}.",
+                'extra' => [],
+            ],
+            'published_auto' => [
+                'kind' => 'success',
+                'heading' => 'Artikel terbit otomatis',
+                'action' => 'Lihat Artikel',
+                'body' => "Artikel \"{$title}\" telah diterbitkan otomatis sesuai jadwal.",
+                'extra' => [],
+            ],
+            'scheduled' => [
+                'kind' => 'info',
+                'heading' => 'Artikel dijadwalkan',
+                'action' => 'Lihat Artikel',
+                'body' => "Artikel \"{$title}\" dijadwalkan terbit oleh {$by}.",
+                'extra' => ['Waktu terbit: ' . $this->note . ' WIB'],
+            ],
+            'archived' => [
+                'kind' => 'info',
+                'heading' => 'Artikel diarsipkan',
+                'action' => 'Lihat Artikel',
+                'body' => "Artikel \"{$title}\" telah diarsipkan oleh {$by}.",
+                'extra' => [],
+            ],
+            default => [
+                'kind' => 'info',
+                'heading' => 'Pembaruan artikel',
+                'action' => 'Buka Artikel',
+                'body' => "Ada pembaruan pada artikel \"{$title}\".",
+                'extra' => [],
+            ],
+        };
     }
 }

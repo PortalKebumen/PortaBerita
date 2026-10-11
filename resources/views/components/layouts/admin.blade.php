@@ -160,18 +160,7 @@
 
                 @endcan
                 <div class="flex items-center gap-2 sm:gap-3 ml-auto shrink-0">
-                    <div class="relative inline-block" data-dropdown>
-                        <button type="button" data-dropdown-btn aria-label="Notifikasi" class="w-9 h-9 rounded-lg bg-[#F1F3F7] flex items-center justify-center hover:bg-[#E4E8EF] transition-colors">
-                            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#171B28" stroke-width="2">
-                                <path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9"/>
-                                <path d="M13.7 21a2 2 0 01-3.4 0"/>
-                            </svg>
-                        </button>
-                        <div class="hidden absolute right-0 mt-2 w-72 rounded-xl bg-white border border-[#E4E8EF] shadow-lg py-1.5 z-30" data-dropdown-menu>
-                            <div class="px-4 py-3 border-b border-[#E4E8EF] text-[13px] font-semibold">Notifikasi</div>
-                            <div class="px-4 py-8 text-center text-[13px] text-[#848CA3]">Belum ada notifikasi.</div>
-                        </div>
-                    </div>
+                    <livewire:admin.notification-bell />
 
                     <div class="hidden sm:block w-px h-6 bg-[#E4E8EF]"></div>
 

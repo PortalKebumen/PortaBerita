@@ -6,6 +6,8 @@ use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use App\Jobs\NotifyAdStatus;
+use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Http\Request;
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -23,6 +25,19 @@ return Application::configure(basePath: dirname(__DIR__))
         $schedule->job(GenerateSitemap::class, connection: 'sync')
             ->everyThirtyMinutes()
             ->withoutOverlapping();
+
+        // Notifikasi iklan akan berakhir / sudah berakhir (tiap pagi)
+        $schedule->job(NotifyAdStatus::class, connection: 'sync')
+            ->dailyAt('08:00')
+            ->withoutOverlapping();
+
+        // Bersihkan notifikasi yang sudah dibaca lebih dari 60 hari
+        $schedule->call(fn () => DatabaseNotification::query()
+                ->whereNotNull('read_at')
+                ->where('read_at', '<', now()->subDays(60))
+                ->delete())
+            ->name('prune-read-notifications')
+            ->daily();
     })
     ->withMiddleware(function (Middleware $middleware): void {
         //
