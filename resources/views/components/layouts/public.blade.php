@@ -15,8 +15,8 @@
     $logo = $site['logo_url'] ?: asset('images/logo-full.png');
 
     $fullTitle = $title
-        ? $title . ' — ' . $siteName
-        : ($site['meta_title'] ?: trim($siteName . ($tagline ? ' — ' . $tagline : '')));
+        ? $title . ' - ' . $siteName
+        : ($site['meta_title'] ?: trim($siteName . ($tagline ? ' - ' . $tagline : '')));
     $metaDescription = $description ?: $site['meta_description'];
     $ogImage = $image ?: $site['og_image_url'];
     $canonicalUrl = $canonical ?: url()->current();

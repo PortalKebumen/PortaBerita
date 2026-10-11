@@ -1,92 +1,117 @@
-<x-layouts.public :title="$article->title" :description="$article->excerpt">
-    <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <nav class="mb-6 flex items-center gap-2 text-sm text-[#848CA3]">
-            <a href="{{ route('public.beranda') }}" class="hover:text-brand-700">Beranda</a>
-            <span>/</span>
-            <a href="{{ route('public.kategori', $article->category->slug) }}" class="hover:text-brand-700">{{ $article->category->label }}</a>
-            <span>/</span>
-            <span class="truncate text-[#3B4152]">{{ $article->title }}</span>
-        </nav>
+@php
+    $seo = $article->seoMeta;
+    $img = $article->getFirstMediaUrl('featured');
+    $desc = $seo?->meta_description ?: ($article->excerpt ?: \Illuminate\Support\Str::limit(trim(strip_tags($article->content)), 155));
+    $url = $article->publicUrl();
+    $shareTitle = urlencode($article->title);
+    $shareUrl = urlencode($url);
+@endphp
 
-        <div class="grid grid-cols-1 gap-8 lg:grid-cols-12">
-            <div class="lg:col-span-8">
-                <header>
-                    <div class="flex items-center gap-2 flex-wrap">
-                        <x-public.rubric-tag :label="$article->category->label ?? ($article->category->name ?? 'Berita')" />
-                        @if (!empty($article->is_advertorial))
-                            <span class="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-1 text-xs font-bold uppercase tracking-wide text-amber-800 border border-amber-300">
-                                Advertorial
-                            </span>
-                        @endif
-                    </div>
-                    <h1 class="mt-3 text-2xl font-bold leading-tight text-[#171B28] sm:text-3xl">
-                        {{ $article->title }}
-                    </h1>
+<x-layouts.public
+    :title="$seo?->meta_title ?: $article->title"
+    :description="$desc"
+    :image="$img ?: null"
+    type="article"
+    :canonical="$url"
+    :noindex="$isPreview || (bool) $seo?->noindex">
 
-                    <div class="mt-4 flex flex-wrap items-center justify-between gap-4 border-y border-[#E4E8EF] py-4">
-                        <a href="{{ route('public.byline', $article->author) }}" class="flex items-center gap-3">
-                            <div class="flex h-10 w-10 items-center justify-center rounded-full bg-brand-100 text-sm font-semibold text-brand-700">
-                                {{ strtoupper(substr($article->author->name, 0, 1)) }}
-                            </div>
-                            <div class="text-sm">
-                                <p class="font-semibold text-[#171B28]">{{ $article->author->name }}</p>
-                                <p class="text-[#848CA3]">{{ $article->published_at->translatedFormat('d F Y, H:i') }} WIB</p>
-                            </div>
-                        </a>
+    @push('head')
+        @unless ($isPreview)
+            <x-seo.news-article-schema :article="$article" />
+        @endunless
+    @endpush
 
-                        <div class="flex items-center gap-2">
-                            @foreach (['Facebook', 'Twitter', 'WhatsApp', 'Salin tautan'] as $channel)
-                                <button type="button" class="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border border-[#E4E8EF] text-[#6C7387] transition hover:border-brand-500 hover:text-brand-700" aria-label="Bagikan via {{ $channel }}">
-                                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M8.68 13.34a3 3 0 100-2.68m0 2.68a3 3 0 110-2.68m0 2.68l6.64 3.98m-6.64-6.66l6.64-3.98m0 0a3 3 0 105.32-2.79 3 3 0 00-5.32 2.79zm0 10.64a3 3 0 105.32 2.79 3 3 0 00-5.32-2.79z"/>
-                                    </svg>
-                                </button>
-                            @endforeach
-                        </div>
-                    </div>
-                </header>
+    @if ($isPreview)
+        <div class="bg-amber-100 px-4 py-2 text-center text-sm font-semibold text-amber-900">
+            Pratinjau: artikel ini belum terbit dan hanya terlihat oleh redaksi.
+        </div>
+    @endif
 
-                <figure class="mt-6">
-                    <div class="flex aspect-video w-full items-center justify-center rounded-card bg-[#F1F3F7] text-sm text-[#848CA3]">
-                        Gambar utama artikel
-                    </div>
-                    <figcaption class="mt-2 text-xs text-[#848CA3]">Keterangan foto akan tampil di sini.</figcaption>
-                </figure>
+    <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+        <div class="grid gap-8 lg:grid-cols-3">
 
-                <div class="mt-6 space-y-4 text-[15px] leading-relaxed text-[#171B28] [&_h2]:mt-8 [&_h2]:text-xl [&_h2]:font-bold [&_a]:text-brand-700 [&_a]:underline [&_img]:rounded-card">
-                    {!! $article->body !!}
+            <article class="lg:col-span-2">
+                {{-- Breadcrumb --}}
+                <nav class="flex flex-wrap items-center gap-1.5 text-xs text-[#848CA3]" aria-label="Breadcrumb">
+                    <a href="{{ route('public.beranda') }}" class="hover:text-brand-600">Beranda</a>
+                    @if ($article->category?->parent)
+                        <span>/</span>
+                        <a href="{{ route('public.kategori', $article->category->parent->slug) }}" class="hover:text-brand-600">{{ $article->category->parent->name }}</a>
+                        <span>/</span>
+                        <a href="{{ route('public.kategori.sub', [$article->category->parent->slug, $article->category->slug]) }}" class="hover:text-brand-600">{{ $article->category->name }}</a>
+                    @elseif ($article->category)
+                        <span>/</span>
+                        <a href="{{ route('public.kategori', $article->category->slug) }}" class="hover:text-brand-600">{{ $article->category->name }}</a>
+                    @endif
+                </nav>
+
+                @if ($article->is_advertorial)
+                    <span class="mt-3 inline-block rounded bg-[#E4E8EF] px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-[#3B4152]">Advertorial</span>
+                @endif
+
+                <h1 class="mt-3 text-2xl font-extrabold leading-tight text-[#171B28] sm:text-4xl">{{ $article->title }}</h1>
+
+                <div class="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-[#5B6378]">
+                    @if ($article->author)
+                        <a href="{{ route('public.byline', $article->author) }}" class="font-semibold text-[#171B28] hover:text-brand-600">{{ $article->author->name }}</a>
+                        <span>&middot;</span>
+                    @endif
+                    @if ($article->published_at)
+                        <time datetime="{{ $article->published_at->toIso8601String() }}">{{ $article->published_at->translatedFormat('l, d F Y, H:i') }} WIB</time>
+                    @endif
+                    <span>&middot;</span>
+                    <span>{{ number_format($article->views_count, 0, ',', '.') }}x dibaca</span>
                 </div>
 
-                <x-public.ad-slot class="mt-8" />
-            </div>
+                @if ($img)
+                    <figure class="mt-5">
+                        <img src="{{ $img }}" alt="{{ $article->title }}" class="w-full rounded-card object-cover">
+                    </figure>
+                @endif
 
-            <aside class="space-y-6 lg:col-span-4">
-                <x-public.ad-slot height="h-60" />
+                @if ($article->excerpt)
+                    <p class="mt-5 text-lg font-medium leading-relaxed text-[#3B4152]">{{ $article->excerpt }}</p>
+                @endif
 
-                <div class="rounded-card border border-[#E4E8EF] bg-white p-5">
-                    <h3 class="text-sm font-bold uppercase tracking-wide text-[#171B28]">Artikel Terkait</h3>
-                    <ul class="mt-4 space-y-4">
-                        @forelse ($relatedArticles as $related)
-                            {{-- akan diisi setelah modul Artikel tersedia --}}
-                        @empty
-                            <li class="text-sm text-[#848CA3]">Belum ada artikel terkait.</li>
-                        @endforelse
-                    </ul>
+                <div class="mt-6 text-[17px] leading-8 text-[#2A3040]
+                    [&_p]:mb-5 [&_h2]:mb-3 [&_h2]:mt-8 [&_h2]:text-2xl [&_h2]:font-bold
+                    [&_h3]:mb-2 [&_h3]:mt-6 [&_h3]:text-xl [&_h3]:font-bold
+                    [&_a]:text-brand-600 [&_a]:underline
+                    [&_ul]:mb-5 [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:mb-5 [&_ol]:list-decimal [&_ol]:pl-6
+                    [&_img]:my-5 [&_img]:h-auto [&_img]:max-w-full [&_img]:rounded-lg
+                    [&_blockquote]:my-5 [&_blockquote]:border-l-4 [&_blockquote]:border-brand-500 [&_blockquote]:pl-4 [&_blockquote]:italic
+                    [&_figure]:my-5 [&_figcaption]:mt-1 [&_figcaption]:text-sm [&_figcaption]:text-[#848CA3]">
+                    {!! $article->content !!}
+                </div>
+
+                <x-public.ad-slot placement="inline_artikel" height="h-28" :placeholder="false" class="my-6" />
+
+                {{-- Bagikan --}}
+                <div class="mt-6 flex flex-wrap items-center gap-2 border-t border-[#E4E8EF] pt-5 text-sm">
+                    <span class="font-semibold text-[#3B4152]">Bagikan:</span>
+                    <a href="https://wa.me/?text={{ $shareTitle }}%20{{ $shareUrl }}" target="_blank" rel="noopener noreferrer" class="rounded-full bg-[#25D366] px-3.5 py-1.5 font-semibold text-white hover:brightness-95">WhatsApp</a>
+                    <a href="https://www.facebook.com/sharer/sharer.php?u={{ $shareUrl }}" target="_blank" rel="noopener noreferrer" class="rounded-full bg-[#1877F2] px-3.5 py-1.5 font-semibold text-white hover:brightness-95">Facebook</a>
+                    <a href="https://twitter.com/intent/tweet?text={{ $shareTitle }}&url={{ $shareUrl }}" target="_blank" rel="noopener noreferrer" class="rounded-full bg-[#171B28] px-3.5 py-1.5 font-semibold text-white hover:brightness-95">X</a>
+                </div>
+
+                {{-- Terkait --}}
+                @if ($relatedArticles->isNotEmpty())
+                    <section class="mt-10">
+                        <h2 class="border-b-2 border-brand-600 pb-2 text-lg font-bold text-[#171B28]">Berita Terkait</h2>
+                        <div class="mt-4 grid gap-5 sm:grid-cols-2">
+                            @foreach ($relatedArticles as $item)
+                                <x-public.article-card :article="$item" />
+                            @endforeach
+                        </div>
+                    </section>
+                @endif
+            </article>
+
+            <aside class="space-y-6">
+                <div class="lg:sticky lg:top-28 space-y-6">
+                    <x-public.ad-slot placement="sidebar" height="h-64" :placeholder="false" />
                 </div>
             </aside>
         </div>
-
-        <section class="mt-12">
-            <div class="mb-4 flex items-center justify-between border-b border-[#E4E8EF] pb-3">
-                <h2 class="text-lg font-bold text-[#171B28]">Berita Terkait</h2>
-            </div>
-            <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
-                @for ($i = 0; $i < 4; $i++)
-                    <div class="flex aspect-[4/3] items-center justify-center rounded-card border border-dashed border-[#CDD3DF] bg-[#F1F3F7] text-center text-xs text-[#848CA3]">
-                        Artikel
-                    </div>
-                @endfor
-            </div>
-        </section>
     </div>
 </x-layouts.public>

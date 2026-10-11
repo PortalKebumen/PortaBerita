@@ -1,77 +1,93 @@
-<x-layouts.public title="Beranda">
-    <div class="bg-accent-600 text-white">
-        <div class="mx-auto flex max-w-7xl items-center gap-3 px-4 py-2 text-sm sm:px-6 lg:px-8">
-            <span class="shrink-0 rounded-full bg-white/20 px-2.5 py-0.5 text-xs font-bold uppercase tracking-wide">Terkini</span>
-            <p class="truncate">Belum ada berita terbaru.</p>
-        </div>
-    </div>
+<x-layouts.public :title="$search ? 'Hasil pencarian: ' . $search : null" :noindex="(bool) $search">
+    <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
 
-    <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <div class="grid grid-cols-1 gap-8 lg:grid-cols-12">
+        @if ($search !== null)
+            {{-- Mode pencarian --}}
+            <h1 class="text-xl font-bold text-[#171B28]">Hasil pencarian &ldquo;{{ $search }}&rdquo;</h1>
+            <p class="mt-1 text-sm text-[#848CA3]">{{ $searchResults->total() }} artikel ditemukan</p>
 
-            <div class="lg:col-span-8">
-                <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                    <div class="sm:col-span-2">
-                        <div class="flex flex-col items-center justify-center gap-3 rounded-card border border-dashed border-[#CDD3DF] bg-[#F1F3F7] px-6 py-16 text-center">
-                            <x-public.rubric-tag label="Berita Utama" />
-                            <p class="max-w-sm text-sm text-[#848CA3]">Belum ada artikel yang dipublikasikan. Artikel utama akan tampil di sini setelah modul Artikel tersedia.</p>
-                        </div>
-                    </div>
-                    @for ($i = 0; $i < 2; $i++)
-                        <div class="flex flex-col items-center justify-center gap-2 rounded-card border border-dashed border-[#CDD3DF] bg-[#F1F3F7] px-4 py-10 text-center">
-                            <p class="text-sm text-[#848CA3]">Artikel akan tampil di sini.</p>
-                        </div>
-                    @endfor
+            @if ($searchResults->isEmpty())
+                <div class="mt-6 rounded-card border border-dashed border-[#CDD3DF] bg-white p-10 text-center text-sm text-[#848CA3]">
+                    Tidak ada artikel yang cocok. Coba kata kunci lain.
                 </div>
-
-                <x-public.ad-slot class="mt-8" />
-
-                <section class="mt-10">
-                    <div class="mb-4 flex items-center justify-between border-b border-[#E4E8EF] pb-3">
-                        <h2 class="text-lg font-bold text-[#171B28]">Potensi Daerah</h2>
-                        <a href="{{ route('public.kategori', 'potensi-daerah') }}" class="text-sm font-medium text-brand-700 hover:underline">Lihat semua</a>
-                    </div>
-                    <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
-                        @for ($i = 0; $i < 4; $i++)
-                            <div class="flex aspect-[4/3] items-center justify-center rounded-card border border-dashed border-[#CDD3DF] bg-[#F1F3F7] text-center text-xs text-[#848CA3]">
-                                Artikel
-                            </div>
-                        @endfor
-                    </div>
-                </section>
-
-                <section class="mt-10">
-                    <div class="mb-4 flex items-center justify-between border-b border-[#E4E8EF] pb-3">
-                        <h2 class="text-lg font-bold text-[#171B28]">Wisata &amp; Budaya</h2>
-                        <a href="{{ route('public.kategori', 'wisata-budaya') }}" class="text-sm font-medium text-brand-700 hover:underline">Lihat semua</a>
-                    </div>
-                    <div class="space-y-4">
-                        @for ($i = 0; $i < 3; $i++)
-                            <div class="flex items-center gap-4 rounded-card border border-dashed border-[#CDD3DF] bg-[#F1F3F7] p-4 text-sm text-[#848CA3]">
-                                <div class="h-16 w-24 shrink-0 rounded-md bg-[#E4E8EF]"></div>
-                                <span>Artikel akan tampil di sini.</span>
-                            </div>
-                        @endfor
-                    </div>
-                </section>
+            @else
+                <div class="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                    @foreach ($searchResults as $item)
+                        <x-public.article-card :article="$item" />
+                    @endforeach
+                </div>
+                <div class="mt-8">{{ $searchResults->links() }}</div>
+            @endif
+        @elseif ($featured->isEmpty())
+            <div class="rounded-card border border-dashed border-[#CDD3DF] bg-white p-10 text-center text-sm text-[#848CA3]">
+                Belum ada artikel yang terbit.
             </div>
+        @else
+            {{-- Headline + sorotan --}}
+            <section class="grid gap-6 lg:grid-cols-3">
+                <div class="lg:col-span-2">
+                    <x-public.article-card :article="$featured->first()" variant="hero" />
+                </div>
+                @if ($featured->count() > 1)
+                    <aside class="rounded-card border border-[#E4E8EF] bg-white p-4">
+                        <h2 class="mb-3 border-b-2 border-brand-600 pb-2 text-base font-bold text-[#171B28]">Sorotan</h2>
+                        @foreach ($featured->slice(1) as $item)
+                            <x-public.article-card :article="$item" variant="compact" />
+                        @endforeach
+                    </aside>
+                @endif
+            </section>
 
-            <aside class="space-y-6 lg:col-span-4">
-                <x-public.ad-slot height="h-60" />
+            <div class="mt-8 grid gap-8 lg:grid-cols-3">
+                <div class="space-y-10 lg:col-span-2">
 
-                <div class="rounded-card border border-[#E4E8EF] bg-white p-5">
-                    <h3 class="text-sm font-bold uppercase tracking-wide text-[#171B28]">Artikel Populer</h3>
-                    <ol class="mt-4 space-y-4">
-                        @forelse ($popularArticles as $item)
-                            {{-- akan diisi setelah modul Artikel tersedia --}}
-                        @empty
-                            <li class="text-sm text-[#848CA3]">Belum ada data artikel populer.</li>
-                        @endforelse
-                    </ol>
+                    {{-- Terbaru --}}
+                    @if ($latest->isNotEmpty())
+                        <section>
+                            <h2 class="border-b-2 border-brand-600 pb-2 text-lg font-bold text-[#171B28]">Berita Terbaru</h2>
+                            <div class="mt-4 space-y-4">
+                                @foreach ($latest as $item)
+                                    <x-public.article-card :article="$item" variant="row" />
+                                @endforeach
+                            </div>
+                        </section>
+                    @endif
+
+                    {{-- Blok per kategori --}}
+                    @foreach ($kategoriBlocks as $blok)
+                        <section>
+                            <div class="flex items-end justify-between border-b-2 border-brand-600 pb-2">
+                                <h2 class="text-lg font-bold text-[#171B28]">{{ $blok['category']->name }}</h2>
+                                <a href="{{ route('public.kategori', $blok['category']->slug) }}" class="text-sm font-semibold text-brand-600 hover:underline">Lihat semua &rarr;</a>
+                            </div>
+                            <div class="mt-4 grid gap-5 sm:grid-cols-2">
+                                @foreach ($blok['articles'] as $item)
+                                    <x-public.article-card :article="$item" />
+                                @endforeach
+                            </div>
+                        </section>
+                    @endforeach
                 </div>
 
-                <x-public.ad-slot height="h-60" />
-            </aside>
-        </div>
+                {{-- Sidebar --}}
+                <aside class="space-y-6">
+                    <x-public.ad-slot placement="sidebar" height="h-64" :placeholder="false" />
+
+                    @if ($popular->isNotEmpty())
+                        <section class="rounded-card border border-[#E4E8EF] bg-white p-4">
+                            <h2 class="mb-3 border-b-2 border-brand-600 pb-2 text-base font-bold text-[#171B28]">Terpopuler</h2>
+                            <ol class="space-y-3">
+                                @foreach ($popular as $item)
+                                    <li class="group flex gap-3">
+                                        <span class="w-6 shrink-0 text-2xl font-extrabold leading-none text-[#CDD3DF] group-hover:text-brand-600">{{ $loop->iteration }}</span>
+                                        <a href="{{ $item->publicUrl() }}" class="text-sm font-semibold leading-snug text-[#171B28] group-hover:text-brand-600">{{ $item->title }}</a>
+                                    </li>
+                                @endforeach
+                            </ol>
+                        </section>
+                    @endif
+                </aside>
+            </div>
+        @endif
     </div>
 </x-layouts.public>

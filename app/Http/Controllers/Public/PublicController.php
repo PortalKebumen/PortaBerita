@@ -3,23 +3,29 @@
 namespace App\Http\Controllers\Public;
 
 use App\Http\Controllers\Controller;
+use App\Models\Article;
+use App\Models\Category;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class PublicController extends Controller
 {
-    /**
-     * Kategori navigasi utama dari database.
-     */
+    /* ---------------------------------------------------------------
+     | Navigasi kategori (array biasa, aman untuk cache)
+     |--------------------------------------------------------------- */
+
     public static function kategoriNav(): array
     {
-        return \App\Models\Category::whereNull('parent_id')
-            ->with(['children' => fn ($q) => $q->orderBy('name')])
-            ->orderBy('id')
-            ->get()
-            ->map(function ($cat) {
-                return [
+        return Cache::remember('public.kategori_nav.v1', 300, function () {
+            return Category::whereNull('parent_id')
+                ->with(['children' => fn ($q) => $q->orderBy('name')])
+                ->orderBy('id')
+                ->get()
+                ->map(fn ($cat) => [
                     'id' => $cat->id,
                     'label' => $cat->name,
                     'slug' => $cat->slug,
@@ -27,10 +33,10 @@ class PublicController extends Controller
                         'id' => $c->id,
                         'label' => $c->name,
                         'slug' => $c->slug,
-                    ])->toArray(),
-                ];
-            })
-            ->toArray();
+                    ])->all(),
+                ])
+                ->all();
+        });
     }
 
     public static function kategoriNavVisible(int $max = 7): array
@@ -43,11 +49,89 @@ class PublicController extends Controller
         return array_slice(self::kategoriNav(), $max);
     }
 
+    /* ---------------------------------------------------------------
+     | Query dasar: hanya artikel yang sudah terbit
+     |--------------------------------------------------------------- */
+
+    protected static function published(): Builder
+    {
+        return Article::query()
+            ->where('status', 'published')
+            ->where(fn ($q) => $q->whereNull('published_at')->orWhere('published_at', '<=', now()))
+            ->with(['category', 'author', 'media'])
+            ->orderByDesc('published_at')
+            ->orderByDesc('id');
+    }
+
+    /* ---------------------------------------------------------------
+     | Halaman
+     |--------------------------------------------------------------- */
+
     public function beranda(): View
     {
+        // Pencarian dari form di header (?q=)
+        $q = trim((string) request('q'));
+
+        if ($q !== '') {
+            $like = '%' . str_replace(['\\', '%', '_'], ['\\\\', '\%', '\_'], $q) . '%';
+
+            $results = self::published()
+                ->where(fn ($w) => $w->where('title', 'like', $like)->orWhere('excerpt', 'like', $like))
+                ->paginate(12)
+                ->withQueryString();
+
+            return view('public.beranda', [
+                'search' => $q,
+                'searchResults' => $results,
+                'featured' => collect(),
+                'latest' => collect(),
+                'popular' => collect(),
+                'kategoriBlocks' => collect(),
+            ]);
+        }
+
+        $featured = self::published()->take(5)->get();
+
+        $latest = self::published()
+            ->whereNotIn('id', $featured->pluck('id'))
+            ->take(8)
+            ->get();
+
+        $popular = self::published()
+            ->reorder()
+            ->where('published_at', '>=', now()->subDays(30))
+            ->orderByDesc('views_count')
+            ->take(5)
+            ->get();
+
+        if ($popular->isEmpty()) {
+            $popular = self::published()->reorder()->orderByDesc('views_count')->take(5)->get();
+        }
+
+        // Blok per kategori utama (maks. 4 kategori, tiap blok 4 artikel termasuk subkategori)
+        $kategoriBlocks = Category::whereNull('parent_id')
+            ->with('children')
+            ->orderBy('id')
+            ->take(4)
+            ->get()
+            ->map(function (Category $cat) {
+                $ids = collect([$cat->id])->merge($cat->children->pluck('id'))->all();
+
+                return [
+                    'category' => $cat,
+                    'articles' => self::published()->whereIn('category_id', $ids)->take(4)->get(),
+                ];
+            })
+            ->filter(fn ($blok) => $blok['articles']->isNotEmpty())
+            ->values();
+
         return view('public.beranda', [
-            'featuredArticles' => [], // TODO: Article::with('category')->latest()->take(5)->get()
-            'popularArticles' => [],  // TODO: Article::orderByDesc('views_count')->take(5)->get()
+            'search' => null,
+            'searchResults' => null,
+            'featured' => $featured,
+            'latest' => $latest,
+            'popular' => $popular,
+            'kategoriBlocks' => $kategoriBlocks,
         ]);
     }
 
@@ -55,11 +139,11 @@ class PublicController extends Controller
     {
         if ($sub) {
             // URL: /kategori/{parent}/{sub}
-            $parentCategory = \App\Models\Category::whereNull('parent_id')
+            $parentCategory = Category::whereNull('parent_id')
                 ->where('slug', $parent)
                 ->firstOrFail();
 
-            $category = \App\Models\Category::where('parent_id', $parentCategory->id)
+            $category = Category::where('parent_id', $parentCategory->id)
                 ->where('slug', $sub)
                 ->firstOrFail();
 
@@ -74,14 +158,13 @@ class PublicController extends Controller
                 ],
             ];
 
-            $articles = \App\Models\Article::where('category_id', $category->id)
-                ->where('status', 'published')
-                ->latest('published_at')
-                ->paginate(12);
+            $articles = self::published()
+                ->where('category_id', $category->id)
+                ->paginate(12)
+                ->withQueryString();
         } else {
             // URL: /kategori/{slug}
-            // Cari apakah kategori utama atau sub-kategori
-            $category = \App\Models\Category::with(['parent', 'children'])
+            $category = Category::with(['parent', 'children'])
                 ->where('slug', $parent)
                 ->firstOrFail();
 
@@ -96,13 +179,13 @@ class PublicController extends Controller
                 ] : null,
             ];
 
-            // Ambil artikel untuk kategori ini beserta seluruh anak kategorinya jika ada
+            // Artikel kategori ini beserta seluruh anak kategorinya
             $categoryIds = collect([$category->id])->merge($category->children->pluck('id'))->all();
 
-            $articles = \App\Models\Article::whereIn('category_id', $categoryIds)
-                ->where('status', 'published')
-                ->latest('published_at')
-                ->paginate(12);
+            $articles = self::published()
+                ->whereIn('category_id', $categoryIds)
+                ->paginate(12)
+                ->withQueryString();
         }
 
         return view('public.kategori', [
@@ -114,21 +197,41 @@ class PublicController extends Controller
 
     public function artikel(string $slug): View
     {
-        // TODO: ganti dengan Article::where('slug', $slug)->with(['author','category'])->firstOrFail()
-        // Data di bawah hanya contoh untuk keperluan wiring layout (PK-15).
-        $article = (object) [
-            'title' => 'Judul Artikel Contoh untuk Wiring Layout',
-            'slug' => $slug,
-            'excerpt' => 'Ringkasan singkat artikel akan tampil di sini.',
-            'body' => '<p>Konten artikel akan ditampilkan di sini setelah modul Artikel tersedia.</p>',
-            'category' => (object) ['label' => 'Berita Kebumen', 'slug' => 'berita-kebumen'],
-            'published_at' => now(),
-            'author' => Auth::user() ?? User::first(),
-        ];
+        $article = Article::query()
+            ->where('slug', $slug)
+            ->with(['author', 'category.parent', 'media', 'seoMeta'])
+            ->firstOrFail();
+
+        $isPublished = $article->status->value === 'published'
+            && (! $article->published_at || $article->published_at->lte(now()));
+
+        // Artikel yang belum terbit hanya bisa dilihat redaksi yang berhak (pratinjau)
+        $isPreview = false;
+        if (! $isPublished) {
+            abort_unless(Auth::check() && Auth::user()->can('update', $article), 404);
+            $isPreview = true;
+        }
+
+        // Hitung tayangan: sekali per sesi, abaikan bot dan pratinjau
+        if (! $isPreview && ! $this->isBot()) {
+            $key = 'viewed_article_' . $article->id;
+            if (! session()->has($key)) {
+                // Query builder biasa agar updated_at dan activity log tidak tersentuh
+                DB::table('articles')->where('id', $article->id)->increment('views_count');
+                session()->put($key, true);
+            }
+        }
+
+        $relatedArticles = self::published()
+            ->where('category_id', $article->category_id)
+            ->where('id', '!=', $article->id)
+            ->take(4)
+            ->get();
 
         return view('public.artikel-detail', [
             'article' => $article,
-            'relatedArticles' => [],
+            'relatedArticles' => $relatedArticles,
+            'isPreview' => $isPreview,
         ]);
     }
 
@@ -136,7 +239,27 @@ class PublicController extends Controller
     {
         return view('public.byline', [
             'penulis' => $user,
-            'articles' => [], // TODO: Article::where('user_id', $user->id)->latest()->paginate(9)
+            'articles' => self::published()
+                ->where('author_id', $user->id)
+                ->paginate(9)
+                ->withQueryString(),
         ]);
+    }
+
+    protected function isBot(): bool
+    {
+        $agent = strtolower((string) request()->userAgent());
+
+        if ($agent === '') {
+            return true;
+        }
+
+        foreach (['bot', 'crawler', 'spider', 'slurp', 'preview', 'facebookexternalhit', 'curl', 'wget'] as $needle) {
+            if (str_contains($agent, $needle)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
