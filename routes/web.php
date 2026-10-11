@@ -1,85 +1,119 @@
 <?php
 
-use App\Http\Controllers\Admin\AdvertisementController;
 use App\Http\Controllers\Admin\ArticleLifecycleController;
-use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\GlobalSearchController;
-use App\Http\Controllers\Admin\MediaLibraryController;
-use App\Http\Controllers\Admin\TagController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Public\AdTrackingController;
 use App\Http\Controllers\Public\PublicController;
+use App\Models\Article;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', [PublicController::class, 'beranda'])->name('public.beranda');
-Route::get('/kategori/{parent}/{sub}', [PublicController::class, 'kategori'])->name('public.kategori.sub');
-Route::get('/kategori/{slug}', [PublicController::class, 'kategori'])->name('public.kategori');
-Route::get('/penulis/{user}', [PublicController::class, 'byline'])->name('public.byline');
-Route::get('/artikel/{slug}', [PublicController::class, 'artikel'])->name('public.artikel');
+/*
+|--------------------------------------------------------------------------
+| Publik
+|--------------------------------------------------------------------------
+| Urutan penting: /kategori/{parent}/{sub} harus di atas /kategori/{slug}.
+*/
+Route::controller(PublicController::class)->name('public.')->group(function () {
+    Route::get('/', 'beranda')->name('beranda');
+    Route::get('/kategori/{parent}/{sub}', 'kategori')->name('kategori.sub');
+    Route::get('/kategori/{slug}', 'kategori')->name('kategori');
+    Route::get('/penulis/{user}', 'byline')->name('byline');
+    Route::get('/artikel/{slug}', 'artikel')->name('artikel');
+});
 
-// Public Ad Tracking routes
-Route::post('/ads/{advertisement}/impression', [AdTrackingController::class, 'recordImpression'])->name('ads.impression');
-Route::get('/ads/{advertisement}/click', [AdTrackingController::class, 'trackClick'])->name('ads.click');
+/*
+|--------------------------------------------------------------------------
+| Tracking iklan (publik)
+|--------------------------------------------------------------------------
+| TODO: dua set route ini fungsinya tumpang tindih (lihat catatan di chat).
+| Setelah diputuskan, hapus salah satunya.
+*/
+Route::get('/ads/{advertisement}/click', [AdTrackingController::class, 'trackClick'])
+    ->middleware('throttle:60,1')
+    ->name('ads.click');
+Route::post('/ads/{advertisement}/impression', [AdTrackingController::class, 'recordImpression'])
+    ->middleware('throttle:120,1')
+    ->name('ads.impression');
 
+/*
+|--------------------------------------------------------------------------
+| Autentikasi
+|--------------------------------------------------------------------------
+*/
 Route::middleware('guest')->group(function () {
+    // login, forgot-password, reset-password
     Route::get('login', [AuthenticatedSessionController::class, 'create'])->name('login');
     Route::post('login', [AuthenticatedSessionController::class, 'store']);
 
     Route::get('forgot-password', [PasswordResetLinkController::class, 'create'])->name('password.request');
     Route::post('forgot-password', [PasswordResetLinkController::class, 'store'])->name('password.email');
+
     Route::get('reset-password/{token}', [NewPasswordController::class, 'create'])->name('password.reset');
-    Route::post('reset-password', [NewPasswordController::class, 'store'])->name('password.update');
+    Route::post('reset-password', [NewPasswordController::class, 'store'])->name('password.store');
 });
 
-Route::middleware('auth')->group(function () {
-    Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
-});
+Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])
+    ->middleware('auth')
+    ->name('logout');
 
-Route::middleware(['auth', 'can:dashboard.view'])->prefix('admin')->name('admin.')->group(function () {
-    Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+/*
+|--------------------------------------------------------------------------
+| Admin
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth', 'can:dashboard.view'])
+    ->prefix('admin')
+    ->name('admin.')
+    ->group(function () {
 
-    Route::get('artikel', fn () => view('admin.artikel'))->can('articles.view')->name('artikel.index');
-    Route::get('artikel/create', fn () => view('admin.artikel-create'))->can('articles.create')->name('artikel.create');
-    Route::get('artikel/{article}/edit', fn (\App\Models\Article $article) => view('admin.artikel-edit', ['article' => $article]))->can('update', 'article')->name('artikel.edit');
+        Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+        Route::get('pencarian', GlobalSearchController::class)
+            ->middleware('can:articles.view')
+            ->name('pencarian');
 
-    Route::get('/pencarian', GlobalSearchController::class)->middleware('can:articles.view')->name('pencarian');
+        // Artikel
+        Route::view('artikel', 'admin.artikel')
+            ->can('articles.view')
+            ->name('artikel.index');
 
-    // Lifecycle routes
-    Route::post('artikel/{article}/submit', [ArticleLifecycleController::class, 'submit'])->name('artikel.submit');
-    Route::post('artikel/{article}/approve', [ArticleLifecycleController::class, 'approve'])->name('artikel.approve');
-    Route::post('artikel/{article}/reject', [ArticleLifecycleController::class, 'reject'])->name('artikel.reject');
-    Route::post('artikel/{article}/publish', [ArticleLifecycleController::class, 'publish'])->name('artikel.publish');
-    Route::post('artikel/{article}/schedule', [ArticleLifecycleController::class, 'schedule'])->name('artikel.schedule');
-    Route::post('artikel/{article}/archive', [ArticleLifecycleController::class, 'archive'])->name('artikel.archive');
+        Route::view('artikel/create', 'admin.artikel-create')
+            ->can('articles.create')
+            ->name('artikel.create');
 
-    // rute utama kategori & tag diarahin langsung ke CategoryController
-    // Route::get('kategori-tag', [CategoryController::class, 'index'])->can('categories.view')->name('kategori-tag.index');
-    Route::get('kategori-tag', fn () => view('admin.kategori-tag'))->can('categories.view')->name('kategori-tag.index');
+        Route::get('artikel/{article}/edit', fn (Article $article) => view('admin.artikel-edit', compact('article')))
+            ->can('update', 'article')
+            ->name('artikel.edit');
 
-    // Media Library — versi lama berbasis Controller (PK-27), digantikan Livewire component MediaLibraryManager.
-    // Route::get('media-library', [MediaLibraryController::class, 'index'])->can('media.view')->name('media-library.index');
-    // Route::post('media-library', [MediaLibraryController::class, 'store'])->name('media-library.store');
-    // Route::put('media-library/{media}', [MediaLibraryController::class, 'update'])->name('media-library.update');
-    // Route::delete('media-library/{media}', [MediaLibraryController::class, 'destroy'])->name('media-library.destroy');
-    Route::get('media-library', fn () => view('admin.media-library'))->can('media.view')->name('media-library.index');
-    
-    // Route::get('iklan', [AdvertisementController::class, 'index'])->can('ads.view')->name('iklan.index');
-    Route::get('iklan', fn () => view('admin.iklan'))->can('ads.view')->name('iklan.index');
+        // Alur kerja artikel (submit, approve, reject, publish, schedule, archive)
+        Route::controller(ArticleLifecycleController::class)
+            ->prefix('artikel/{article}')
+            ->name('artikel.')
+            ->group(function () {
+                Route::post('submit', 'submit')->name('submit');
+                Route::post('approve', 'approve')->name('approve');
+                Route::post('reject', 'reject')->name('reject');
+                Route::post('publish', 'publish')->name('publish');
+                Route::post('schedule', 'schedule')->name('schedule');
+                Route::post('archive', 'archive')->name('archive');
+            });
 
-    Route::get('pengguna-role', fn () => view('admin.pengguna-role'))->can('users.view')->name('pengguna-role.index');
-    Route::get('activity-log', fn () => view('admin.activity-log'))->can('activity-log.view')->name('activity-log.index');
-    Route::get('pengaturan', fn () => view('admin.pengaturan', ['title' => 'Pengaturan']))->can('settings.view')->name('pengaturan.index');
+        // Halaman Livewire lain
+        Route::view('kategori-tag', 'admin.kategori-tag')->can('categories.view')->name('kategori-tag.index');
+        Route::view('media-library', 'admin.media-library')->can('media.view')->name('media-library.index');
+        Route::view('iklan', 'admin.iklan')->can('ads.view')->name('iklan.index');
+        Route::view('pengguna-role', 'admin.pengguna-role')->can('users.view')->name('pengguna-role.index');
+        Route::view('activity-log', 'admin.activity-log')->can('activity-log.view')->name('activity-log.index');
+        Route::view('pengaturan', 'admin.pengaturan', ['title' => 'Pengaturan'])
+            ->can('settings.view')
+            ->name('pengaturan.index');
 
-    // resource rute untuk operasi CRUD kategori & tag
-    // Route::resource('categories', CategoryController::class)->except(['create', 'show', 'edit', 'index']);
-    // Route::resource('tags', TagController::class)->except(['create', 'show', 'edit']);
-    // Route::resource('advertisements', AdvertisementController::class)->except(['create', 'show', 'edit']);
-
-    // rute uji-coba sementara komponen x-editor & Media Picker (PK-28/PK-29)
-    // TODO: hapus setelah x-editor benar-benar dipasang di form Artikel yang sesungguhnya
-    Route::get('test-media-picker', fn () => view('admin.test-media-picker'))->name('test-media-picker');
-    Route::get('test-editor', fn () => view('admin.test-editor'))->name('test-editor');
-});
+        // Hanya untuk pengembangan lokal, tidak terdaftar di staging/produksi
+        if (app()->environment('local')) {
+            Route::view('test-media-picker', 'admin.test-media-picker')->name('test-media-picker');
+            Route::view('test-editor', 'admin.test-editor')->name('test-editor');
+        }
+    });

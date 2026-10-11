@@ -2,6 +2,7 @@
     'placement' => 'sidebar',
     'label' => 'Advertisement',
     'height' => 'h-32',
+    'placeholder' => true,
 ])
 
 @php
@@ -10,19 +11,10 @@
 
 @if ($ad)
     <div {{ $attributes->merge(['class' => 'relative w-full overflow-hidden rounded-card group']) }}
-         x-data
-         x-init="
-            fetch('{{ route('ads.impression', $ad) }}', {
-                method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                    'Accept': 'application/json'
-                }
-            }).catch(() => {})
-         ">
-        <a href="{{ route('ads.click', $ad) }}" target="_blank" rel="noopener noreferrer" class="block w-full h-full">
+         data-ad-impression="{{ route('ads.impression', $ad) }}">
+        <a href="{{ route('ads.click', $ad) }}" target="_blank" rel="sponsored noopener noreferrer" class="block w-full h-full">
             @if ($ad->banner_url)
-                <img src="{{ $ad->banner_url }}" alt="{{ $ad->advertiser_name }}" class="w-full object-cover rounded-card {{ $height }} transition-transform duration-200 group-hover:scale-[1.01]">
+                <img src="{{ $ad->banner_url }}" alt="{{ $ad->advertiser_name }}" loading="lazy" class="w-full object-cover rounded-card {{ $height }} transition-transform duration-200 group-hover:scale-[1.01]">
             @else
                 <div class="flex {{ $height }} w-full flex-col items-center justify-center rounded-card bg-gradient-to-r from-blue-700 to-indigo-800 p-4 text-center text-white shadow-sm transition group-hover:brightness-105">
                     <span class="text-[10px] font-bold uppercase tracking-wider text-blue-200">Sponsor / Iklan</span>
@@ -35,7 +27,44 @@
             Iklan
         </div>
     </div>
-@else
+
+    @once
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                var token = '{{ csrf_token() }}';
+                var slots = document.querySelectorAll('[data-ad-impression]');
+                if (!slots.length) return;
+
+                var send = function (el) {
+                    var url = el.getAttribute('data-ad-impression');
+                    if (!url || el.dataset.adSent) return;
+                    el.dataset.adSent = '1';
+                    fetch(url, {
+                        method: 'POST',
+                        headers: { 'X-CSRF-TOKEN': token, 'Accept': 'application/json' },
+                        keepalive: true
+                    }).catch(function () {});
+                };
+
+                if (!('IntersectionObserver' in window)) {
+                    slots.forEach(send);
+                    return;
+                }
+
+                var observer = new IntersectionObserver(function (entries) {
+                    entries.forEach(function (entry) {
+                        if (entry.isIntersecting) {
+                            send(entry.target);
+                            observer.unobserve(entry.target);
+                        }
+                    });
+                }, { threshold: 0.5 });
+
+                slots.forEach(function (el) { observer.observe(el); });
+            });
+        </script>
+    @endonce
+@elseif ($placeholder)
     <div {{ $attributes->merge(['class' => "flex $height w-full items-center justify-center rounded-card border border-dashed border-[#CDD3DF] bg-[#F1F3F7] text-xs font-semibold uppercase tracking-wide text-[#848CA3]"]) }}>
         {{ $label }}
     </div>
