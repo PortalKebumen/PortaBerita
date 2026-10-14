@@ -154,12 +154,39 @@
         <div class="hidden border-t border-[#CDD3DF] lg:block">
             <div class="mx-auto flex max-w-7xl items-center gap-1 px-4 py-1.5 sm:px-6 lg:px-8">
                 @foreach (\App\Http\Controllers\Public\PublicController::kategoriNavVisible(7) as $item)
-                    @php($active = $currentUrl === route('public.kategori', $item['slug']))
-                    <a href="{{ route('public.kategori', $item['slug']) }}"
-                       @if ($active) aria-current="page" @endif
-                       class="shrink-0 whitespace-nowrap rounded-md px-3 py-2 text-sm font-semibold transition hover:bg-[#F1F3F7] hover:text-brand-600 {{ $active ? 'bg-[#F1F3F7] text-brand-600' : 'text-[#3B4152]' }}">
-                        {{ $item['label'] }}
-                    </a>
+                    @php
+                        $parentUrl = route('public.kategori', $item['slug']);
+                        // Aktif juga saat membuka salah satu sub-kategorinya (/kategori/{induk}/{sub})
+                        $active = $currentUrl === $parentUrl || str_starts_with($currentUrl, $parentUrl . '/');
+                    @endphp
+
+                    @if (count($item['children']))
+                        <div class="group/dd relative shrink-0">
+                            <a href="{{ $parentUrl }}" aria-haspopup="true"
+                               @if ($currentUrl === $parentUrl) aria-current="page" @endif
+                               class="block whitespace-nowrap rounded-md px-3 py-2 text-sm font-semibold transition hover:bg-[#F1F3F7] hover:text-brand-600 group-hover/dd:bg-[#F1F3F7] group-hover/dd:text-brand-600 {{ $active ? 'bg-[#F1F3F7] text-brand-600' : 'text-[#3B4152]' }}">
+                                {{ $item['label'] }}
+                            </a>
+                            <div class="absolute left-0 top-full z-40 hidden pt-1 group-focus-within/dd:block group-hover/dd:block">
+                                <div class="min-w-52 rounded-lg border border-[#E4E8EF] bg-white py-2 shadow-lg">
+                                    @foreach ($item['children'] as $child)
+                                        @php($childUrl = route('public.kategori.sub', [$item['slug'], $child['slug']]))
+                                        <a href="{{ $childUrl }}"
+                                           @if ($currentUrl === $childUrl) aria-current="page" @endif
+                                           class="block whitespace-nowrap px-4 py-1.5 text-sm font-semibold transition hover:text-brand-600 {{ $currentUrl === $childUrl ? 'text-brand-600' : 'text-[#3B4152]' }}">
+                                            {{ $child['label'] }}
+                                        </a>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
+                    @else
+                        <a href="{{ $parentUrl }}"
+                           @if ($active) aria-current="page" @endif
+                           class="shrink-0 whitespace-nowrap rounded-md px-3 py-2 text-sm font-semibold transition hover:bg-[#F1F3F7] hover:text-brand-600 {{ $active ? 'bg-[#F1F3F7] text-brand-600' : 'text-[#3B4152]' }}">
+                            {{ $item['label'] }}
+                        </a>
+                    @endif
                 @endforeach
 
                 @php($overflowNav = \App\Http\Controllers\Public\PublicController::kategoriNavOverflow(7))
@@ -173,12 +200,21 @@
                             </svg>
                         </button>
                         <div class="absolute left-0 top-full z-40 hidden pt-1 group-focus-within:block group-hover:block">
-                            <div class="w-52 rounded-lg border border-[#E4E8EF] bg-white py-1.5 shadow-lg">
+                            <div class="max-h-[70vh] w-56 overflow-y-auto rounded-lg border border-[#E4E8EF] bg-white py-1.5 shadow-lg">
                                 @foreach ($overflowNav as $item)
+                                    @if (! $loop->first && count($item['children']))
+                                        <div class="my-1 border-t border-[#EEF1F5]"></div>
+                                    @endif
                                     <a href="{{ route('public.kategori', $item['slug']) }}"
-                                       class="block px-4 py-2 text-sm font-medium text-[#3B4152] hover:bg-[#F1F3F7] hover:text-brand-600">
+                                       class="block px-4 py-2 text-sm font-semibold text-[#3B4152] hover:bg-[#F1F3F7] hover:text-brand-600">
                                         {{ $item['label'] }}
                                     </a>
+                                    @foreach ($item['children'] as $child)
+                                        <a href="{{ route('public.kategori.sub', [$item['slug'], $child['slug']]) }}"
+                                           class="block py-1.5 pl-7 pr-4 text-[13px] font-medium text-[#5B6378] hover:bg-[#F1F3F7] hover:text-brand-600">
+                                            {{ $child['label'] }}
+                                        </a>
+                                    @endforeach
                                 @endforeach
                             </div>
                         </div>
@@ -199,10 +235,31 @@
         <input type="checkbox" id="mobile-nav-toggle" class="peer/nav hidden">
         <nav class="hidden max-h-[70vh] overflow-y-auto border-t border-[#CDD3DF] bg-white px-4 py-2 peer-checked/nav:block lg:hidden">
             @foreach (\App\Http\Controllers\Public\PublicController::kategoriNav() as $item)
-                <a href="{{ route('public.kategori', $item['slug']) }}"
-                   class="block rounded-md px-3 py-2.5 text-sm font-medium text-[#3B4152] hover:bg-[#F1F3F7] hover:text-brand-600">
-                    {{ $item['label'] }}
-                </a>
+                @if (count($item['children']))
+                    @php($parentUrl = route('public.kategori', $item['slug']))
+                    <details class="group/m" @if ($currentUrl === $parentUrl || str_starts_with($currentUrl, $parentUrl . '/')) open @endif>
+                        <summary class="flex cursor-pointer list-none items-center justify-between rounded-md px-3 py-2.5 text-sm font-medium text-[#3B4152] hover:bg-[#F1F3F7] [&::-webkit-details-marker]:hidden">
+                            {{ $item['label'] }}
+                            <svg class="h-4 w-4 text-[#848CA3] transition group-open/m:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                            </svg>
+                        </summary>
+                        <div class="mb-1 ml-3 border-l-2 border-[#E4E8EF] pl-2">
+                            <a href="{{ $parentUrl }}" class="block rounded-md px-3 py-2 text-sm font-semibold text-brand-700 hover:bg-[#F1F3F7]">Semua {{ $item['label'] }}</a>
+                            @foreach ($item['children'] as $child)
+                                <a href="{{ route('public.kategori.sub', [$item['slug'], $child['slug']]) }}"
+                                   class="block rounded-md px-3 py-2 text-sm text-[#5B6378] hover:bg-[#F1F3F7] hover:text-brand-600">
+                                    {{ $child['label'] }}
+                                </a>
+                            @endforeach
+                        </div>
+                    </details>
+                @else
+                    <a href="{{ route('public.kategori', $item['slug']) }}"
+                       class="block rounded-md px-3 py-2.5 text-sm font-medium text-[#3B4152] hover:bg-[#F1F3F7] hover:text-brand-600">
+                        {{ $item['label'] }}
+                    </a>
+                @endif
             @endforeach
         </nav>
     </header>
