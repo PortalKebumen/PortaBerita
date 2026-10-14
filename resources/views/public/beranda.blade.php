@@ -1,24 +1,7 @@
-<x-layouts.public :title="$search ? 'Hasil pencarian: ' . $search : null" :noindex="(bool) $search">
+<x-layouts.public>
     <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
 
-        @if ($search !== null)
-            {{-- Mode pencarian --}}
-            <h1 class="text-xl font-bold text-[#171B28]">Hasil pencarian &ldquo;{{ $search }}&rdquo;</h1>
-            <p class="mt-1 text-sm text-[#848CA3]">{{ $searchResults->total() }} artikel ditemukan</p>
-
-            @if ($searchResults->isEmpty())
-                <div class="mt-6 rounded-card border border-dashed border-[#CDD3DF] bg-white p-10 text-center text-sm text-[#848CA3]">
-                    Tidak ada artikel yang cocok. Coba kata kunci lain.
-                </div>
-            @else
-                <div class="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                    @foreach ($searchResults as $item)
-                        <x-public.article-card :article="$item" />
-                    @endforeach
-                </div>
-                <div class="mt-8">{{ $searchResults->links() }}</div>
-            @endif
-        @elseif ($featured->isEmpty())
+        @if ($featured->isEmpty())
             <div class="rounded-card border border-dashed border-[#CDD3DF] bg-white p-10 text-center text-sm text-[#848CA3]">
                 Belum ada artikel yang terbit.
             </div>

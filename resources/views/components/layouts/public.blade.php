@@ -88,7 +88,7 @@
                     'publisher' => ['@id' => url('/') . '#organization'],
                     'potentialAction' => [
                         '@type' => 'SearchAction',
-                        'target' => route('public.beranda') . '?q={search_term_string}',
+                        'target' => route('public.cari') . '?q={search_term_string}',
                         'query-input' => 'required name=search_term_string',
                     ],
                 ],
@@ -124,11 +124,11 @@
             </a>
 
             <div class="hidden flex-1 sm:block">
-                <form action="{{ route('public.beranda') }}" method="GET" class="relative mx-auto max-w-md" role="search">
+                <form action="{{ route('public.cari') }}" method="GET" class="relative mx-auto max-w-md" role="search">
                     <svg class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#848CA3]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 10a7 7 0 11-14 0 7 7 0 0114 0z"/>
                     </svg>
-                    <input type="search" name="q" value="{{ request('q') }}" placeholder="Cari berita, topik, atau tokoh..."
+                    <input id="header-search" type="search" name="q" value="{{ request('q') }}" placeholder="Cari berita, topik, atau tokoh..." aria-label="Cari berita"
                            class="w-full rounded-full border border-[#E4E8EF] bg-[#F1F3F7] py-2 pl-9 pr-3 text-sm text-[#171B28] transition focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20">
                 </form>
             </div>
@@ -190,8 +190,8 @@
         {{-- Panel mobile: pencarian & kategori --}}
         <input type="checkbox" id="mobile-search-toggle" class="peer/search hidden">
         <div class="hidden border-t border-[#CDD3DF] bg-white px-4 py-3 peer-checked/search:block sm:hidden">
-            <form action="{{ route('public.beranda') }}" method="GET" role="search">
-                <input type="search" name="q" value="{{ request('q') }}" placeholder="Cari berita..."
+            <form action="{{ route('public.cari') }}" method="GET" role="search">
+                <input id="header-search-mobile" type="search" name="q" value="{{ request('q') }}" placeholder="Cari berita..." aria-label="Cari berita"
                        class="w-full rounded-full border border-[#E4E8EF] bg-[#F1F3F7] px-4 py-2 text-sm focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20">
             </form>
         </div>

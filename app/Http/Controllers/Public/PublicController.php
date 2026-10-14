@@ -8,10 +8,12 @@ use App\Models\Category;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class PublicController extends Controller
@@ -89,27 +91,11 @@ class PublicController extends Controller
      | Halaman
      |--------------------------------------------------------------- */
 
-    public function beranda(): View
+    public function beranda(): View|RedirectResponse
     {
-        // Pencarian dari form di header (?q=)
-        $q = trim((string) request('q'));
-
-        if ($q !== '') {
-            $like = '%' . str_replace(['\\', '%', '_'], ['\\\\', '\%', '\_'], $q) . '%';
-
-            $results = self::published()
-                ->where(fn ($w) => $w->where('title', 'like', $like)->orWhere('excerpt', 'like', $like))
-                ->paginate(12)
-                ->withQueryString();
-
-            return view('public.beranda', [
-                'search' => $q,
-                'searchResults' => $results,
-                'featured' => collect(),
-                'latest' => collect(),
-                'popular' => collect(),
-                'kategoriBlocks' => collect(),
-            ]);
+        // Tautan lama pencarian (/?q=) dialihkan ke halaman pencarian
+        if (filled(request('q'))) {
+            return redirect()->route('public.cari', request()->only('q'), 301);
         }
 
         $featured = self::published()->take(5)->get();
@@ -139,8 +125,6 @@ class PublicController extends Controller
             ->values();
 
         return view('public.beranda', [
-            'search' => null,
-            'searchResults' => null,
             'featured' => $featured,
             'latest' => $latest,
             'popular' => $popular,
@@ -269,6 +253,95 @@ class PublicController extends Controller
             'topCategories' => $topCategories,
             'popularArticles' => $publishedQuery()->reorder()->orderByDesc('views_count')->take(5)->get(),
         ]);
+    }
+
+    /** Pilihan urutan & rentang waktu di halaman pencarian. */
+    public const SEARCH_SORTS = ['relevan' => 'Relevansi', 'terbaru' => 'Terbaru', 'terpopuler' => 'Terpopuler'];
+
+    public const SEARCH_TIMES = ['semua' => 'Semua waktu', 'hari-ini' => 'Hari ini', 'kemarin' => 'Kemarin', 'sebulan' => 'Sebulan lalu', 'pilih' => 'Pilih waktu'];
+
+    /**
+     * Pencarian: kata kunci di judul & ringkasan, filter kategori dan waktu, urutan hasil.
+     */
+    public function cari(): View
+    {
+        $q = Str::limit(trim((string) request('q')), 100, '');
+        $sort = array_key_exists((string) request('urut'), self::SEARCH_SORTS) ? (string) request('urut') : 'relevan';
+        $time = array_key_exists((string) request('waktu'), self::SEARCH_TIMES) ? (string) request('waktu') : 'semua';
+
+        $kategori = filled(request('kategori'))
+            ? Category::with('children')->where('slug', (string) request('kategori'))->first()
+            : null;
+
+        [$from, $to] = match ($time) {
+            'hari-ini' => [today(), today()->endOfDay()],
+            'kemarin' => [today()->subDay(), today()->subDay()->endOfDay()],
+            'sebulan' => [today()->subMonth(), now()],
+            'pilih' => [$this->parseDate(request('dari')), $this->parseDate(request('sampai'))?->endOfDay()],
+            default => [null, null],
+        };
+        if ($from && $to && $from->gt($to)) {
+            [$from, $to] = [$to->copy()->startOfDay(), $from->copy()->endOfDay()];
+        }
+
+        $query = self::published()
+            ->when($kategori, fn ($w) => $w->whereIn('category_id', collect([$kategori->id])->merge($kategori->children->pluck('id'))))
+            ->when($from, fn ($w) => $w->where('published_at', '>=', $from))
+            ->when($to, fn ($w) => $w->where('published_at', '<=', $to));
+
+        if ($q !== '') {
+            // Setiap kata (maks. 6) harus ada di judul atau ringkasan
+            $words = collect(preg_split('/\s+/', Str::lower($q)))->filter()->unique()->take(6);
+            foreach ($words as $word) {
+                $like = '%' . $this->escapeLike($word) . '%';
+                $query->where(fn ($w) => $w->where('title', 'like', $like)->orWhere('excerpt', 'like', $like));
+            }
+
+            if ($sort === 'relevan') {
+                // Frasa utuh di judul paling atas, lalu kata-kata yang muncul di judul
+                $query->reorder()->orderByRaw('CASE WHEN LOWER(title) LIKE ? THEN 0 ELSE 1 END', ['%' . $this->escapeLike(Str::lower($q)) . '%']);
+                foreach ($words as $word) {
+                    $query->orderByRaw('CASE WHEN LOWER(title) LIKE ? THEN 0 ELSE 1 END', ['%' . $this->escapeLike($word) . '%']);
+                }
+                $query->orderByDesc('published_at');
+            }
+        }
+
+        if ($sort === 'terpopuler') {
+            $query->reorder()->orderByDesc('views_count')->orderByDesc('published_at');
+        }
+
+        $results = $query->paginate(10)->withQueryString();
+
+        return view('public.cari', [
+            'q' => $q,
+            'sort' => $sort,
+            'time' => $time,
+            'kategori' => $kategori,
+            'from' => $from,
+            'to' => $to,
+            'results' => $results,
+            'kategoriOptions' => self::kategoriNav(),
+            'suggestions' => self::popular(4, collect($results->items())->pluck('id')->all()),
+        ]);
+    }
+
+    private function parseDate(mixed $value): ?Carbon
+    {
+        if (! is_string($value) || ! preg_match('/^\d{4}-\d{2}-\d{2}$/', $value)) {
+            return null;
+        }
+
+        try {
+            return Carbon::createFromFormat('Y-m-d', $value)->startOfDay();
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    private function escapeLike(string $value): string
+    {
+        return str_replace(['\\', '%', '_'], ['\\\\', '\%', '\_'], $value);
     }
 
     protected function isBot(): bool

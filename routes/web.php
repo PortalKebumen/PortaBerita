@@ -24,6 +24,7 @@ Route::controller(PublicController::class)->name('public.')->group(function () {
     Route::get('/profile/{user}/{slug?}', 'byline')->whereNumber('user')->name('byline');
     Route::get('/penulis/{user}', fn (\App\Models\User $user) => redirect($user->profileUrl(), 301))->whereNumber('user');
     Route::get('/artikel/{slug}', 'artikel')->name('artikel');
+    Route::get('/cari', 'cari')->name('cari');
 });
 
 /*
