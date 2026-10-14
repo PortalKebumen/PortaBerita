@@ -208,6 +208,12 @@
                             <input type="text" wire:model="whatsapp" placeholder="+62 812-3456-7890" class="form-input @error('whatsapp') is-error @enderror">
                             @error('whatsapp') <p class="form-error-text">{{ $message }}</p> @enderror
                         </div>
+                        <div>
+                            <label class="form-label">WhatsApp Channel</label>
+                            <input type="url" wire:model="whatsappChannel" placeholder="https://whatsapp.com/channel/..." class="form-input @error('whatsappChannel') is-error @enderror">
+                            <p class="mt-1 text-[11.5px] text-[#848CA3]">Jika diisi, tombol WhatsApp di widget Ikuti Kami & footer mengarah ke channel ini.</p>
+                            @error('whatsappChannel') <p class="form-error-text">{{ $message }}</p> @enderror
+                        </div>
                     </div>
                 </div>
             </div>

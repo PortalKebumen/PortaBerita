@@ -10,6 +10,7 @@ use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 class DummyArticleSeeder extends Seeder
 {
@@ -137,6 +138,16 @@ class DummyArticleSeeder extends Seeder
         }
 
         $article->unsetRelation('media');
+
+        // Alt & caption mengikuti data foto yang sama di Media Library.
+        $library = Media::where('collection_name', 'library')->where('file_name', basename($image))->first();
+        $featured = $article->getFirstMedia('featured');
+
+        if ($library && $featured) {
+            $featured->setCustomProperty('alt_text', (string) $library->getCustomProperty('alt_text', ''))
+                ->setCustomProperty('caption', (string) $library->getCustomProperty('caption', ''))
+                ->save();
+        }
     }
 
     /**

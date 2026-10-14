@@ -31,6 +31,7 @@ class SiteSetting
             'x_twitter' => null,
             'youtube' => null,
             'whatsapp' => null,
+            'whatsapp_channel' => null,
         ];
     }
 
@@ -58,6 +59,34 @@ class SiteSetting
         $value = static::values()[$key] ?? null;
 
         return filled($value) ? $value : $default;
+    }
+
+    /**
+     * Akun media sosial yang diisi di Pengaturan, urut tampil.
+     *
+     * @return array<int, array{key: string, label: string, url: string, color: string, chat: bool}>
+     */
+    public static function socialLinks(): array
+    {
+        $values = static::values();
+
+        $waDigits = preg_replace('/\D+/', '', (string) $values['whatsapp']);
+        if ($waDigits !== '' && str_starts_with($waDigits, '0')) {
+            $waDigits = '62' . substr($waDigits, 1);
+        }
+
+        $links = [
+            ['key' => 'facebook', 'label' => 'Facebook', 'url' => $values['facebook'], 'color' => '#1877F2', 'chat' => false],
+            ['key' => 'instagram', 'label' => 'Instagram', 'url' => $values['instagram'], 'color' => '#E4405F', 'chat' => false],
+            ['key' => 'x', 'label' => 'X (Twitter)', 'url' => $values['x_twitter'], 'color' => '#000000', 'chat' => false],
+            ['key' => 'youtube', 'label' => 'YouTube', 'url' => $values['youtube'], 'color' => '#FF0000', 'chat' => false],
+            // Channel diutamakan; tanpa channel, WhatsApp jatuh ke chat nomor redaksi.
+            filled($values['whatsapp_channel'])
+                ? ['key' => 'whatsapp', 'label' => 'WhatsApp Channel', 'url' => $values['whatsapp_channel'], 'color' => '#25D366', 'chat' => false]
+                : ['key' => 'whatsapp', 'label' => 'WhatsApp', 'url' => $waDigits !== '' ? 'https://wa.me/' . $waDigits : null, 'color' => '#25D366', 'chat' => true],
+        ];
+
+        return array_values(array_filter($links, fn ($link) => filled($link['url'])));
     }
 
     /** Simpan beberapa key sekaligus. */

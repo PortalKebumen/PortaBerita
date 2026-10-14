@@ -1,10 +1,11 @@
 @php
     $seo = $article->seoMeta;
+    $featured = $article->getFirstMedia('featured');
     $img = $article->getFirstMediaUrl('featured');
+    $imgAlt = $featured?->getCustomProperty('alt_text') ?: $article->title;
+    $imgCaption = $featured?->getCustomProperty('caption');
     $desc = $seo?->meta_description ?: ($article->excerpt ?: \Illuminate\Support\Str::limit(trim(strip_tags($article->content)), 155));
     $url = $article->publicUrl();
-    $shareTitle = urlencode($article->title);
-    $shareUrl = urlencode($url);
 @endphp
 
 <x-layouts.public
@@ -54,26 +55,40 @@
 
                 <h1 class="mt-3 text-2xl font-extrabold leading-tight text-[#171B28] sm:text-4xl">{{ $article->title }}</h1>
 
-                <div class="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-[#5B6378]">
-                    @if ($article->author)
-                        <a href="{{ route('public.byline', $article->author) }}" class="font-semibold text-[#171B28] hover:text-brand-600">{{ $article->author->name }}</a>
-                        <span>&middot;</span>
-                    @endif
-                    @if ($article->published_at)
-                        <time datetime="{{ $article->published_at->toIso8601String() }}">{{ $article->published_at->translatedFormat('l, d F Y, H:i') }} WIB</time>
-                    @endif
-                    <span>&middot;</span>
-                    <span>{{ number_format($article->views_count, 0, ',', '.') }}x dibaca</span>
+                {{-- Byline + bagikan (atas) --}}
+                <div class="mt-5 flex flex-wrap items-center justify-between gap-4 border-y border-[#E4E8EF] py-3">
+                    <div class="flex min-w-0 items-center gap-3">
+                        @if ($article->author)
+                            <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-100 text-sm font-bold text-brand-700" aria-hidden="true">
+                                {{ \Illuminate\Support\Str::of($article->author->name)->explode(' ')->take(2)->map(fn ($w) => mb_substr($w, 0, 1))->implode('') }}
+                            </span>
+                        @endif
+                        <div class="min-w-0 text-[13px] leading-snug text-[#5B6378]">
+                            @if ($article->author)
+                                <a href="{{ route('public.byline', $article->author) }}" class="block font-semibold text-[#171B28] hover:text-brand-600">{{ $article->author->name }}</a>
+                            @endif
+                            <span class="flex flex-wrap items-center gap-x-1.5">
+                                @if ($article->published_at)
+                                    <time datetime="{{ $article->published_at->toIso8601String() }}">{{ $article->published_at->translatedFormat('l, d F Y, H:i') }} WIB</time>
+                                    <span aria-hidden="true">&middot;</span>
+                                @endif
+                                <span>{{ number_format($article->views_count, 0, ',', '.') }}x dibaca</span>
+                            </span>
+                        </div>
+                    </div>
+
+                    @unless ($isPreview)
+                        <x-public.share-buttons :url="$url" :title="$article->title" />
+                    @endunless
                 </div>
 
                 @if ($img)
                     <figure class="mt-5">
-                        <img src="{{ $img }}" alt="{{ $article->title }}" class="w-full rounded-card object-cover">
+                        <img src="{{ $img }}" alt="{{ $imgAlt }}" class="aspect-[16/9] w-full rounded-card object-cover">
+                        @if ($imgCaption)
+                            <figcaption class="mt-2 text-[13px] leading-snug text-[#5B6378]">{{ $imgCaption }}</figcaption>
+                        @endif
                     </figure>
-                @endif
-
-                @if ($article->excerpt)
-                    <p class="mt-5 text-lg font-medium leading-relaxed text-[#3B4152]">{{ $article->excerpt }}</p>
                 @endif
 
                 <div class="mt-6 text-[17px] leading-8 text-[#2A3040]
@@ -89,13 +104,10 @@
 
                 <x-public.ad-slot placement="inline_artikel" height="h-28" :placeholder="false" class="my-6" />
 
-                {{-- Bagikan --}}
-                <div class="mt-6 flex flex-wrap items-center gap-2 border-t border-[#E4E8EF] pt-5 text-sm">
-                    <span class="font-semibold text-[#3B4152]">Bagikan:</span>
-                    <a href="https://wa.me/?text={{ $shareTitle }}%20{{ $shareUrl }}" target="_blank" rel="noopener noreferrer" class="rounded-full bg-[#25D366] px-3.5 py-1.5 font-semibold text-white hover:brightness-95">WhatsApp</a>
-                    <a href="https://www.facebook.com/sharer/sharer.php?u={{ $shareUrl }}" target="_blank" rel="noopener noreferrer" class="rounded-full bg-[#1877F2] px-3.5 py-1.5 font-semibold text-white hover:brightness-95">Facebook</a>
-                    <a href="https://twitter.com/intent/tweet?text={{ $shareTitle }}&url={{ $shareUrl }}" target="_blank" rel="noopener noreferrer" class="rounded-full bg-[#171B28] px-3.5 py-1.5 font-semibold text-white hover:brightness-95">X</a>
-                </div>
+                {{-- Bagikan (bawah) --}}
+                @unless ($isPreview)
+                    <x-public.share-buttons :url="$url" :title="$article->title" class="mt-6 border-t border-[#E4E8EF] pt-5" />
+                @endunless
 
                 {{-- Terkait --}}
                 @if ($relatedArticles->isNotEmpty())
@@ -111,9 +123,32 @@
             </article>
 
             <aside class="space-y-6">
-                <div class="lg:sticky lg:top-28 space-y-6">
-                    <x-public.ad-slot placement="sidebar" height="h-64" :placeholder="false" />
-                </div>
+                <x-public.ad-slot placement="sidebar" height="h-64" :placeholder="false" />
+
+                @if ($popularArticles->isNotEmpty())
+                    <section class="rounded-card border border-[#E4E8EF] bg-white p-4">
+                        <h2 class="mb-3 border-b-2 border-brand-600 pb-2 text-base font-bold text-[#171B28]">Terpopuler</h2>
+                        <ol class="space-y-3">
+                            @foreach ($popularArticles as $item)
+                                <li class="group flex gap-3">
+                                    <span class="w-6 shrink-0 text-2xl font-extrabold leading-none text-[#CDD3DF] group-hover:text-brand-600">{{ $loop->iteration }}</span>
+                                    <a href="{{ $item->publicUrl() }}" class="text-sm font-semibold leading-snug text-[#171B28] group-hover:text-brand-600">{{ $item->title }}</a>
+                                </li>
+                            @endforeach
+                        </ol>
+                    </section>
+                @endif
+
+                @if ($latestArticles->isNotEmpty())
+                    <section class="rounded-card border border-[#E4E8EF] bg-white p-4">
+                        <h2 class="mb-3 border-b-2 border-brand-600 pb-2 text-base font-bold text-[#171B28]">Berita Terbaru</h2>
+                        @foreach ($latestArticles as $item)
+                            <x-public.article-card :article="$item" variant="compact" />
+                        @endforeach
+                    </section>
+                @endif
+
+                <x-public.follow-us />
             </aside>
         </div>
     </div>

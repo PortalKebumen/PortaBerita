@@ -122,7 +122,7 @@
             </div>
             <div class="mb-5">
                 <label class="form-label">Keterangan (Caption)</label>
-                <input type="text" name="caption" class="form-input" placeholder="Keterangan yang tampil di bawah gambar">
+                <textarea name="caption" rows="3" maxlength="255" class="form-textarea resize-y" placeholder="Keterangan yang tampil di bawah gambar"></textarea>
             </div>
             <div class="flex justify-end gap-2.5">
                 <button type="button" class="btn-secondary" data-modal-close>Batal</button>
@@ -157,7 +157,7 @@
             </div>
             <div class="mb-5">
                 <label class="form-label">Keterangan (Caption)</label>
-                <input type="text" name="caption" id="media-edit-caption" class="form-input">
+                <textarea name="caption" id="media-edit-caption" rows="3" maxlength="255" class="form-textarea resize-y"></textarea>
             </div>
             <div class="flex justify-end gap-2.5">
                 <button type="button" class="btn-secondary" data-modal-close>Batal</button>

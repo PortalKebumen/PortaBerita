@@ -215,8 +215,8 @@
                 </div>
                 <div class="mb-5">
                     <label class="form-label">Keterangan (Caption)</label>
-                    <input type="text" wire:model="newCaption" class="form-input"
-                        placeholder="Keterangan yang tampil di bawah gambar">
+                    <textarea wire:model="newCaption" rows="3" maxlength="255" class="form-textarea resize-y"
+                        placeholder="Keterangan yang tampil di bawah gambar, contoh: Warga memadati Pantai Menganti saat libur panjang. (Foto: Dok. PortalKebumen)"></textarea>
                 </div>
 
                 <div class="flex justify-end gap-2.5">
@@ -269,7 +269,8 @@
                 </div>
                 <div class="mb-5">
                     <label class="form-label">Keterangan (Caption)</label>
-                    <input type="text" wire:model="editCaption" class="form-input">
+                    <textarea wire:model="editCaption" rows="3" maxlength="255" class="form-textarea resize-y"
+                        placeholder="Keterangan yang tampil di bawah gambar"></textarea>
                 </div>
                 <div class="flex justify-end gap-2.5">
                     <button type="button" wire:click="closeEditModal" class="btn-secondary">Batal</button>

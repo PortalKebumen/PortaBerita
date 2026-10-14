@@ -7,6 +7,7 @@ use App\Models\Article;
 use App\Models\Category;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -63,6 +64,20 @@ class PublicController extends Controller
             ->orderByDesc('id');
     }
 
+    /**
+     * Terpopuler 30 hari terakhir, jatuh ke sepanjang waktu jika kosong.
+     *
+     * @param  array<int, int>  $exceptIds
+     */
+    protected static function popular(int $limit = 5, array $exceptIds = []): Collection
+    {
+        $query = fn () => self::published()->reorder()->whereNotIn('id', $exceptIds)->orderByDesc('views_count')->take($limit);
+
+        $popular = $query()->where('published_at', '>=', now()->subDays(30))->get();
+
+        return $popular->isNotEmpty() ? $popular : $query()->get();
+    }
+
     /* ---------------------------------------------------------------
      | Halaman
      |--------------------------------------------------------------- */
@@ -97,16 +112,7 @@ class PublicController extends Controller
             ->take(8)
             ->get();
 
-        $popular = self::published()
-            ->reorder()
-            ->where('published_at', '>=', now()->subDays(30))
-            ->orderByDesc('views_count')
-            ->take(5)
-            ->get();
-
-        if ($popular->isEmpty()) {
-            $popular = self::published()->reorder()->orderByDesc('views_count')->take(5)->get();
-        }
+        $popular = self::popular();
 
         // Blok per kategori utama (maks. 4 kategori, tiap blok 4 artikel termasuk subkategori)
         $kategoriBlocks = Category::whereNull('parent_id')
@@ -228,9 +234,18 @@ class PublicController extends Controller
             ->take(4)
             ->get();
 
+        $popularArticles = self::popular(5, [$article->id]);
+
+        $latestArticles = self::published()
+            ->whereNotIn('id', $relatedArticles->pluck('id')->push($article->id))
+            ->take(5)
+            ->get();
+
         return view('public.artikel-detail', [
             'article' => $article,
             'relatedArticles' => $relatedArticles,
+            'popularArticles' => $popularArticles,
+            'latestArticles' => $latestArticles,
             'isPreview' => $isPreview,
         ]);
     }

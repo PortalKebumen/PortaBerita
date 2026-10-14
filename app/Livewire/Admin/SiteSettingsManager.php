@@ -40,6 +40,7 @@ class SiteSettingsManager extends Component
     public string $xTwitter = '';
     public string $youtube = '';
     public string $whatsapp = '';
+    public string $whatsappChannel = '';
 
     // Gambar (lewat MediaPicker)
     public ?int $logoMediaId = null;
@@ -79,6 +80,7 @@ class SiteSettingsManager extends Component
             'xTwitter' => 'nullable|url|max:255',
             'youtube' => 'nullable|url|max:255',
             'whatsapp' => ['nullable', 'regex:/^\+?[0-9\s\-]{8,20}$/'],
+            'whatsappChannel' => ['nullable', 'url', 'max:255', 'regex:#^https://(www\.)?whatsapp\.com/channel/#'],
 
             'logoMediaId' => 'nullable|integer|exists:media,id',
             'ogMediaId' => 'nullable|integer|exists:media,id',
@@ -99,6 +101,8 @@ class SiteSettingsManager extends Component
             'xTwitter.url' => 'Tautan X (Twitter) harus berupa URL lengkap (https://...).',
             'youtube.url' => 'Tautan YouTube harus berupa URL lengkap (https://...).',
             'whatsapp.regex' => 'Nomor WhatsApp tidak valid (contoh: +62 812-3456-7890).',
+            'whatsappChannel.url' => 'Tautan WhatsApp Channel harus berupa URL lengkap (https://...).',
+            'whatsappChannel.regex' => 'Tautan WhatsApp Channel harus diawali https://whatsapp.com/channel/.',
         ];
     }
 
@@ -172,6 +176,7 @@ class SiteSettingsManager extends Component
                 'x_twitter' => $this->xTwitter ?: null,
                 'youtube' => $this->youtube ?: null,
                 'whatsapp' => $this->whatsapp ?: null,
+                'whatsapp_channel' => $this->whatsappChannel ?: null,
             ]);
         } catch (\Throwable $e) {
             report($e);
@@ -343,6 +348,7 @@ class SiteSettingsManager extends Component
         $this->xTwitter = (string) $s['x_twitter'];
         $this->youtube = (string) $s['youtube'];
         $this->whatsapp = (string) $s['whatsapp'];
+        $this->whatsappChannel = (string) $s['whatsapp_channel'];
 
         $this->logoMediaId = null;
         $this->logoPreviewUrl = $s['logo_url'];
@@ -397,7 +403,7 @@ class SiteSettingsManager extends Component
     {
         return match (true) {
             in_array($field, ['metaTitle', 'metaDescription', 'gaId', 'gscVerification', 'ogMediaId'], true) => 'seo',
-            in_array($field, ['facebook', 'instagram', 'xTwitter', 'youtube', 'whatsapp'], true) => 'sosial',
+            in_array($field, ['facebook', 'instagram', 'xTwitter', 'youtube', 'whatsapp', 'whatsappChannel'], true) => 'sosial',
             default => 'umum',
         };
     }

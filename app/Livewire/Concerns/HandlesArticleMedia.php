@@ -81,8 +81,13 @@ trait HandlesArticleMedia
         }
 
         // Koleksi singleFile() otomatis mengganti file lama setelah yang baru berhasil ditambahkan.
+        // Alt & caption dari Media Library ikut dibawa agar keterangan foto tampil di halaman artikel.
         $article->copyMedia($sourceMedia->getPath())
             ->usingFileName($sourceMedia->file_name)
+            ->withCustomProperties([
+                'alt_text' => (string) $sourceMedia->getCustomProperty('alt_text', ''),
+                'caption' => (string) $sourceMedia->getCustomProperty('caption', ''),
+            ])
             ->toMediaCollection($collection);
     }
 
