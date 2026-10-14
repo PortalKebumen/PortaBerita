@@ -142,3 +142,32 @@
   background: #F8F9FB !important;
   border-color: #E4E8EF !important;
 }
+
+/* ===== Breaking news ticker (teks berjalan) ===== */
+.breaking-ticker__viewport {
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 24px, #000 calc(100% - 32px), transparent);
+          mask-image: linear-gradient(to right, transparent, #000 24px, #000 calc(100% - 32px), transparent);
+}
+.breaking-ticker__track {
+  animation: breaking-ticker-scroll var(--ticker-duration, 40s) linear infinite;
+}
+.breaking-ticker__viewport:hover .breaking-ticker__track,
+.breaking-ticker__viewport:focus-within .breaking-ticker__track {
+  animation-play-state: paused;
+}
+.breaking-ticker__ping {
+  animation: breaking-ticker-ping 1.4s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+@keyframes breaking-ticker-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+@keyframes breaking-ticker-ping {
+  75%, 100% { transform: scale(2.2); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .breaking-ticker__track,
+  .breaking-ticker__ping { animation: none; }
+  .breaking-ticker__viewport { overflow-x: auto; scrollbar-width: none; }
+  .breaking-ticker__track > ul[aria-hidden="true"] { display: none; }
+}

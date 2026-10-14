@@ -45,6 +45,9 @@
                     @endif
                 </nav>
 
+                @if ($article->is_breaking)
+                    <span class="mt-3 inline-block rounded bg-accent-500 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-white">Breaking News</span>
+                @endif
                 @if ($article->is_advertorial)
                     <span class="mt-3 inline-block rounded bg-[#E4E8EF] px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-[#3B4152]">Advertorial</span>
                 @endif

@@ -17,6 +17,9 @@
             @endif
             <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/50 to-transparent p-5 pt-16 sm:p-7 sm:pt-24">
                 <div class="flex flex-wrap items-center gap-2">
+                    @if ($article->is_breaking)
+                        <span class="rounded bg-white px-2 py-0.5 text-[10.5px] font-bold uppercase tracking-wide text-accent-500">Breaking</span>
+                    @endif
                     @if ($catName)
                         <span class="rounded bg-accent-500 px-2 py-0.5 text-[10.5px] font-bold uppercase tracking-wide text-white">{{ $catName }}</span>
                     @endif
@@ -43,6 +46,9 @@
         </a>
         <div class="min-w-0 flex-1">
             <div class="flex flex-wrap items-center gap-2 text-[11px] font-bold uppercase tracking-wide">
+                @if ($article->is_breaking)
+                    <span class="rounded bg-accent-500 px-1.5 py-0.5 text-white">Breaking</span>
+                @endif
                 @if ($catName)
                     <span class="text-brand-600">{{ $catName }}</span>
                 @endif
@@ -65,6 +71,9 @@
 @elseif ($variant === 'compact')
     <article class="group flex gap-3 border-b border-[#E4E8EF] py-3 last:border-0 last:pb-0 first:pt-0">
         <div class="min-w-0 flex-1">
+            @if ($article->is_breaking)
+                <span class="mr-1 rounded bg-accent-500 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">Breaking</span>
+            @endif
             @if ($catName)
                 <span class="text-[10.5px] font-bold uppercase tracking-wide text-brand-600">{{ $catName }}</span>
             @endif
@@ -93,6 +102,9 @@
         </a>
         <div class="p-4">
             <div class="flex flex-wrap items-center gap-2 text-[11px] font-bold uppercase tracking-wide">
+                @if ($article->is_breaking)
+                    <span class="rounded bg-accent-500 px-1.5 py-0.5 text-white">Breaking</span>
+                @endif
                 @if ($catName)
                     <span class="text-brand-600">{{ $catName }}</span>
                 @endif
