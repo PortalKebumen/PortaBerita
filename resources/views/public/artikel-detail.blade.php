@@ -65,7 +65,7 @@
                         @endif
                         <div class="min-w-0 text-[13px] leading-snug text-[#5B6378]">
                             @if ($article->author)
-                                <a href="{{ route('public.byline', $article->author) }}" class="block font-semibold text-[#171B28] hover:text-brand-600">{{ $article->author->name }}</a>
+                                <a href="{{ $article->author->profileUrl() }}" class="block font-semibold text-[#171B28] hover:text-brand-600">{{ $article->author->name }}</a>
                             @endif
                             <span class="flex flex-wrap items-center gap-x-1.5">
                                 @if ($article->published_at)

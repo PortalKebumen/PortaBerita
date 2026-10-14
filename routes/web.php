@@ -21,7 +21,8 @@ Route::controller(PublicController::class)->name('public.')->group(function () {
     Route::get('/', 'beranda')->name('beranda');
     Route::get('/kategori/{parent}/{sub}', 'kategori')->name('kategori.sub');
     Route::get('/kategori/{slug}', 'kategori')->name('kategori');
-    Route::get('/penulis/{user}', 'byline')->name('byline');
+    Route::get('/profile/{user}/{slug?}', 'byline')->whereNumber('user')->name('byline');
+    Route::get('/penulis/{user}', fn (\App\Models\User $user) => redirect($user->profileUrl(), 301))->whereNumber('user');
     Route::get('/artikel/{slug}', 'artikel')->name('artikel');
 });
 

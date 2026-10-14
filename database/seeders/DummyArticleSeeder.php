@@ -85,7 +85,8 @@ class DummyArticleSeeder extends Seeder
                     'excerpt' => $excerpt,
                     'content' => collect($paragraphs)->map(fn ($p) => "<p>{$p}</p>")->implode("\n"),
                     'status' => $status,
-                    'author_id' => $authors[$index % $authors->count()]->id,
+                    // Digeser tiap satu putaran status agar status terbit terbagi rata antarpenulis.
+                    'author_id' => $authors[($index + intdiv($index, count(self::STATUS_CYCLE))) % $authors->count()]->id,
                     'category_id' => $categories[$categorySlug],
                     'is_breaking' => in_array('breaking', $flags, true),
                     'is_advertorial' => in_array('advertorial', $flags, true),

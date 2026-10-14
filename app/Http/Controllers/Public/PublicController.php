@@ -7,6 +7,7 @@ use App\Models\Article;
 use App\Models\Category;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
@@ -231,14 +232,42 @@ class PublicController extends Controller
         ]);
     }
 
-    public function byline(User $user): View
+    public function byline(User $user, ?string $slug = null): View|RedirectResponse
     {
+        // Samakan ke URL resmi /profile/{id}/{Nama.Penulis}; nama salah/kosong dialihkan permanen
+        if ($slug !== $user->profileSlug()) {
+            $query = request()->getQueryString();
+
+            return redirect()->to($user->profileUrl() . ($query ? '?' . $query : ''), 301);
+        }
+
+        $publishedQuery = fn () => self::published()->where('author_id', $user->id);
+
+        // Hanya akun aktif yang memang menulis (role redaksi atau punya artikel terbit)
+        abort_unless(
+            $user->is_active && ($user->hasAnyRole(['Penulis', 'Editor']) || $publishedQuery()->exists()),
+            404
+        );
+
+        $stats = $publishedQuery()->reorder()
+            ->selectRaw('COUNT(*) as total, COALESCE(SUM(views_count), 0) as views, MIN(published_at) as first_at')
+            ->toBase()
+            ->first();
+
+        $topCategories = Category::query()
+            ->whereIn('id', $publishedQuery()->reorder()->select('category_id'))
+            ->with('parent')
+            ->withCount(['articles' => fn ($q) => $q->where('author_id', $user->id)->where('status', 'published')])
+            ->orderByDesc('articles_count')
+            ->take(5)
+            ->get();
+
         return view('public.byline', [
             'penulis' => $user,
-            'articles' => self::published()
-                ->where('author_id', $user->id)
-                ->paginate(9)
-                ->withQueryString(),
+            'articles' => $publishedQuery()->paginate(10)->withQueryString(),
+            'stats' => $stats,
+            'topCategories' => $topCategories,
+            'popularArticles' => $publishedQuery()->reorder()->orderByDesc('views_count')->take(5)->get(),
         ]);
     }
 

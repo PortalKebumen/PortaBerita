@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
 use Spatie\Permission\Traits\HasRoles;
 
 #[Fillable(['name', 'email', 'password', 'is_active'])]
@@ -37,6 +38,20 @@ class User extends Authenticatable
 
     protected array $logAttributes = ['name', 'email', 'bio', 'is_active'];
     protected string $logLabel = 'Pengguna';
+
+    /**
+     * Segmen nama untuk URL profil publik, gaya "Nama.Penulis" (contoh: Bagus.Prakoso).
+     */
+    public function profileSlug(): string
+    {
+        return Str::of($this->name)->ascii()->replaceMatches('/[^A-Za-z0-9]+/', '.')->trim('.')->value() ?: 'penulis';
+    }
+
+    /** URL profil publik: /profile/{id}/{Nama.Penulis} */
+    public function profileUrl(): string
+    {
+        return route('public.byline', ['user' => $this->id, 'slug' => $this->profileSlug()]);
+    }
 
     /**
      * Kirim email reset password memakai template PortalKebumen.
