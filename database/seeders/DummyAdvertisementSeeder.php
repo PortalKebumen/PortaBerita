@@ -8,11 +8,12 @@ use Illuminate\Database\Seeder;
 class DummyAdvertisementSeeder extends Seeder
 {
     /**
-     * Seed iklan bergambar dari public/images/iklan, dua iklan per lokasi agar rotasi terlihat.
+     * Seed iklan bergambar dari public/images/Iklan, dua iklan per lokasi agar rotasi terlihat.
      */
     public function run(): void
     {
-        if (! app()->environment(['local', 'testing'])) {
+        // Data dummy: boleh di local/testing/staging, tidak pernah di production
+        if (app()->isProduction()) {
             return;
         }
 
@@ -26,7 +27,8 @@ class DummyAdvertisementSeeder extends Seeder
         ];
 
         foreach ($ads as $index => [$name, $placement, $file, $url]) {
-            $path = public_path("images/iklan/{$file}");
+            // Nama folder di git "Iklan" (huruf I besar); server Linux peka huruf besar-kecil
+            $path = public_path("images/Iklan/{$file}");
 
             if (! is_file($path)) {
                 $this->command?->warn("Gambar {$file} tidak ditemukan, iklan {$name} dilewati.");

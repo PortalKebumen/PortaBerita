@@ -47,6 +47,13 @@
                         ],
                     ],
                     [
+                        'label' => 'Tampilan Situs',
+                        'items' => [
+                            ['route' => 'admin.halaman.index', 'label' => 'Halaman', 'icon' => 'halaman', 'permission' => 'pages.view'],
+                            ['route' => 'admin.menu.index', 'label' => 'Menu', 'icon' => 'menu', 'permission' => 'menus.view'],
+                        ],
+                    ],
+                    [
                         'label' => 'Konten',
                         'items' => [
                             ['route' => 'admin.artikel.index', 'label' => 'Artikel', 'icon' => 'artikel', 'permission' => 'articles.view'],

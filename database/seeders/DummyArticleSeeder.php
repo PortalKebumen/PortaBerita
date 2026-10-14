@@ -35,7 +35,8 @@ class DummyArticleSeeder extends Seeder
      */
     public function run(): void
     {
-        if (! app()->environment(['local', 'testing'])) {
+        // Data dummy: boleh di local/testing/staging, tidak pernah di production
+        if (app()->isProduction()) {
             return;
         }
 
@@ -156,9 +157,10 @@ class DummyArticleSeeder extends Seeder
      */
     private function dummyImage(): ?string
     {
-        $files = glob(public_path('storage/21/*.{jpg,jpeg,png,webp}'), GLOB_BRACE) ?: [];
+        // Disimpan di repo (public/storage tidak ikut git) agar seeder juga jalan di server
+        $path = base_path(DummyMediaLibrarySeeder::IMAGE);
 
-        return $files[0] ?? null;
+        return is_file($path) ? $path : null;
     }
 
     /**

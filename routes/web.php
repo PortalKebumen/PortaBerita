@@ -25,6 +25,7 @@ Route::controller(PublicController::class)->name('public.')->group(function () {
     Route::get('/penulis/{user}', fn (\App\Models\User $user) => redirect($user->profileUrl(), 301))->whereNumber('user');
     Route::get('/artikel/{slug}', 'artikel')->name('artikel');
     Route::get('/cari', 'cari')->name('cari');
+    Route::get('/halaman/{slug}', 'halaman')->name('halaman');
 });
 
 /*
@@ -109,6 +110,8 @@ Route::middleware(['auth', 'can:dashboard.view'])
         Route::view('iklan', 'admin.iklan')->can('ads.view')->name('iklan.index');
         Route::view('pengguna-role', 'admin.pengguna-role')->can('users.view')->name('pengguna-role.index');
         Route::view('activity-log', 'admin.activity-log')->can('activity-log.view')->name('activity-log.index');
+        Route::view('halaman', 'admin.halaman', ['title' => 'Halaman'])->can('pages.view')->name('halaman.index');
+        Route::view('menu', 'admin.menu', ['title' => 'Menu'])->can('menus.view')->name('menu.index');
         Route::view('pengaturan', 'admin.pengaturan', ['title' => 'Pengaturan'])
             ->can('settings.view')
             ->name('pengaturan.index');

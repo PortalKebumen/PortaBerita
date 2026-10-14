@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Public;
 use App\Http\Controllers\Controller;
 use App\Models\Article;
 use App\Models\Category;
+use App\Models\Page;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
@@ -51,6 +52,34 @@ class PublicController extends Controller
     public static function kategoriNavOverflow(int $max = 7): array
     {
         return array_slice(self::kategoriNav(), $max);
+    }
+
+    /**
+     * Berita terpopuler 7 hari untuk footer (array biasa, aman untuk cache).
+     *
+     * @return array<int, array{title: string, url: string, image: string, category: ?string, date: ?string}>
+     */
+    public static function footerPopular(int $limit = 4): array
+    {
+        return Cache::remember('public.footer_popular.v1', 600, function () use ($limit) {
+            $popular = self::published()->reorder()
+                ->where('published_at', '>=', now()->subDays(7))
+                ->orderByDesc('views_count')
+                ->take($limit)
+                ->get();
+
+            if ($popular->count() < $limit) {
+                $popular = self::published()->reorder()->orderByDesc('views_count')->take($limit)->get();
+            }
+
+            return $popular->map(fn (Article $a) => [
+                'title' => $a->title,
+                'url' => $a->publicUrl(),
+                'image' => $a->getFirstMediaUrl('featured', 'thumb'),
+                'category' => $a->category?->name,
+                'date' => $a->published_at?->translatedFormat('d M Y'),
+            ])->all();
+        });
     }
 
     /* ---------------------------------------------------------------
@@ -213,6 +242,22 @@ class PublicController extends Controller
             'popularArticles' => $popularArticles,
             'latestArticles' => $latestArticles,
             'isPreview' => $isPreview,
+        ]);
+    }
+
+    /** Halaman statis dari Admin > Halaman (Tentang Kami, Pedoman Media Siber, dll.). */
+    public function halaman(string $slug): View
+    {
+        $page = Page::where('slug', $slug)->firstOrFail();
+
+        // Draft hanya bisa dipratinjau oleh yang berhak mengelola halaman
+        $isPreview = ! $page->isPublished();
+        abort_if($isPreview && ! (Auth::check() && Auth::user()->can('pages.update')), 404);
+
+        return view('public.halaman', [
+            'page' => $page,
+            'isPreview' => $isPreview,
+            'popularArticles' => self::popular(5),
         ]);
     }
 

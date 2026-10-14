@@ -27,6 +27,10 @@ class Category extends Model
                 $category->slug = Str::slug($category->name);
             }
         });
+
+        // Nama/slug kategori dipakai di menu navbar & footer
+        static::saved(fn () => MenuItem::flushCache());
+        static::deleted(fn () => MenuItem::flushCache());
     }
 
     // relasi ke kategori parent

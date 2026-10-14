@@ -38,6 +38,7 @@ $administrator = [
     'users.view', 'users.create', 'users.update', 'users.deactivate', 'users.delete',
     'roles.view', 'roles.assign', 'roles.update-permissions',
     'activity-log.view-any', 'activity-log.purge', 'settings.view', 'settings.update',
+    'pages.view', 'pages.create', 'pages.update', 'pages.delete', 'menus.view', 'menus.update',
 ];
 
 return [

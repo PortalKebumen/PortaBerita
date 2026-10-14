@@ -12,7 +12,8 @@ class DummyAuthorProfileSeeder extends Seeder
      */
     public function run(): void
     {
-        if (! app()->environment(['local', 'testing'])) {
+        // Data dummy: boleh di local/testing/staging, tidak pernah di production
+        if (app()->isProduction()) {
             return;
         }
 

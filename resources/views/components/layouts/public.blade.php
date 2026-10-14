@@ -27,6 +27,29 @@
     $socials = collect(\App\Models\SiteSetting::socialLinks());
 
     $currentUrl = url()->current();
+
+    // Menu dari Admin > Menu. Navbar kosong = jatuh ke daftar kategori otomatis.
+    $navItems = \App\Models\MenuItem::tree('navbar');
+    if (! $navItems) {
+        $navItems = collect(\App\Http\Controllers\Public\PublicController::kategoriNav())->map(fn ($c) => [
+            'label' => $c['label'],
+            'url' => route('public.kategori', $c['slug']),
+            'new_tab' => false,
+            'type' => 'category',
+            'children' => collect($c['children'])->map(fn ($ch) => [
+                'label' => $ch['label'],
+                'url' => route('public.kategori.sub', [$c['slug'], $ch['slug']]),
+                'new_tab' => false,
+                'type' => 'category',
+                'children' => [],
+            ])->all(),
+        ])->all();
+    }
+    $isActiveUrl = fn (?string $url) => $url && ($currentUrl === $url || str_starts_with($currentUrl, rtrim($url, '/') . '/'));
+
+    $footerColumns = \App\Models\MenuItem::tree('footer');
+    $footerBottom = \App\Models\MenuItem::tree('footer_bottom');
+    $footerPopular = \App\Http\Controllers\Public\PublicController::footerPopular();
 @endphp
 <!DOCTYPE html>
 <html lang="{{ $htmlLang }}">
@@ -150,78 +173,111 @@
             </div>
         </div>
 
-        {{-- Baris 2: menu kategori (desktop). 7 tampil, sisanya di "Lainnya" (CSS murni) --}}
+        {{-- Baris 2: menu utama (desktop), dari Admin > Menu lokasi Navbar.
+             Item yang tidak muat di lebar kontainer otomatis pindah ke tombol ≡ di kanan (lihat skrip di bawah). --}}
         <div class="hidden border-t border-[#CDD3DF] lg:block">
-            <div class="mx-auto flex max-w-7xl items-center gap-1 px-4 py-1.5 sm:px-6 lg:px-8">
-                @foreach (\App\Http\Controllers\Public\PublicController::kategoriNavVisible(7) as $item)
-                    @php
-                        $parentUrl = route('public.kategori', $item['slug']);
-                        // Aktif juga saat membuka salah satu sub-kategorinya (/kategori/{induk}/{sub})
-                        $active = $currentUrl === $parentUrl || str_starts_with($currentUrl, $parentUrl . '/');
-                    @endphp
+            <nav data-priority-nav class="mx-auto flex max-w-7xl items-center gap-1 px-4 py-1.5 sm:px-6 lg:px-8" aria-label="Menu utama">
+                <ul data-nav-list class="flex min-w-0 flex-1 flex-wrap items-center gap-1">
+                    @foreach ($navItems as $i => $item)
+                        @php($active = $isActiveUrl($item['url']) || collect($item['children'])->contains(fn ($c) => $isActiveUrl($c['url'])))
+                        <li data-nav-item="{{ $i }}" class="group/dd relative shrink-0">
+                            @if ($item['url'])
+                                <a href="{{ $item['url'] }}" @if ($item['new_tab']) target="_blank" rel="noopener" @endif
+                                   @if ($currentUrl === $item['url']) aria-current="page" @endif
+                                   @if (count($item['children'])) aria-haspopup="true" @endif
+                                   class="block whitespace-nowrap rounded-md px-3 py-2 text-sm font-semibold transition hover:bg-[#F1F3F7] hover:text-brand-600 {{ count($item['children']) ? 'group-hover/dd:bg-[#F1F3F7] group-hover/dd:text-brand-600' : '' }} {{ $active ? 'bg-[#F1F3F7] text-brand-600' : 'text-[#3B4152]' }}">
+                                    {{ $item['label'] }}
+                                </a>
+                            @else
+                                <span class="block cursor-default whitespace-nowrap rounded-md px-3 py-2 text-sm font-semibold text-[#3B4152] group-hover/dd:bg-[#F1F3F7] group-hover/dd:text-brand-600">{{ $item['label'] }}</span>
+                            @endif
 
-                    @if (count($item['children']))
-                        <div class="group/dd relative shrink-0">
-                            <a href="{{ $parentUrl }}" aria-haspopup="true"
-                               @if ($currentUrl === $parentUrl) aria-current="page" @endif
-                               class="block whitespace-nowrap rounded-md px-3 py-2 text-sm font-semibold transition hover:bg-[#F1F3F7] hover:text-brand-600 group-hover/dd:bg-[#F1F3F7] group-hover/dd:text-brand-600 {{ $active ? 'bg-[#F1F3F7] text-brand-600' : 'text-[#3B4152]' }}">
-                                {{ $item['label'] }}
-                            </a>
-                            <div class="absolute left-0 top-full z-40 hidden pt-1 group-focus-within/dd:block group-hover/dd:block">
-                                <div class="min-w-52 rounded-lg border border-[#E4E8EF] bg-white py-2 shadow-lg">
-                                    @foreach ($item['children'] as $child)
-                                        @php($childUrl = route('public.kategori.sub', [$item['slug'], $child['slug']]))
-                                        <a href="{{ $childUrl }}"
-                                           @if ($currentUrl === $childUrl) aria-current="page" @endif
-                                           class="block whitespace-nowrap px-4 py-1.5 text-sm font-semibold transition hover:text-brand-600 {{ $currentUrl === $childUrl ? 'text-brand-600' : 'text-[#3B4152]' }}">
-                                            {{ $child['label'] }}
-                                        </a>
-                                    @endforeach
+                            @if (count($item['children']))
+                                <div class="absolute left-0 top-full z-40 hidden pt-1 group-focus-within/dd:block group-hover/dd:block">
+                                    <div class="min-w-52 rounded-lg border border-[#E4E8EF] bg-white py-2 shadow-lg">
+                                        @foreach ($item['children'] as $child)
+                                            <a href="{{ $child['url'] ?? '#' }}" @if ($child['new_tab']) target="_blank" rel="noopener" @endif
+                                               @if ($currentUrl === $child['url']) aria-current="page" @endif
+                                               class="block whitespace-nowrap px-4 py-1.5 text-sm font-semibold transition hover:text-brand-600 {{ $currentUrl === $child['url'] ? 'text-brand-600' : 'text-[#3B4152]' }}">
+                                                {{ $child['label'] }}
+                                            </a>
+                                        @endforeach
+                                    </div>
                                 </div>
-                            </div>
-                        </div>
-                    @else
-                        <a href="{{ $parentUrl }}"
-                           @if ($active) aria-current="page" @endif
-                           class="shrink-0 whitespace-nowrap rounded-md px-3 py-2 text-sm font-semibold transition hover:bg-[#F1F3F7] hover:text-brand-600 {{ $active ? 'bg-[#F1F3F7] text-brand-600' : 'text-[#3B4152]' }}">
-                            {{ $item['label'] }}
-                        </a>
-                    @endif
-                @endforeach
+                            @endif
+                        </li>
+                    @endforeach
+                </ul>
 
-                @php($overflowNav = \App\Http\Controllers\Public\PublicController::kategoriNavOverflow(7))
-                @if (count($overflowNav))
-                    <div class="group relative shrink-0">
-                        <button type="button" aria-haspopup="true"
-                                class="flex cursor-pointer items-center gap-1 whitespace-nowrap rounded-md px-3 py-2 text-sm font-semibold text-[#3B4152] transition hover:bg-[#F1F3F7] hover:text-brand-600">
-                            Lainnya
-                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
-                            </svg>
-                        </button>
-                        <div class="absolute left-0 top-full z-40 hidden pt-1 group-focus-within:block group-hover:block">
-                            <div class="max-h-[70vh] w-56 overflow-y-auto rounded-lg border border-[#E4E8EF] bg-white py-1.5 shadow-lg">
-                                @foreach ($overflowNav as $item)
-                                    @if (! $loop->first && count($item['children']))
-                                        <div class="my-1 border-t border-[#EEF1F5]"></div>
+                {{-- Tombol ≡: menampung item yang tidak muat --}}
+                <div data-nav-more hidden class="group relative shrink-0">
+                    <button type="button" aria-haspopup="true" aria-label="Menu lainnya" title="Menu lainnya"
+                            class="flex h-9 w-9 cursor-pointer items-center justify-center rounded-md text-[#3B4152] transition hover:bg-[#F1F3F7] hover:text-brand-600 group-focus-within:bg-[#F1F3F7] group-hover:bg-[#F1F3F7] group-hover:text-brand-600">
+                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+                    </button>
+                    <div class="absolute right-0 top-full z-40 hidden pt-1 group-focus-within:block group-hover:block">
+                        <ul class="max-h-[70vh] w-60 overflow-y-auto rounded-lg border border-[#E4E8EF] bg-white py-1.5 shadow-lg">
+                            @foreach ($navItems as $i => $item)
+                                <li data-more-item="{{ $i }}" hidden>
+                                    @if ($item['url'])
+                                        <a href="{{ $item['url'] }}" @if ($item['new_tab']) target="_blank" rel="noopener" @endif
+                                           class="block px-4 py-2 text-sm font-semibold hover:bg-[#F1F3F7] hover:text-brand-600 {{ $isActiveUrl($item['url']) ? 'text-brand-600' : 'text-[#3B4152]' }}">{{ $item['label'] }}</a>
+                                    @else
+                                        <span class="block px-4 py-2 text-xs font-bold uppercase tracking-wide text-[#848CA3]">{{ $item['label'] }}</span>
                                     @endif
-                                    <a href="{{ route('public.kategori', $item['slug']) }}"
-                                       class="block px-4 py-2 text-sm font-semibold text-[#3B4152] hover:bg-[#F1F3F7] hover:text-brand-600">
-                                        {{ $item['label'] }}
-                                    </a>
                                     @foreach ($item['children'] as $child)
-                                        <a href="{{ route('public.kategori.sub', [$item['slug'], $child['slug']]) }}"
-                                           class="block py-1.5 pl-7 pr-4 text-[13px] font-medium text-[#5B6378] hover:bg-[#F1F3F7] hover:text-brand-600">
-                                            {{ $child['label'] }}
-                                        </a>
+                                        <a href="{{ $child['url'] ?? '#' }}" @if ($child['new_tab']) target="_blank" rel="noopener" @endif
+                                           class="block py-1.5 pl-7 pr-4 text-[13px] font-medium text-[#5B6378] hover:bg-[#F1F3F7] hover:text-brand-600">{{ $child['label'] }}</a>
                                     @endforeach
-                                @endforeach
-                            </div>
-                        </div>
+                                </li>
+                            @endforeach
+                        </ul>
                     </div>
-                @endif
-            </div>
+                </div>
+            </nav>
         </div>
+
+        <script>
+            // Navbar "priority+": tampilkan item sebanyak yang muat, sisanya masuk ke tombol ≡.
+            (function () {
+                var nav = document.querySelector('[data-priority-nav]');
+                if (!nav) return;
+                var list = nav.querySelector('[data-nav-list]');
+                var more = nav.querySelector('[data-nav-more]');
+                var items = Array.prototype.slice.call(list.querySelectorAll('[data-nav-item]'));
+                var moreItems = Array.prototype.slice.call(more.querySelectorAll('[data-more-item]'));
+
+                list.classList.remove('flex-wrap');
+
+                var layout = function () {
+                    if (!nav.offsetParent) return; // navbar desktop sedang disembunyikan (layar kecil)
+
+                    items.forEach(function (li) { li.hidden = false; });
+                    more.hidden = true;
+                    if (list.scrollWidth <= list.clientWidth) {
+                        moreItems.forEach(function (li) { li.hidden = true; });
+                        return;
+                    }
+
+                    more.hidden = false;
+                    var limit = list.clientWidth;
+                    var overflow = false;
+                    items.forEach(function (li, i) {
+                        overflow = overflow || (li.offsetLeft - list.offsetLeft + li.offsetWidth > limit);
+                        li.hidden = overflow;
+                        moreItems[i].hidden = !overflow;
+                    });
+                };
+
+                var timer;
+                window.addEventListener('resize', function () {
+                    clearTimeout(timer);
+                    timer = setTimeout(layout, 100);
+                });
+                if (document.fonts && document.fonts.ready) document.fonts.ready.then(layout);
+                layout();
+            })();
+        </script>
 
         {{-- Panel mobile: pencarian & kategori --}}
         <input type="checkbox" id="mobile-search-toggle" class="peer/search hidden">
@@ -233,11 +289,10 @@
         </div>
 
         <input type="checkbox" id="mobile-nav-toggle" class="peer/nav hidden">
-        <nav class="hidden max-h-[70vh] overflow-y-auto border-t border-[#CDD3DF] bg-white px-4 py-2 peer-checked/nav:block lg:hidden">
-            @foreach (\App\Http\Controllers\Public\PublicController::kategoriNav() as $item)
+        <nav class="hidden max-h-[70vh] overflow-y-auto border-t border-[#CDD3DF] bg-white px-4 py-2 peer-checked/nav:block lg:hidden" aria-label="Menu utama">
+            @foreach ($navItems as $item)
                 @if (count($item['children']))
-                    @php($parentUrl = route('public.kategori', $item['slug']))
-                    <details class="group/m" @if ($currentUrl === $parentUrl || str_starts_with($currentUrl, $parentUrl . '/')) open @endif>
+                    <details class="group/m" @if ($isActiveUrl($item['url']) || collect($item['children'])->contains(fn ($c) => $isActiveUrl($c['url']))) open @endif>
                         <summary class="flex cursor-pointer list-none items-center justify-between rounded-md px-3 py-2.5 text-sm font-medium text-[#3B4152] hover:bg-[#F1F3F7] [&::-webkit-details-marker]:hidden">
                             {{ $item['label'] }}
                             <svg class="h-4 w-4 text-[#848CA3] transition group-open/m:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -245,20 +300,18 @@
                             </svg>
                         </summary>
                         <div class="mb-1 ml-3 border-l-2 border-[#E4E8EF] pl-2">
-                            <a href="{{ $parentUrl }}" class="block rounded-md px-3 py-2 text-sm font-semibold text-brand-700 hover:bg-[#F1F3F7]">Semua {{ $item['label'] }}</a>
+                            @if ($item['url'])
+                                <a href="{{ $item['url'] }}" class="block rounded-md px-3 py-2 text-sm font-semibold text-brand-700 hover:bg-[#F1F3F7]">Semua {{ $item['label'] }}</a>
+                            @endif
                             @foreach ($item['children'] as $child)
-                                <a href="{{ route('public.kategori.sub', [$item['slug'], $child['slug']]) }}"
-                                   class="block rounded-md px-3 py-2 text-sm text-[#5B6378] hover:bg-[#F1F3F7] hover:text-brand-600">
-                                    {{ $child['label'] }}
-                                </a>
+                                <a href="{{ $child['url'] ?? '#' }}" @if ($child['new_tab']) target="_blank" rel="noopener" @endif
+                                   class="block rounded-md px-3 py-2 text-sm text-[#5B6378] hover:bg-[#F1F3F7] hover:text-brand-600">{{ $child['label'] }}</a>
                             @endforeach
                         </div>
                     </details>
-                @else
-                    <a href="{{ route('public.kategori', $item['slug']) }}"
-                       class="block rounded-md px-3 py-2.5 text-sm font-medium text-[#3B4152] hover:bg-[#F1F3F7] hover:text-brand-600">
-                        {{ $item['label'] }}
-                    </a>
+                @elseif ($item['url'])
+                    <a href="{{ $item['url'] }}" @if ($item['new_tab']) target="_blank" rel="noopener" @endif
+                       class="block rounded-md px-3 py-2.5 text-sm font-medium text-[#3B4152] hover:bg-[#F1F3F7] hover:text-brand-600">{{ $item['label'] }}</a>
                 @endif
             @endforeach
         </nav>
@@ -282,87 +335,125 @@
     </div>
 
     <footer class="mt-14 bg-brand-900 text-[#B9C3E6]">
-        <div class="mx-auto grid max-w-7xl grid-cols-1 gap-10 px-4 py-11 sm:grid-cols-2 sm:px-6 lg:grid-cols-4 lg:px-8">
-            <div>
+        {{-- 1. Identitas + kolom menu footer (Admin > Menu lokasi Footer) --}}
+        <div class="mx-auto grid max-w-7xl gap-10 px-4 py-12 sm:px-6 lg:grid-cols-12 lg:px-8">
+            <div class="lg:col-span-4">
                 <a href="{{ route('public.beranda') }}" class="inline-block">
                     <img src="{{ asset('images/logo-full.png') }}" alt="{{ $siteName }}" class="h-12 w-auto max-w-[260px] object-contain sm:h-14">
                 </a>
 
-                @if ($tagline)
-                    <p class="mt-3 text-sm text-[#B9C3E6]">{{ $tagline }}</p>
+                @if ($site['meta_description'] || $tagline)
+                    <p class="mt-4 max-w-sm text-sm leading-relaxed">{{ $site['meta_description'] ?: $tagline }}</p>
                 @endif
 
-                <ul class="mt-4 space-y-2 text-sm">
+                <ul class="mt-5 space-y-2.5 text-sm">
                     @if ($site['address'])
                         <li class="flex gap-2.5">
-                            <svg class="mt-0.5 h-4 w-4 shrink-0 text-[#7C88AE]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17.7 8.3a5.7 5.7 0 10-11.4 0c0 4.3 5.7 10.7 5.7 10.7s5.7-6.4 5.7-10.7z"/><circle cx="12" cy="8.3" r="2"/></svg>
+                            <svg class="mt-0.5 h-4 w-4 shrink-0 text-accent-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17.7 8.3a5.7 5.7 0 10-11.4 0c0 4.3 5.7 10.7 5.7 10.7s5.7-6.4 5.7-10.7z"/><circle cx="12" cy="8.3" r="2"/></svg>
                             <span>{{ $site['address'] }}</span>
                         </li>
                     @endif
                     @if ($site['editorial_email'])
                         <li class="flex gap-2.5">
-                            <svg class="mt-0.5 h-4 w-4 shrink-0 text-[#7C88AE]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path stroke-linecap="round" stroke-linejoin="round" d="M3 7l9 6 9-6"/></svg>
+                            <svg class="mt-0.5 h-4 w-4 shrink-0 text-accent-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path stroke-linecap="round" stroke-linejoin="round" d="M3 7l9 6 9-6"/></svg>
                             <a href="mailto:{{ $site['editorial_email'] }}" class="hover:text-white">{{ $site['editorial_email'] }}</a>
                         </li>
                     @endif
                     @if ($site['phone'])
                         <li class="flex gap-2.5">
-                            <svg class="mt-0.5 h-4 w-4 shrink-0 text-[#7C88AE]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 4h4l2 5-2.5 1.5a11 11 0 005 5L15 13l5 2v4a2 2 0 01-2 2A16 16 0 013 6a2 2 0 012-2z"/></svg>
+                            <svg class="mt-0.5 h-4 w-4 shrink-0 text-accent-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 4h4l2 5-2.5 1.5a11 11 0 005 5L15 13l5 2v4a2 2 0 01-2 2A16 16 0 013 6a2 2 0 012-2z"/></svg>
                             <a href="tel:{{ preg_replace('/[^\d+]/', '', $site['phone']) }}" class="hover:text-white">{{ $site['phone'] }}</a>
                         </li>
                     @endif
                 </ul>
 
                 @if ($socials->isNotEmpty())
-                    <div class="mt-5 flex flex-wrap items-center gap-3">
+                    <p class="mt-6 text-[12px] font-bold uppercase tracking-wider text-white">Ikuti Kami</p>
+                    <div class="mt-2.5 flex flex-wrap items-center gap-2.5">
                         @foreach ($socials as $social)
-                            <a href="{{ $social['url'] }}" target="_blank" rel="noopener noreferrer" aria-label="{{ $social['label'] }}"
-                               class="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-[#B9C3E6] transition hover:bg-white/20 hover:text-white">
+                            <a href="{{ $social['url'] }}" target="_blank" rel="noopener noreferrer" aria-label="{{ $social['label'] }}" title="{{ $social['label'] }}"
+                               style="--brand: {{ $social['color'] }}"
+                               class="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white transition hover:-translate-y-0.5 hover:bg-(--brand)">
                                 <x-public.social-icon :name="$social['key']" />
                             </a>
                         @endforeach
                     </div>
                 @endif
+
             </div>
 
-            <div>
-                <h3 class="text-[13px] font-bold uppercase tracking-wide text-white">Redaksi</h3>
-                <ul class="mt-3 space-y-2.5 text-sm">
-                    {{-- TODO: arahkan ke halaman statis begitu dibuat --}}
-                    <li><a href="#" class="hover:text-white">Tentang Kami</a></li>
-                    <li><a href="#" class="hover:text-white">Pedoman Media Siber</a></li>
-                    <li><a href="#" class="hover:text-white">Kode Etik Jurnalistik</a></li>
-                    @if ($site['editorial_email'])
-                        <li><a href="mailto:{{ $site['editorial_email'] }}" class="hover:text-white">Hubungi Kami</a></li>
-                    @endif
-                </ul>
-            </div>
-
-            <div>
-                <h3 class="text-[13px] font-bold uppercase tracking-wide text-white">Kategori</h3>
-                <ul class="mt-3 space-y-2.5 text-sm">
-                    @foreach (\App\Http\Controllers\Public\PublicController::kategoriNavVisible(5) as $item)
-                        <li><a href="{{ route('public.kategori', $item['slug']) }}" class="hover:text-white">{{ $item['label'] }}</a></li>
+            @if (count($footerColumns))
+                <div class="grid grid-cols-2 gap-8 sm:grid-cols-3 lg:col-span-8 {{ count($footerColumns) >= 4 ? 'lg:grid-cols-4' : 'lg:grid-cols-3' }}">
+                    @foreach ($footerColumns as $column)
+                        <div>
+                            @if ($column['url'] && ! count($column['children']))
+                                <a href="{{ $column['url'] }}" @if ($column['new_tab']) target="_blank" rel="noopener" @endif class="text-[13px] font-bold uppercase tracking-wider text-white hover:text-accent-400">{{ $column['label'] }}</a>
+                            @else
+                                <h3 class="text-[13px] font-bold uppercase tracking-wider text-white">{{ $column['label'] }}</h3>
+                            @endif
+                            <span class="mt-2 block h-0.5 w-8 rounded bg-accent-500"></span>
+                            @if (count($column['children']))
+                                <ul class="mt-4 space-y-2.5 text-sm">
+                                    @foreach ($column['children'] as $link)
+                                        <li>
+                                            <a href="{{ $link['url'] ?? '#' }}" @if ($link['new_tab']) target="_blank" rel="noopener" @endif
+                                               class="transition hover:pl-1 hover:text-white">{{ $link['label'] }}</a>
+                                        </li>
+                                    @endforeach
+                                </ul>
+                            @endif
+                        </div>
                     @endforeach
-                </ul>
-            </div>
-
-            <div>
-                <h3 class="text-[13px] font-bold uppercase tracking-wide text-white">Layanan</h3>
-                <ul class="mt-3 space-y-2.5 text-sm">
-                    @if ($site['editorial_email'])
-                        <li><a href="mailto:{{ $site['editorial_email'] }}?subject=Pasang%20Iklan" class="hover:text-white">Pasang Iklan (Rate Card)</a></li>
-                        <li><a href="mailto:{{ $site['editorial_email'] }}?subject=Kirim%20Berita%20%2F%20Siaran%20Pers" class="hover:text-white">Kirim Berita / Siaran Pers</a></li>
-                    @endif
-                    <li><a href="#" class="hover:text-white">Kebijakan Privasi</a></li>
-                </ul>
-            </div>
+                </div>
+            @endif
         </div>
 
-        <div class="border-t border-[#223258]">
-            <div class="mx-auto flex max-w-7xl flex-col items-center justify-between gap-2 px-4 py-4 text-xs text-[#7C88AE] sm:flex-row sm:px-6 lg:px-8">
-                <span>&copy; {{ now()->year }} {{ $siteName }}. Hak cipta dilindungi.</span>
-                <a href="{{ route('login') }}" class="hover:text-white">Login Redaksi</a>
+        {{-- 2. Terpopuler pekan ini --}}
+        @if (count($footerPopular))
+            <div class="border-t border-white/10 bg-black/15">
+                <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+                    <div class="flex items-center justify-between gap-3">
+                        <h3 class="text-[13px] font-bold uppercase tracking-wider text-white">Terpopuler Pekan Ini</h3>
+                        <a href="{{ route('public.cari', ['urut' => 'terpopuler']) }}" class="text-xs font-semibold text-accent-400 hover:text-white">Lihat semua &rarr;</a>
+                    </div>
+                    <ol class="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+                        @foreach ($footerPopular as $i => $pop)
+                            <li>
+                                <a href="{{ $pop['url'] }}" class="group flex gap-3">
+                                    <span class="relative h-16 w-20 shrink-0 overflow-hidden rounded-md bg-white/10">
+                                        @if ($pop['image'])
+                                            <img src="{{ $pop['image'] }}" alt="" loading="lazy" class="h-full w-full object-cover transition duration-300 group-hover:scale-105">
+                                        @endif
+                                        <span class="absolute left-0 top-0 flex h-6 w-6 items-center justify-center rounded-br-md bg-accent-500 text-xs font-extrabold text-white">{{ $i + 1 }}</span>
+                                    </span>
+                                    <span class="min-w-0">
+                                        @if ($pop['category'])
+                                            <span class="block text-[10.5px] font-bold uppercase tracking-wide text-accent-400">{{ $pop['category'] }}</span>
+                                        @endif
+                                        <span class="mt-0.5 line-clamp-2 text-sm font-semibold leading-snug text-white group-hover:underline">{{ $pop['title'] }}</span>
+                                        @if ($pop['date'])
+                                            <span class="mt-1 block text-[11px] text-[#7C88AE]">{{ $pop['date'] }}</span>
+                                        @endif
+                                    </span>
+                                </a>
+                            </li>
+                        @endforeach
+                    </ol>
+                </div>
+            </div>
+        @endif
+
+        {{-- 3. Baris bawah: hak cipta + menu Footer Bawah --}}
+        <div class="border-t border-white/10 bg-[#081529]">
+            <div class="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 px-4 py-4 text-xs text-[#7C88AE] sm:px-6 md:flex-row lg:px-8">
+                <span>&copy; {{ now()->year }} {{ $siteName }}. Hak cipta dilindungi undang-undang.</span>
+                <div class="flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5">
+                    @foreach ($footerBottom as $link)
+                        @if ($link['url'])
+                            <a href="{{ $link['url'] }}" @if ($link['new_tab']) target="_blank" rel="noopener" @endif class="hover:text-white">{{ $link['label'] }}</a>
+                        @endif
+                    @endforeach
+                </div>
             </div>
         </div>
     </footer>
