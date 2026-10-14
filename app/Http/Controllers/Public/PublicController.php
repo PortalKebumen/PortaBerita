@@ -68,10 +68,16 @@ class PublicController extends Controller
      * Terpopuler 30 hari terakhir, jatuh ke sepanjang waktu jika kosong.
      *
      * @param  array<int, int>  $exceptIds
+     * @param  array<int, int>|null  $categoryIds
      */
-    protected static function popular(int $limit = 5, array $exceptIds = []): Collection
+    protected static function popular(int $limit = 5, array $exceptIds = [], ?array $categoryIds = null): Collection
     {
-        $query = fn () => self::published()->reorder()->whereNotIn('id', $exceptIds)->orderByDesc('views_count')->take($limit);
+        $query = fn () => self::published()
+            ->reorder()
+            ->whereNotIn('id', $exceptIds)
+            ->when($categoryIds !== null, fn ($q) => $q->whereIn('category_id', $categoryIds))
+            ->orderByDesc('views_count')
+            ->take($limit);
 
         $popular = $query()->where('published_at', '>=', now()->subDays(30))->get();
 
@@ -145,59 +151,34 @@ class PublicController extends Controller
     {
         if ($sub) {
             // URL: /kategori/{parent}/{sub}
-            $parentCategory = Category::whereNull('parent_id')
-                ->where('slug', $parent)
-                ->firstOrFail();
-
-            $category = Category::where('parent_id', $parentCategory->id)
-                ->where('slug', $sub)
-                ->firstOrFail();
-
-            $kategoriData = [
-                'id' => $category->id,
-                'label' => $category->name,
-                'slug' => $category->slug,
-                'parent' => [
-                    'id' => $parentCategory->id,
-                    'label' => $parentCategory->name,
-                    'slug' => $parentCategory->slug,
-                ],
-            ];
-
-            $articles = self::published()
-                ->where('category_id', $category->id)
-                ->paginate(12)
-                ->withQueryString();
+            $parentCategory = Category::whereNull('parent_id')->where('slug', $parent)->firstOrFail();
+            $category = Category::where('parent_id', $parentCategory->id)->where('slug', $sub)->firstOrFail();
+            $category->setRelation('parent', $parentCategory);
         } else {
             // URL: /kategori/{slug}
-            $category = Category::with(['parent', 'children'])
-                ->where('slug', $parent)
-                ->firstOrFail();
-
-            $kategoriData = [
-                'id' => $category->id,
-                'label' => $category->name,
-                'slug' => $category->slug,
-                'parent' => $category->parent ? [
-                    'id' => $category->parent->id,
-                    'label' => $category->parent->name,
-                    'slug' => $category->parent->slug,
-                ] : null,
-            ];
-
-            // Artikel kategori ini beserta seluruh anak kategorinya
-            $categoryIds = collect([$category->id])->merge($category->children->pluck('id'))->all();
-
-            $articles = self::published()
-                ->whereIn('category_id', $categoryIds)
-                ->paginate(12)
-                ->withQueryString();
+            $category = Category::with('parent')->where('slug', $parent)->firstOrFail();
         }
 
+        // Tab sub-kategori: anak dari kategori utama (juga tampil saat membuka sub-kategori)
+        $rootCategory = $category->parent ?? $category;
+        $subCategories = $rootCategory->children()->orderBy('name')->get();
+
+        // Kategori utama memuat artikel seluruh anaknya
+        $categoryIds = $category->parent_id
+            ? [$category->id]
+            : collect([$category->id])->merge($subCategories->pluck('id'))->all();
+
+        $articles = self::published()
+            ->whereIn('category_id', $categoryIds)
+            ->paginate(12)
+            ->withQueryString();
+
         return view('public.kategori', [
-            'kategori' => $kategoriData,
             'category' => $category,
+            'rootCategory' => $rootCategory,
+            'subCategories' => $subCategories,
             'articles' => $articles,
+            'popularArticles' => self::popular(5, [], $categoryIds),
         ]);
     }
 
