@@ -43,6 +43,18 @@ class Advertisement extends Model implements HasMedia
     ];
 
     /**
+     * Ruang yang disediakan tiap lokasi iklan (piksel CSS di desktop). Banner ukuran berapa pun
+     * diperkecil agar muat di ruang ini tanpa terpotong; "populer" hanya saran ukuran standar IAB.
+     * Lebar maks mengikuti layout publik: kontainer 1216px, kolom artikel 800px, kolom sidebar 384px.
+     */
+    public const PLACEMENTS = [
+        'header' => ['label' => 'Header Banner', 'max_width' => 1216, 'max_height' => 250, 'popular' => ['970×250', '970×90', '728×90']],
+        'sidebar' => ['label' => 'Sidebar Banner', 'max_width' => 384, 'max_height' => 600, 'popular' => ['300×250', '336×280', '300×600']],
+        'inline_artikel' => ['label' => 'Inline Artikel', 'max_width' => 800, 'max_height' => 250, 'popular' => ['728×90', '468×60', '300×250']],
+        'footer' => ['label' => 'Footer Banner', 'max_width' => 1216, 'max_height' => 250, 'popular' => ['970×250', '970×90', '728×90']],
+    ];
+
+    /**
      * Relationship to ad metrics.
      */
     public function metrics(): HasMany

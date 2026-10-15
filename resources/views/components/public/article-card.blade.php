@@ -1,4 +1,4 @@
-@props(['article', 'variant' => 'card'])
+@props(['article', 'variant' => 'card', 'fill' => false])
 
 @php
     $img = $article->getFirstMediaUrl('featured', 'medium');
@@ -8,12 +8,13 @@
 @endphp
 
 @if ($variant === 'hero')
-    <article class="group relative overflow-hidden rounded-card bg-brand-900">
-        <a href="{{ $url }}" class="block">
+    {{-- fill: mengisi tinggi baris grid (mis. setinggi kolom Sorotan); 16:9 tetap jadi tinggi minimum --}}
+    <article {{ $attributes->class(['group relative overflow-hidden rounded-card bg-brand-900', 'h-full' => $fill]) }}>
+        <a href="{{ $url }}" @class(['block', 'h-full' => $fill])>
             @if ($img)
-                <img src="{{ $img }}" alt="{{ $article->title }}" class="aspect-[16/9] w-full object-cover transition duration-300 group-hover:scale-[1.02]">
+                <img src="{{ $img }}" alt="{{ $article->title }}" @class(['aspect-[16/9] w-full object-cover transition duration-300 group-hover:scale-[1.02]', 'h-full' => $fill])>
             @else
-                <div class="aspect-[16/9] w-full bg-gradient-to-br from-brand-900 to-brand-600"></div>
+                <div @class(['aspect-[16/9] w-full bg-gradient-to-br from-brand-900 to-brand-600', 'h-full' => $fill])></div>
             @endif
             <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/50 to-transparent p-5 pt-16 sm:p-7 sm:pt-24">
                 <div class="flex flex-wrap items-center gap-2">
@@ -77,7 +78,7 @@
             @if ($catName)
                 <span class="text-[10.5px] font-bold uppercase tracking-wide text-brand-600">{{ $catName }}</span>
             @endif
-            <h3 class="mt-0.5 text-sm font-semibold leading-snug text-[#171B28] group-hover:text-brand-600">
+            <h3 class="mt-0.5 line-clamp-3 text-sm font-semibold leading-snug text-[#171B28] group-hover:text-brand-600">
                 <a href="{{ $url }}">{{ $article->title }}</a>
             </h3>
             @if ($time)

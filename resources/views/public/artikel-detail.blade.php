@@ -149,6 +149,8 @@
                 @endif
 
                 <x-public.follow-us />
+
+                <x-public.sticky-ad />
             </aside>
         </div>
     </div>

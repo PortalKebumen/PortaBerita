@@ -106,6 +106,17 @@ return [
             'activity-log.purge' => 'Hapus log lama',
         ],
     ],
+    'site-appearance' => [
+        'label' => 'Tampilan Situs (Halaman & Menu)',
+        'permissions' => [
+            'pages.view' => 'Lihat halaman statis',
+            'pages.create' => 'Tambah halaman',
+            'pages.update' => 'Edit halaman & pratinjau draft',
+            'pages.delete' => 'Hapus halaman',
+            'menus.view' => 'Lihat struktur menu',
+            'menus.update' => 'Kelola menu (tambah, edit, hapus, atur urutan)',
+        ],
+    ],
     'settings' => [
         'label' => 'Pengaturan',
         'permissions' => [

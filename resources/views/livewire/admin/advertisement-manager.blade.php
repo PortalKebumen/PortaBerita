@@ -138,6 +138,9 @@
                             @else
                                 <span class="badge-neutral">{{ ucfirst($ad->placement) }}</span>
                             @endif
+                            @if ($spec = \App\Models\Advertisement::PLACEMENTS[$ad->placement] ?? null)
+                                <div class="mt-1 text-[11px] font-normal text-[#848CA3]">maks. {{ $spec['max_width'] }}×{{ $spec['max_height'] }}</div>
+                            @endif
                         </td>
 
                         {{-- Kolom Periode --}}
@@ -324,13 +327,19 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label class="form-label">Posisi Penempatan <span class="text-danger">*</span></label>
-                        <select wire:model="placement" class="form-select @error('placement') is-error @enderror">
-                            <option value="header">Header Banner (970x250)</option>
-                            <option value="sidebar">Sidebar Banner (300x250)</option>
-                            <option value="inline_artikel">Inline Artikel (728x90)</option>
-                            <option value="footer">Footer Banner</option>
+                        <select wire:model.live="placement" class="form-select @error('placement') is-error @enderror">
+                            @foreach (\App\Models\Advertisement::PLACEMENTS as $key => $spec)
+                                <option value="{{ $key }}">{{ $spec['label'] }} (maks. {{ $spec['max_width'] }}×{{ $spec['max_height'] }})</option>
+                            @endforeach
                         </select>
                         @error('placement') <p class="form-error-text">{{ $message }}</p> @enderror
+                        @if ($spec = \App\Models\Advertisement::PLACEMENTS[$placement] ?? null)
+                            <p class="mt-1.5 text-xs leading-relaxed text-[#6C7387]">
+                                Ruang tersedia hingga <strong class="text-[#3B4152]">{{ $spec['max_width'] }} × {{ $spec['max_height'] }} px</strong>.
+                                Ukuran banner bebas, otomatis diperkecil agar muat tanpa terpotong.
+                                Ukuran populer: {{ implode(', ', $spec['popular']) }}.
+                            </p>
+                        @endif
                     </div>
                     <div>
                         <label class="form-label">Status Iklan <span class="text-danger">*</span></label>

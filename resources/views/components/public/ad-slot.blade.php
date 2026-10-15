@@ -4,46 +4,63 @@
     'height' => 'h-32',
     'placeholder' => true,
     'interval' => 4,
+    'start' => 0,
 ])
 
 @php
     // Urutan diacak per muat halaman agar setiap pengiklan mendapat giliran tampil pertama.
-    $ads = \App\Models\Advertisement::activeRunning($placement)->with('media')->get()->shuffle()->values();
+    // Disimpan per request supaya slot kedua di lokasi yang sama memakai urutan yang sama.
+    $cacheKey = "ad-slot.{$placement}";
+    $ads = request()->attributes->get($cacheKey);
+    if ($ads === null) {
+        $ads = \App\Models\Advertisement::activeRunning($placement)->with('media')->get()->shuffle()->values();
+        request()->attributes->set($cacheKey, $ads);
+    }
 
-    // Rasio mengikuti ukuran banner standar tiap lokasi (header 970x250, sidebar 300x250, inline/footer 728x90).
-    [$ratio, $maxWidth] = match ($placement) {
-        'header' => ['aspect-[970/250]', 'max-w-[970px]'],
-        'sidebar' => ['aspect-[300/250]', 'max-w-full'],
-        default => ['aspect-[728/90]', 'max-w-[728px]'],
+    // start > 0: slot tambahan (mis. iklan sticky sidebar) mulai dari iklan berikutnya agar tidak kembar
+    // dengan slot pertama; tidak tampil bila iklannya tidak cukup.
+    $start = (int) $start;
+    if ($start > 0) {
+        $ads = $ads->count() > $start ? $ads->slice($start)->concat($ads->take($start))->values() : collect();
+    }
+
+    // Ruang maksimal per lokasi (lihat Advertisement::PLACEMENTS). Lebar dibatasi kolom tempat slot berada,
+    // tinggi dibatasi di sini. Banner ukuran apa pun tampil utuh: diperkecil bila lebih besar, tidak diperbesar.
+    // Kelas ditulis lengkap agar terbaca Tailwind; $fallbackRatio hanya untuk iklan tanpa gambar.
+    [$maxHeight, $fallbackRatio] = match ($placement) {
+        'sidebar' => ['max-h-[600px]', 'aspect-[300/250]'],
+        'header', 'footer' => ['max-h-[250px]', 'aspect-[970/250]'],
+        default => ['max-h-[250px]', 'aspect-[728/90]'],
     };
 @endphp
 
 @if ($ads->isNotEmpty())
-    <div {{ $attributes->merge(['class' => "relative mx-auto w-full $maxWidth"]) }}
+    <div {{ $attributes->merge(['class' => 'mx-auto w-full']) }}
          data-ad-slot data-ad-interval="{{ max(2, (int) $interval) * 1000 }}"
          role="complementary" aria-label="Iklan">
-        <div class="grid overflow-hidden rounded-card bg-[#E4E8EF]">
+        {{-- Slide ditumpuk di sel grid yang sama; tinggi ruang mengikuti banner tertinggi, banner lain di tengah --}}
+        <div class="grid">
             @foreach ($ads as $i => $ad)
-                <div class="group [grid-area:1/1] transition-opacity duration-700 motion-reduce:transition-none {{ $i === 0 ? 'opacity-100' : 'opacity-0' }}"
+                <div class="group flex items-center justify-center [grid-area:1/1] transition-opacity duration-700 motion-reduce:transition-none {{ $i === 0 ? 'opacity-100' : 'opacity-0' }}"
                      data-ad-slide data-ad-impression="{{ route('ads.impression', $ad) }}"
                      @if ($i > 0) inert aria-hidden="true" @endif>
-                    <a href="{{ route('ads.click', $ad) }}" target="_blank" rel="sponsored noopener noreferrer" class="block {{ $ratio }} w-full">
+                    <a href="{{ route('ads.click', $ad) }}" target="_blank" rel="sponsored noopener noreferrer"
+                       class="relative block max-w-full overflow-hidden rounded-card {{ $ad->banner_url ? '' : 'w-full' }}">
                         @if ($ad->banner_url)
                             <img src="{{ $ad->banner_url }}" alt="Iklan: {{ $ad->advertiser_name }}" loading="lazy"
-                                 class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.01]">
+                                 class="block h-auto w-auto max-w-full {{ $maxHeight }} transition-transform duration-300 group-hover:scale-[1.01]">
                         @else
-                            <div class="flex h-full w-full flex-col items-center justify-center bg-gradient-to-r from-brand-700 to-brand-500 p-4 text-center text-white">
+                            <div class="flex {{ $fallbackRatio }} w-full flex-col items-center justify-center bg-gradient-to-r from-brand-700 to-brand-500 p-4 text-center text-white">
                                 <span class="text-[10px] font-bold uppercase tracking-wider text-white/70">Sponsor / Iklan</span>
                                 <span class="mt-1 text-sm font-bold">{{ $ad->advertiser_name }}</span>
                                 <span class="mt-2 inline-block rounded bg-white/20 px-2.5 py-1 text-[11px] font-medium">Kunjungi Situs &rarr;</span>
                             </div>
                         @endif
+                        <span class="pointer-events-none absolute right-1.5 top-1.5 rounded bg-black/45 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-white/90">Iklan</span>
                     </a>
                 </div>
             @endforeach
         </div>
-
-        <span class="pointer-events-none absolute right-1.5 top-1.5 rounded bg-black/45 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-white/90">Iklan</span>
     </div>
 
     @once

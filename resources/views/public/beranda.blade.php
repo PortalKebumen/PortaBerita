@@ -9,7 +9,7 @@
             {{-- Headline + sorotan --}}
             <section class="grid gap-6 lg:grid-cols-3">
                 <div class="lg:col-span-2">
-                    <x-public.article-card :article="$featured->first()" variant="hero" />
+                    <x-public.article-card :article="$featured->first()" variant="hero" fill />
                 </div>
                 @if ($featured->count() > 1)
                     <aside class="rounded-card border border-[#E4E8EF] bg-white p-4">
@@ -43,10 +43,16 @@
                                 <h2 class="text-lg font-bold text-[#171B28]">{{ $blok['category']->name }}</h2>
                                 <a href="{{ route('public.kategori', $blok['category']->slug) }}" class="text-sm font-semibold text-brand-600 hover:underline">Lihat semua &rarr;</a>
                             </div>
+                            {{-- 1 artikel utama + daftar ringkas: tidak ada kartu "yatim" saat jumlah artikel ganjil --}}
                             <div class="mt-4 grid gap-5 sm:grid-cols-2">
-                                @foreach ($blok['articles'] as $item)
-                                    <x-public.article-card :article="$item" />
-                                @endforeach
+                                <x-public.article-card :article="$blok['articles']->first()" />
+                                @if ($blok['articles']->count() > 1)
+                                    <div class="rounded-card border border-[#E4E8EF] bg-white p-4">
+                                        @foreach ($blok['articles']->slice(1) as $item)
+                                            <x-public.article-card :article="$item" variant="compact" />
+                                        @endforeach
+                                    </div>
+                                @endif
                             </div>
                         </section>
                     @endforeach
@@ -69,6 +75,8 @@
                             </ol>
                         </section>
                     @endif
+
+                    <x-public.sticky-ad />
                 </aside>
             </div>
         @endif
