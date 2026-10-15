@@ -31,6 +31,9 @@ return Application::configure(basePath: dirname(__DIR__))
             ->dailyAt('08:00')
             ->withoutOverlapping();
 
+        // Database lokasi IP (DB-IP City Lite) dirilis bulanan
+        $schedule->command('geoip:update')->monthlyOn(5, '03:00')->withoutOverlapping();
+
         // Bersihkan notifikasi yang sudah dibaca lebih dari 60 hari
         $schedule->call(fn () => DatabaseNotification::query()
                 ->whereNotNull('read_at')
@@ -40,7 +43,11 @@ return Application::configure(basePath: dirname(__DIR__))
             ->daily();
     })
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        // Di balik reverse proxy / Cloudflare: isi TRUSTED_PROXIES (IP proxy, dipisah koma, atau *) agar
+        // IP pembaca asli terbaca untuk statistik lokasi. Kosong = tidak memercayai proxy mana pun.
+        if ($proxies = env('TRUSTED_PROXIES')) {
+            $middleware->trustProxies(at: $proxies === '*' ? '*' : array_map('trim', explode(',', $proxies)));
+        }
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

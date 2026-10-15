@@ -110,6 +110,8 @@ Route::middleware(['auth', 'can:dashboard.view'])
         Route::view('iklan', 'admin.iklan')->can('ads.view')->name('iklan.index');
         Route::view('pengguna-role', 'admin.pengguna-role')->can('users.view')->name('pengguna-role.index');
         Route::view('activity-log', 'admin.activity-log')->can('activity-log.view')->name('activity-log.index');
+        Route::view('analitik', 'admin.analitik', ['title' => 'Laporan Analitik'])->can('view-analytics')->name('analitik.index');
+        Route::get('analitik/ekspor', \App\Http\Controllers\Admin\AnalyticsExportController::class)->can('analytics.export')->name('analitik.ekspor');
         Route::view('halaman', 'admin.halaman', ['title' => 'Halaman'])->can('pages.view')->name('halaman.index');
         Route::view('menu', 'admin.menu', ['title' => 'Menu'])->can('menus.view')->name('menu.index');
         Route::view('pengaturan', 'admin.pengaturan', ['title' => 'Pengaturan'])

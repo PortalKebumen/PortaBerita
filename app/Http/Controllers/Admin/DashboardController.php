@@ -7,6 +7,7 @@ use App\Models\Advertisement;
 use App\Models\Article;
 use App\Models\ArticleStatus;
 use App\Models\User;
+use App\Services\Analytics\AnalyticsReport;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -95,7 +96,31 @@ class DashboardController extends Controller
             }
         }
 
+        // ===== Analitik 14 hari (redaktur: seluruh situs; penulis: artikel miliknya) =====
+        $contentAnalytics = null;
+        if ($user->can('articles.view')) {
+            $report = AnalyticsReport::make(14, $user->can('analytics.view-content') ? null : $user->getKey());
+            $contentAnalytics = [
+                'own' => $report->authorId !== null,
+                'summary' => $report->contentSummary(),
+                'daily' => $report->dailyViews(),
+                'top' => $report->topArticles(5),
+            ];
+        }
+
+        $adsAnalytics = null;
+        if ($user->can('ads.view-reports')) {
+            $report = AnalyticsReport::make(14);
+            $adsAnalytics = [
+                'summary' => $report->adsSummary(),
+                'daily' => $report->adsDaily()['impressions'],
+                'top' => $report->adsByAdvertisement()->filter(fn ($row) => $row['impressions'] > 0)->take(3),
+            ];
+        }
+
         return view('admin.dashboard', [
+            'contentAnalytics' => $contentAnalytics,
+            'adsAnalytics' => $adsAnalytics,
             'totalPengguna' => $user->can('users.view') ? User::count() : null,
             'totalIklanAktif' => $totalIklanAktif,
             'expiringAds' => $expiringAds,

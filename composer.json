@@ -14,6 +14,7 @@
         "laravel/scout": "^11.6",
         "laravel/tinker": "^3.0",
         "livewire/livewire": "^4.4",
+        "maxmind-db/reader": "^1.14",
         "spatie/laravel-activitylog": "^5.1",
         "spatie/laravel-medialibrary": "^11.23",
         "spatie/laravel-permission": "^8.3",

@@ -19,7 +19,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // Satu pembaca database lokasi IP per request
+        $this->app->singleton(\App\Services\Analytics\GeoLocator::class);
     }
 
     /**
@@ -43,6 +44,9 @@ class AppServiceProvider extends ServiceProvider
                 ->getPermissions(['name' => $ability])
                 ->isNotEmpty() ? true : null;
         });
+
+        // Menu Laporan Analitik tampil bila punya salah satu tab: Konten (analytics.view-content) atau Iklan (ads.view-reports)
+        \Illuminate\Support\Facades\Gate::define('view-analytics', fn ($user) => $user->canAny(['analytics.view-content', 'ads.view-reports']));
 
         // PK-39: suntik alamat IP ke SEMUA activity log (otomatis maupun manual),
         // karena spatie/laravel-activitylog v5.1.0 tidak punya hook tapActivity()

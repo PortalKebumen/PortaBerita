@@ -44,6 +44,61 @@
         @endcan
     </div>
 
+    {{-- ===== Ringkasan analitik 14 hari ===== --}}
+    @if ($contentAnalytics)
+        @php $ca = $contentAnalytics; @endphp
+        <div class="grid grid-cols-12 gap-5 sm:gap-6 mb-6">
+            <div class="col-span-12 lg:col-span-8 bg-white border border-[#E4E8EF] rounded-2xl shadow-sm p-5">
+                <div class="flex flex-wrap items-start justify-between gap-3 mb-4">
+                    <div>
+                        <h2 class="text-[15px] font-bold">{{ $ca['own'] ? 'Tayangan Artikel Saya' : 'Tayangan Situs' }} · 14 Hari Terakhir</h2>
+                        <div class="mt-1 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                            <span class="font-body text-[26px] font-semibold leading-none">{{ number_format($ca['summary']['views'], 0, ',', '.') }}</span>
+                            <x-admin.trend-badge :change="$ca['summary']['change']" suffix="vs 14 hari sebelumnya" />
+                        </div>
+                    </div>
+                    @can('view-analytics')
+                        <a href="{{ route('admin.analitik.index') }}" class="text-[12.5px] font-semibold text-brand-600 whitespace-nowrap">Laporan Lengkap &rarr;</a>
+                    @endcan
+                </div>
+                <x-admin.bar-chart :data="$ca['daily']" unit="tayangan" height="h-64" />
+            </div>
+
+            <div class="col-span-12 lg:col-span-4 bg-white border border-[#E4E8EF] rounded-2xl shadow-sm">
+                <div class="px-5 py-4 border-b border-[#E4E8EF]">
+                    <h2 class="text-[15px] font-bold">{{ $ca['own'] ? 'Artikel Saya Terpopuler' : 'Terpopuler' }} · 14 Hari</h2>
+                </div>
+                @forelse ($ca['top'] as $item)
+                    <a href="{{ url('/artikel/' . $item->slug) }}" target="_blank" class="flex items-start gap-3 px-5 py-3 hover:bg-[#F7F8FA] {{ ! $loop->last ? 'border-b border-[#E4E8EF]' : '' }}">
+                        <span class="w-5 shrink-0 text-[18px] font-extrabold leading-none text-[#CDD3DF]">{{ $loop->iteration }}</span>
+                        <div class="min-w-0 flex-1">
+                            <div class="text-[13px] font-semibold leading-snug line-clamp-2">{{ $item->title }}</div>
+                            <div class="text-[11px] text-[#848CA3] mt-1">{{ number_format($item->views, 0, ',', '.') }} tayangan @unless ($ca['own']) · {{ $item->author_name ?? '-' }} @endunless</div>
+                        </div>
+                    </a>
+                @empty
+                    <div class="px-5 py-8 text-center text-[13px] text-[#848CA3]">Belum ada tayangan dalam 14 hari terakhir.</div>
+                @endforelse
+            </div>
+        </div>
+    @endif
+
+    @if (! $contentAnalytics && $adsAnalytics)
+        <div class="bg-white border border-[#E4E8EF] rounded-2xl shadow-sm p-5 mb-6">
+            <div class="flex flex-wrap items-start justify-between gap-3 mb-4">
+                <div>
+                    <h2 class="text-[15px] font-bold">Impresi Iklan · 14 Hari Terakhir</h2>
+                    <div class="mt-1 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                        <span class="font-body text-[26px] font-semibold leading-none">{{ number_format($adsAnalytics['summary']['impressions'], 0, ',', '.') }}</span>
+                        <x-admin.trend-badge :change="$adsAnalytics['summary']['impressions_change']" suffix="vs 14 hari sebelumnya" />
+                    </div>
+                </div>
+                <a href="{{ route('admin.analitik.index', ['tab' => 'iklan']) }}" class="text-[12.5px] font-semibold text-brand-600 whitespace-nowrap">Laporan Lengkap &rarr;</a>
+            </div>
+            <x-admin.bar-chart :data="$adsAnalytics['daily']" unit="impresi" height="h-48" />
+        </div>
+    @endif
+
     <div class="grid grid-cols-12 gap-5 sm:gap-6">
         {{-- ===== Kolom kiri: Artikel Terbaru ===== --}}
         @can('articles.view')
@@ -96,7 +151,8 @@
         @endcan
 
         {{-- ===== Kolom kanan ===== --}}
-        <div class="col-span-12 lg:col-span-4 flex flex-col gap-5 sm:gap-6">
+        {{-- Tanpa kolom artikel (mis. Ads Manager), kartu kanan dibentangkan jadi grid selebar penuh --}}
+        <div @class(['col-span-12 gap-5 sm:gap-6', 'lg:col-span-4 flex flex-col' => auth()->user()->can('articles.view'), 'grid lg:grid-cols-2 items-start' => ! auth()->user()->can('articles.view')])>
             {{-- Antrean Review (redaktur) --}}
             @can('articles.approve')
             <div class="bg-white border border-[#E4E8EF] rounded-2xl shadow-sm">
@@ -118,6 +174,39 @@
                 @endforelse
             </div>
             @endcan
+
+            {{-- Performa Iklan 14 hari --}}
+            @if ($adsAnalytics)
+                @php $as = $adsAnalytics['summary']; @endphp
+                <div class="bg-white border border-[#E4E8EF] rounded-2xl shadow-sm">
+                    <div class="flex justify-between items-center px-5 py-4 border-b border-[#E4E8EF]">
+                        <h2 class="text-[15px] font-bold">Performa Iklan · 14 Hari</h2>
+                        <a href="{{ route('admin.analitik.index', ['tab' => 'iklan']) }}" class="text-[12.5px] font-semibold text-brand-600">Detail</a>
+                    </div>
+                    <div class="grid grid-cols-3 divide-x divide-[#E4E8EF] border-b border-[#E4E8EF] text-center">
+                        @foreach ([['Impresi', number_format($as['impressions'], 0, ',', '.')], ['Klik', number_format($as['clicks'], 0, ',', '.')], ['CTR', number_format($as['ctr'], 2, ',', '.') . '%']] as [$label, $value])
+                            <div class="px-2 py-3">
+                                <div class="text-[11px] font-semibold text-[#6C7387]">{{ $label }}</div>
+                                <div class="font-body text-[18px] font-semibold mt-0.5">{{ $value }}</div>
+                            </div>
+                        @endforeach
+                    </div>
+                    @forelse ($adsAnalytics['top'] as $row)
+                        <div class="flex items-center justify-between gap-3 px-5 py-2.5 {{ ! $loop->last ? 'border-b border-[#E4E8EF]' : '' }}">
+                            <div class="min-w-0">
+                                <div class="text-[13px] font-semibold truncate">{{ $row['ad']->advertiser_name }}</div>
+                                <div class="text-[11px] text-[#848CA3]">{{ \App\Models\Advertisement::PLACEMENTS[$row['ad']->placement]['label'] ?? $row['ad']->placement }}</div>
+                            </div>
+                            <div class="text-right shrink-0">
+                                <div class="font-mono text-[12.5px] font-semibold">{{ number_format($row['impressions'], 0, ',', '.') }}</div>
+                                <div class="text-[11px] text-[#848CA3]">CTR {{ number_format($row['ctr'], 2, ',', '.') }}%</div>
+                            </div>
+                        </div>
+                    @empty
+                        <div class="px-5 py-6 text-center text-[13px] text-[#848CA3]">Belum ada impresi dalam 14 hari terakhir.</div>
+                    @endforelse
+                </div>
+            @endif
 
             {{-- Iklan Akan Berakhir --}}
             @can('ads.view')

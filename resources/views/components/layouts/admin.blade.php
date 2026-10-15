@@ -44,6 +44,7 @@
                         'label' => null,
                         'items' => [
                             ['route' => 'admin.dashboard', 'label' => 'Dashboard', 'icon' => 'dashboard', 'permission' => 'dashboard.view'],
+                            ['route' => 'admin.analitik.index', 'label' => 'Laporan Analitik', 'icon' => 'analitik', 'permission' => 'view-analytics'],
                         ],
                     ],
                     [

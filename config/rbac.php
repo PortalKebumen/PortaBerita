@@ -26,11 +26,12 @@ $editor = array_merge($writer, [
     'media.view-any', 'media.update-any', 'media.delete-any',
     'seo.update-any', 'seo.set-indexing',
     'activity-log.view', 'activity-log.view-own',
+    'analytics.view-content', 'analytics.export',
 ]);
 
 $adsManager = [
     'dashboard.view', 'ads.view', 'ads.create', 'ads.update', 'ads.delete',
-    'ads.schedule', 'ads.view-reports',
+    'ads.schedule', 'ads.view-reports', 'analytics.export',
 ];
 
 $administrator = [

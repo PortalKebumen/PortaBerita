@@ -7,6 +7,7 @@
         'media'      => '<rect x="3" y="4" width="18" height="14" rx="2"/><circle cx="8.5" cy="10" r="1.6"/><path d="M3 16l5-4 4 3 3-3 6 5"/>',
         'iklan'      => '<path d="M3 11l16-7-4 16-5-6-6-3z"/>',
         'pengguna'   => '<circle cx="9" cy="8" r="3"/><path d="M3 20v-1a6 6 0 016-6h0a6 6 0 016 6v1"/><circle cx="18" cy="9" r="2.4"/><path d="M16 20v-1a4 4 0 015.5-3.7"/>',
+        'analitik'   => '<path d="M4 20V10M10 20V4M16 20v-7M21 20H3"/>',
         'activity'   => '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/>',
         'halaman'    => '<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h8M8 11h8M8 15h5"/>',
         'menu'       => '<path d="M4 6h16M4 12h10M4 18h13"/><circle cx="19" cy="12" r="1.4"/>',

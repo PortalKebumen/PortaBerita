@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Cache;
 
 /**
  * Isi lengkap untuk server testing/staging: role & permission, akun per role, kategori,
- * halaman & menu, pengaturan situs, 75 artikel dummy (foto, SEO, tag), iklan bergambar + metriknya.
+ * halaman & menu, pengaturan situs, 75 artikel dummy (foto, SEO, tag, tayangan harian), iklan bergambar + metriknya.
  *
  *   php artisan migrate:fresh --seed --seeder=TestingServerSeeder
  *
@@ -38,6 +38,8 @@ class TestingServerSeeder extends Seeder
             DummyMediaLibrarySeeder::class,
             DummyArticleSeeder::class,
             DummyTagSeeder::class,
+            DummyArticleViewSeeder::class,
+            DummyLocationViewSeeder::class,
 
             // Iklan
             DummyAdvertisementSeeder::class,

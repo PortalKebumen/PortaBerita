@@ -81,7 +81,14 @@ return [
             'ads.update' => 'Edit iklan',
             'ads.delete' => 'Hapus iklan',
             'ads.schedule' => 'Jadwalkan tayang iklan',
+        ],
+    ],
+    'analytics' => [
+        'label' => 'Laporan Analitik',
+        'permissions' => [
+            'analytics.view-content' => 'Lihat laporan konten, tayangan & lokasi pembaca',
             'ads.view-reports' => 'Lihat laporan performa iklan',
+            'analytics.export' => 'Ekspor laporan ke Excel / CSV',
         ],
     ],
     'users' => [

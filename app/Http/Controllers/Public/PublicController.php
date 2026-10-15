@@ -7,6 +7,7 @@ use App\Models\Article;
 use App\Models\Category;
 use App\Models\Page;
 use App\Models\User;
+use App\Services\Analytics\GeoLocator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Carbon;
@@ -219,6 +220,26 @@ class PublicController extends Controller
             if (! session()->has($key)) {
                 // Query builder biasa agar updated_at dan activity log tidak tersentuh
                 DB::table('articles')->where('id', $article->id)->increment('views_count');
+                // Rekap harian untuk Laporan Analitik (tren & views per kategori/penulis per periode)
+                DB::table('article_daily_views')->upsert(
+                    [['article_id' => $article->id, 'date' => today()->toDateString(), 'views' => 1]],
+                    ['article_id', 'date'],
+                    ['views' => DB::raw('views + 1')]
+                );
+                // Rekap wilayah pembaca (IP hanya dicocokkan, tidak disimpan)
+                $location = app(GeoLocator::class)->lookup(request()->ip());
+                DB::table('article_daily_locations')->upsert(
+                    [[
+                        'date' => today()->toDateString(),
+                        'country_code' => $location['country_code'] ?? '',
+                        'country' => $location['country'] ?? '',
+                        'region' => $location['region'] ?? '',
+                        'city' => $location['city'] ?? '',
+                        'views' => 1,
+                    ]],
+                    ['date', 'country_code', 'region', 'city'],
+                    ['views' => DB::raw('views + 1')]
+                );
                 session()->put($key, true);
             }
         }

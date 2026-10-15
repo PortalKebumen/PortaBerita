@@ -9,6 +9,7 @@
         ['group' => 'Navigasi', 'label' => 'Iklan', 'url' => route('admin.iklan.index'), 'icon' => 'nav', 'keywords' => 'banner advertisement monetisasi', 'can' => 'ads.view'],
         ['group' => 'Navigasi', 'label' => 'Pengguna & Role', 'url' => route('admin.pengguna-role.index'), 'icon' => 'nav', 'keywords' => 'user akun izin permission', 'can' => 'users.view'],
         ['group' => 'Navigasi', 'label' => 'Activity Log', 'url' => route('admin.activity-log.index'), 'icon' => 'nav', 'keywords' => 'log riwayat audit aktivitas', 'can' => 'activity-log.view'],
+        ['group' => 'Navigasi', 'label' => 'Laporan Analitik', 'url' => route('admin.analitik.index'), 'icon' => 'nav', 'keywords' => 'analitik laporan statistik tayangan views kategori penulis iklan ctr impresi klik', 'can' => 'view-analytics'],
         ['group' => 'Navigasi', 'label' => 'Halaman', 'url' => route('admin.halaman.index'), 'icon' => 'nav', 'keywords' => 'page halaman statis tentang kami pedoman redaksi', 'can' => 'pages.view'],
         ['group' => 'Navigasi', 'label' => 'Menu', 'url' => route('admin.menu.index'), 'icon' => 'nav', 'keywords' => 'navbar footer navigasi tautan link menu', 'can' => 'menus.view'],
         ['group' => 'Navigasi', 'label' => 'Pengaturan', 'url' => route('admin.pengaturan.index'), 'icon' => 'nav', 'keywords' => 'setting logo seo sitemap sosial', 'can' => 'settings.view'],
