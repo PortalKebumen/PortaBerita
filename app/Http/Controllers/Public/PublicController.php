@@ -8,6 +8,7 @@ use App\Models\Category;
 use App\Models\Page;
 use App\Models\User;
 use App\Services\Analytics\GeoLocator;
+use App\Support\BotDetector;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Carbon;
@@ -215,7 +216,7 @@ class PublicController extends Controller
         }
 
         // Hitung tayangan: sekali per sesi, abaikan bot dan pratinjau
-        if (! $isPreview && ! $this->isBot()) {
+        if (! $isPreview && ! BotDetector::isBot(request())) {
             $key = 'viewed_article_' . $article->id;
             if (! session()->has($key)) {
                 // Query builder biasa agar updated_at dan activity log tidak tersentuh
@@ -331,7 +332,9 @@ class PublicController extends Controller
      */
     public function cari(): View
     {
-        $q = Str::limit(trim((string) request('q')), 100, '');
+        // Hanya teks yang wajar: maks. 100 karakter, tanpa karakter kontrol; halaman hasil maks. 50
+        $q = Str::limit(trim(preg_replace('/[\x00-\x1F\x7F]/u', ' ', (string) request('q')) ?? ''), 100, '');
+        abort_if((int) request('page', 1) > 50, 404);
         $sort = array_key_exists((string) request('urut'), self::SEARCH_SORTS) ? (string) request('urut') : 'relevan';
         $time = array_key_exists((string) request('waktu'), self::SEARCH_TIMES) ? (string) request('waktu') : 'semua';
 
@@ -408,22 +411,5 @@ class PublicController extends Controller
     private function escapeLike(string $value): string
     {
         return str_replace(['\\', '%', '_'], ['\\\\', '\%', '\_'], $value);
-    }
-
-    protected function isBot(): bool
-    {
-        $agent = strtolower((string) request()->userAgent());
-
-        if ($agent === '') {
-            return true;
-        }
-
-        foreach (['bot', 'crawler', 'spider', 'slurp', 'preview', 'facebookexternalhit', 'curl', 'wget'] as $needle) {
-            if (str_contains($agent, $needle)) {
-                return true;
-            }
-        }
-
-        return false;
     }
 }

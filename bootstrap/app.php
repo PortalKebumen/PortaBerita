@@ -43,6 +43,12 @@ return Application::configure(basePath: dirname(__DIR__))
             ->daily();
     })
     ->withMiddleware(function (Middleware $middleware): void {
+        // Header keamanan HTTP di semua halaman web
+        $middleware->web(append: [\App\Http\Middleware\SecurityHeaders::class]);
+
+        // Anti-spam tanpa CAPTCHA (honeypot + jebakan waktu) untuk form publik; pasangan <x-honeypot />
+        $middleware->alias(['antispam' => \App\Http\Middleware\ProtectAgainstSpam::class]);
+
         // Di balik reverse proxy / Cloudflare: isi TRUSTED_PROXIES (IP proxy, dipisah koma, atau *) agar
         // IP pembaca asli terbaca untuk statistik lokasi. Kosong = tidak memercayai proxy mana pun.
         if ($proxies = env('TRUSTED_PROXIES')) {

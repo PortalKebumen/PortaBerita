@@ -17,14 +17,15 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 | Urutan penting: /kategori/{parent}/{sub} harus di atas /kategori/{slug}.
 */
-Route::controller(PublicController::class)->name('public.')->group(function () {
+// Batas akses per IP: lihat AppServiceProvider::configureRateLimiting()
+Route::controller(PublicController::class)->name('public.')->middleware('throttle:public')->group(function () {
     Route::get('/', 'beranda')->name('beranda');
     Route::get('/kategori/{parent}/{sub}', 'kategori')->name('kategori.sub');
     Route::get('/kategori/{slug}', 'kategori')->name('kategori');
     Route::get('/profile/{user}/{slug?}', 'byline')->whereNumber('user')->name('byline');
     Route::get('/penulis/{user}', fn (\App\Models\User $user) => redirect($user->profileUrl(), 301))->whereNumber('user');
     Route::get('/artikel/{slug}', 'artikel')->name('artikel');
-    Route::get('/cari', 'cari')->name('cari');
+    Route::get('/cari', 'cari')->middleware('throttle:search')->name('cari');
     Route::get('/halaman/{slug}', 'halaman')->name('halaman');
 });
 
@@ -36,10 +37,10 @@ Route::controller(PublicController::class)->name('public.')->group(function () {
 | Setelah diputuskan, hapus salah satunya.
 */
 Route::get('/ads/{advertisement}/click', [AdTrackingController::class, 'trackClick'])
-    ->middleware('throttle:60,1')
+    ->middleware('throttle:ads-click')
     ->name('ads.click');
 Route::post('/ads/{advertisement}/impression', [AdTrackingController::class, 'recordImpression'])
-    ->middleware('throttle:120,1')
+    ->middleware('throttle:ads-impression')
     ->name('ads.impression');
 
 /*
@@ -50,13 +51,13 @@ Route::post('/ads/{advertisement}/impression', [AdTrackingController::class, 're
 Route::middleware('guest')->group(function () {
     // login, forgot-password, reset-password
     Route::get('login', [AuthenticatedSessionController::class, 'create'])->name('login');
-    Route::post('login', [AuthenticatedSessionController::class, 'store']);
+    Route::post('login', [AuthenticatedSessionController::class, 'store'])->middleware(['throttle:login', 'antispam']);
 
     Route::get('forgot-password', [PasswordResetLinkController::class, 'create'])->name('password.request');
-    Route::post('forgot-password', [PasswordResetLinkController::class, 'store'])->name('password.email');
+    Route::post('forgot-password', [PasswordResetLinkController::class, 'store'])->middleware(['throttle:password-reset', 'antispam'])->name('password.email');
 
     Route::get('reset-password/{token}', [NewPasswordController::class, 'create'])->name('password.reset');
-    Route::post('reset-password', [NewPasswordController::class, 'store'])->name('password.store');
+    Route::post('reset-password', [NewPasswordController::class, 'store'])->middleware(['throttle:password-reset', 'antispam'])->name('password.store');
 });
 
 Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])

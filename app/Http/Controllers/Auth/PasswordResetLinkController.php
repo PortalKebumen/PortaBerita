@@ -28,26 +28,27 @@ class PasswordResetLinkController extends Controller
             $request->only('email')
         );
 
+        // Jawaban & jeda kirim ulang dibuat sama untuk email terdaftar maupun tidak, sehingga form ini
+        // tidak bisa dipakai menebak email mana yang punya akun (account enumeration).
+        $config = config('auth.passwords.'.config('auth.defaults.passwords'));
+        $retryAt = now()->addSeconds($config['throttle'])->timestamp;
+
         if (in_array($status, [Password::RESET_LINK_SENT, Password::RESET_THROTTLED], true)) {
-            $config = config('auth.passwords.'.config('auth.defaults.passwords'));
             $user = Password::broker()->getUser($request->only('email'));
-            $createdAt = DB::connection($config['connection'] ?? null)
+            $createdAt = $user ? DB::connection($config['connection'] ?? null)
                 ->table($config['table'])
                 ->where('email', $user->getEmailForPasswordReset())
-                ->value('created_at');
+                ->value('created_at') : null;
 
             if ($createdAt !== null) {
-                $request->session()->put('password_retry_at', Carbon::parse($createdAt)
-                    ->addSeconds($config['throttle'])->timestamp);
+                $retryAt = Carbon::parse($createdAt)->addSeconds($config['throttle'])->timestamp;
             }
         }
 
-        if ($status === Password::RESET_LINK_SENT) {
-            return back()->withInput($request->only('email'))->with('status', __($status));
-        }
+        $request->session()->put('password_retry_at', $retryAt);
 
         return back()
             ->withInput($request->only('email'))
-            ->withErrors(['email' => __($status)]);
+            ->with('status', 'Jika email tersebut terdaftar, tautan untuk mengatur ulang password telah dikirim. Periksa kotak masuk atau folder spam.');
     }
 }

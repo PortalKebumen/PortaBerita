@@ -2,8 +2,9 @@
     <h1 class="mb-1.5 text-[19px] font-bold">Reset kata sandi</h1>
     <p class="mb-6 text-[13px] text-[#6C7387]">Buat kata sandi baru untuk akun PortalKebumen kamu.</p>
 
-    <form method="POST" action="{{ route('password.update') }}">
+    <form method="POST" action="{{ route('password.store') }}">
         @csrf
+        <x-honeypot />
 
         <input type="hidden" name="token" value="{{ $token }}">
 
