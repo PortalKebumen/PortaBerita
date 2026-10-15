@@ -6,7 +6,7 @@
     </div>
 
     <div class="flex flex-col lg:flex-row lg:items-center gap-3 mb-5">
-        <div class="relative flex-1 max-w-[300px]">
+        <div class="relative w-full sm:w-auto sm:flex-1 sm:max-w-[300px]">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#848CA3" stroke-width="2" class="absolute left-3.5 top-1/2 -translate-y-1/2"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
             <input type="text" wire:model.live.debounce.400ms="search" class="form-input pl-9" placeholder="Cari pengguna atau objek...">
         </div>
@@ -39,14 +39,14 @@
 
     <div class="card overflow-hidden">
         <div class="overflow-x-auto">
-            <table class="w-full min-w-[760px] border-collapse">
+            <table class="w-full xl:min-w-[760px] border-collapse">
                 <thead>
                     <tr>
-                        <th class="text-left text-[11px] uppercase tracking-wide text-[#848CA3] font-bold px-4 py-2.5 border-b border-[#CDD3DF] whitespace-nowrap">Waktu</th>
-                        <th class="text-left text-[11px] uppercase tracking-wide text-[#848CA3] font-bold px-4 py-2.5 border-b border-[#CDD3DF]">Pengguna</th>
+                        <th class="max-xl:hidden text-left text-[11px] uppercase tracking-wide text-[#848CA3] font-bold px-4 py-2.5 border-b border-[#CDD3DF] whitespace-nowrap">Waktu</th>
+                        <th class="max-xl:hidden text-left text-[11px] uppercase tracking-wide text-[#848CA3] font-bold px-4 py-2.5 border-b border-[#CDD3DF]">Pengguna</th>
                         <th class="text-left text-[11px] uppercase tracking-wide text-[#848CA3] font-bold px-3 py-2.5 border-b border-[#CDD3DF]">Aksi</th>
                         <th class="text-left text-[11px] uppercase tracking-wide text-[#848CA3] font-bold px-4 py-2.5 border-b border-[#CDD3DF]">Objek</th>
-                        <th class="text-left text-[11px] uppercase tracking-wide text-[#848CA3] font-bold px-4 py-2.5 border-b border-[#CDD3DF]">IP</th>
+                        <th class="max-xl:hidden text-left text-[11px] uppercase tracking-wide text-[#848CA3] font-bold px-4 py-2.5 border-b border-[#CDD3DF]">IP</th>
                         <th class="text-left text-[11px] uppercase tracking-wide text-[#848CA3] font-bold px-3 py-2.5 border-b border-[#CDD3DF]"></th>
                     </tr>
                 </thead>
@@ -54,11 +54,14 @@
                     @forelse ($this->logs as $log)
                         @php [$actionLabel, $actionClass] = $this->actionMeta($log->event); @endphp
                         <tr class="border-b border-[#E4E8EF]">
-                            <td class="px-4 py-3 text-[12.5px] font-mono text-[#6C7387] whitespace-nowrap">{{ $log->created_at->translatedFormat('d M Y, H:i') }}</td>
-                            <td class="px-4 py-3 text-sm font-semibold whitespace-nowrap">{{ $log->causer?->name ?? 'Sistem' }}</td>
+                            <td class="max-xl:hidden px-4 py-3 text-[12.5px] font-mono text-[#6C7387] whitespace-nowrap">{{ $log->created_at->translatedFormat('d M Y, H:i') }}</td>
+                            <td class="max-xl:hidden px-4 py-3 text-sm font-semibold whitespace-nowrap">{{ $log->causer?->name ?? 'Sistem' }}</td>
                             <td class="px-3 py-3 whitespace-nowrap"><span class="{{ $actionClass }}"><span class="badge-dot"></span>{{ $actionLabel }}</span></td>
-                            <td class="px-4 py-3 text-sm">{{ $this->subjectLabel($log) }}</td>
-                            <td class="px-4 py-3 text-[12px] font-mono text-[#848CA3] whitespace-nowrap">{{ $log->properties['ip'] ?? '—' }}</td>
+                            <td class="px-4 py-3 text-sm">
+                                {{ $this->subjectLabel($log) }}
+                                <div class="xl:hidden mt-0.5 text-[11.5px] text-[#848CA3]">{{ $log->causer?->name ?? 'Sistem' }} · {{ $log->created_at->translatedFormat('d M Y, H:i') }}</div>
+                            </td>
+                            <td class="max-xl:hidden px-4 py-3 text-[12px] font-mono text-[#848CA3] whitespace-nowrap">{{ $log->properties['ip'] ?? '—' }}</td>
                             <td class="px-2 py-3">
                                 <button type="button" wire:click="showDetail({{ $log->id }})" class="text-[12.5px] font-semibold text-brand-600">Detail</button>
                             </td>

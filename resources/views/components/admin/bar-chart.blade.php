@@ -49,7 +49,11 @@
                     <div class="group relative flex h-full min-w-0 flex-1 items-end">
                         <div class="w-full rounded-t-[4px] {{ $bar }} transition-opacity group-hover:opacity-80"
                              style="height: {{ $value > 0 ? max(2, round($value / $niceMax * 100, 2)) : 0 }}%"></div>
-                        <div class="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1.5 -translate-x-1/2 whitespace-nowrap rounded-md bg-[#171B28] px-2 py-1 text-[11px] text-white opacity-0 shadow transition-opacity group-hover:opacity-100">
+                        {{-- Tooltip di tepi kiri/kanan ditambatkan ke sisi itu agar tidak keluar layar (HP) --}}
+                        <div @class(['pointer-events-none absolute bottom-full z-10 mb-1.5 whitespace-nowrap rounded-md bg-[#171B28] px-2 py-1 text-[11px] text-white opacity-0 shadow transition-opacity group-hover:opacity-100',
+                                     'left-0' => $loop->index < $count / 3,
+                                     'right-0' => $loop->index >= $count * 2 / 3,
+                                     'left-1/2 -translate-x-1/2' => $loop->index >= $count / 3 && $loop->index < $count * 2 / 3])>
                             <div class="text-white/70">{{ $tooltipDate($date) }}</div>
                             <div class="font-semibold">{{ $fmt($value) }} {{ $unit }}</div>
                         </div>
@@ -60,9 +64,16 @@
             {{-- Label tanggal (sebagian, agar tidak bertumpuk) --}}
             <div class="mt-1.5 flex gap-[2px] text-[10.5px] text-[#848CA3]">
                 @foreach (array_keys($data) as $i => $day)
-                    <div class="min-w-0 flex-1 overflow-visible whitespace-nowrap text-center">
-                        @if ($i % $labelEvery === 0 || $i === $count - 1)
-                            {{ $axisDate(\Carbon\Carbon::parse($day)) }}
+                    @php
+                        // Label terakhir hanya bila cukup jauh dari label berkala sebelumnya; label ganjil disembunyikan di HP
+                        $isLast = $i === $count - 1 && ($count - 1) % $labelEvery >= max(1, intdiv($labelEvery, 2) + 1);
+                        $show = $i % $labelEvery === 0 || $isLast;
+                        $mobileHidden = ! $isLast && intdiv($i, $labelEvery) % 2 === 1;
+                    @endphp
+                    <div @class(['min-w-0 flex-1 overflow-visible whitespace-nowrap',
+                                 'text-left' => $i === 0, 'text-right' => $i === $count - 1 && $count > 1, 'text-center' => $i !== 0 && $i !== $count - 1])>
+                        @if ($show)
+                            <span @class(['max-sm:invisible' => $mobileHidden])>{{ $axisDate(\Carbon\Carbon::parse($day)) }}</span>
                         @endif
                     </div>
                 @endforeach

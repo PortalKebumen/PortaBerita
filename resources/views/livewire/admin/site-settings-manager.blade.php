@@ -222,7 +222,7 @@
         {{-- Bar simpan (sticky) --}}
         @can('settings.update')
             <div x-show="tab !== 'bahaya'"
-                class="flex justify-end gap-2.5 mt-6 sticky bottom-0 bg-[#F7F8FA]/95 backdrop-blur-sm py-3 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 border-t border-[#E4E8EF] z-10">
+                class="flex flex-wrap justify-end gap-2.5 mt-6 sticky bottom-0 bg-[#F7F8FA]/95 backdrop-blur-sm py-3 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 border-t border-[#E4E8EF] z-10">
                 <button type="button" class="btn-secondary" wire:click="cancelChanges">Batalkan Perubahan</button>
                 <button type="submit" class="btn-primary" wire:loading.attr="disabled" wire:target="save">
                     <span wire:loading.remove wire:target="save">Simpan Perubahan</span>

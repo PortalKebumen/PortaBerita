@@ -18,7 +18,7 @@
         {{-- Toolbar: Search Bar + Filter Type + Tombol Tambah Kategori (Gaya Pengguna & Role) --}}
         <div class="flex flex-wrap items-center justify-between gap-3">
             <div class="flex flex-wrap items-center gap-3 flex-1">
-                <div class="relative flex-1 max-w-[320px]">
+                <div class="relative w-full sm:w-auto sm:flex-1 sm:max-w-[320px]">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#848CA3" stroke-width="2" class="absolute left-3.5 top-1/2 -translate-y-1/2">
                         <circle cx="11" cy="11" r="7"></circle>
                         <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
@@ -29,7 +29,7 @@
                         class="form-input pl-9">
                 </div>
 
-                <select wire:model.live="categoryTypeFilter" class="form-select w-44">
+                <select wire:model.live="categoryTypeFilter" class="form-select max-sm:w-full sm:w-44">
                     <option value="all">Semua Jenis</option>
                     <option value="main">Kategori Utama</option>
                     <option value="sub">Sub-kategori</option>
@@ -49,9 +49,9 @@
                 <thead>
                     <tr class="text-left text-[#6C7387] border-b border-[#E4E8EF]">
                         <th class="px-5 py-3.5 font-medium">NAMA</th>
-                        <th class="px-4 py-3.5 font-medium">SLUG</th>
-                        <th class="px-4 py-3.5 font-medium">SUB-KATEGORI DARI</th>
-                        <th class="px-4 py-3.5 font-medium text-center">JML. ARTIKEL</th>
+                        <th class="max-md:hidden px-4 py-3.5 font-medium">SLUG</th>
+                        <th class="max-md:hidden px-4 py-3.5 font-medium">SUB-KATEGORI DARI</th>
+                        <th class="max-md:hidden px-4 py-3.5 font-medium text-center">JML. ARTIKEL</th>
                         <th class="px-5 py-3.5 font-medium text-right">AKSI</th>
                     </tr>
                 </thead>
@@ -60,18 +60,22 @@
                         <tr class="hover:bg-gray-50/50 transition-colors">
                             <td class="px-5 py-3.5">
                                 <span class="font-medium text-[#1B2033]">{{ $cat->name }}</span>
+                                <div class="md:hidden mt-0.5 text-[11.5px] text-[#848CA3]">
+                                    {{ $cat->parent ? 'Sub dari ' . $cat->parent->name : 'Kategori utama' }} · {{ $cat->articles_count ?? 0 }} artikel
+                                    <span class="block font-mono">/{{ $cat->slug }}</span>
+                                </div>
                             </td>
-                            <td class="px-4 py-3.5 font-mono text-xs text-[#848CA3]">
+                            <td class="max-md:hidden px-4 py-3.5 font-mono text-xs text-[#848CA3]">
                                 /{{ $cat->slug }}
                             </td>
-                            <td class="px-4 py-3.5">
+                            <td class="max-md:hidden px-4 py-3.5">
                                 @if ($cat->parent)
                                     <span class="text-gray-700 font-medium text-xs">{{ $cat->parent->name }}</span>
                                 @else
                                     <span class="badge-neutral">Utama</span>
                                 @endif
                             </td>
-                            <td class="px-4 py-3.5 text-center font-medium text-[#6C7387]">
+                            <td class="max-md:hidden px-4 py-3.5 text-center font-medium text-[#6C7387]">
                                 {{ $cat->articles_count ?? 0 }}
                             </td>
                             <td class="px-5 py-3.5 text-right">
@@ -123,7 +127,7 @@
     @if ($tab === 'tag')
         {{-- Toolbar: Search Bar + Tombol Tambah Tag --}}
         <div class="flex flex-wrap items-center justify-between gap-3">
-            <div class="relative flex-1 max-w-[320px]">
+            <div class="relative w-full sm:w-auto sm:flex-1 sm:max-w-[320px]">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#848CA3" stroke-width="2" class="absolute left-3.5 top-1/2 -translate-y-1/2">
                     <circle cx="11" cy="11" r="7"></circle>
                     <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
@@ -147,8 +151,8 @@
                 <thead>
                     <tr class="text-left text-[#6C7387] border-b border-[#E4E8EF]">
                         <th class="px-5 py-3.5 font-medium">NAMA TAG</th>
-                        <th class="px-4 py-3.5 font-medium">SLUG</th>
-                        <th class="px-4 py-3.5 font-medium text-center">JML. ARTIKEL</th>
+                        <th class="max-md:hidden px-4 py-3.5 font-medium">SLUG</th>
+                        <th class="max-md:hidden px-4 py-3.5 font-medium text-center">JML. ARTIKEL</th>
                         <th class="px-5 py-3.5 font-medium text-right">AKSI</th>
                     </tr>
                 </thead>
@@ -157,11 +161,12 @@
                         <tr class="hover:bg-gray-50/50 transition-colors">
                             <td class="px-5 py-3.5">
                                 <span class="font-medium text-[#1B2033]">#{{ $t->name }}</span>
+                                <div class="md:hidden mt-0.5 text-[11.5px] text-[#848CA3]"><span class="font-mono">/{{ $t->slug }}</span> · {{ $t->articles_count ?? 0 }} artikel</div>
                             </td>
-                            <td class="px-4 py-3.5 font-mono text-xs text-[#848CA3]">
+                            <td class="max-md:hidden px-4 py-3.5 font-mono text-xs text-[#848CA3]">
                                 /{{ $t->slug }}
                             </td>
-                            <td class="px-4 py-3.5 text-center font-medium text-[#6C7387]">
+                            <td class="max-md:hidden px-4 py-3.5 text-center font-medium text-[#6C7387]">
                                 {{ $t->articles_count ?? 0 }}
                             </td>
                             <td class="px-5 py-3.5 text-right">

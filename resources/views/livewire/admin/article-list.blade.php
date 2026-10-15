@@ -137,7 +137,7 @@
     @else
     <div class="card overflow-hidden">
         <div class="overflow-x-auto">
-            <table class="w-full min-w-[820px] border-collapse">
+            <table class="w-full xl:min-w-[820px] border-collapse">
                 <thead>
                     <tr>
                         <th class="px-4 py-2.5 border-b border-[#CDD3DF] w-10">
@@ -148,11 +148,11 @@
                                 title="Pilih semua di halaman ini">
                         </th>
                         <th class="text-left text-[11px] uppercase tracking-wide text-[#848CA3] font-bold px-4 py-2.5 border-b border-[#CDD3DF]">JUDUL</th>
-                        <th class="text-left text-[11px] uppercase tracking-wide text-[#848CA3] font-bold px-4 py-2.5 border-b border-[#CDD3DF]">PENULIS</th>
-                        <th class="text-left text-[11px] uppercase tracking-wide text-[#848CA3] font-bold px-4 py-2.5 border-b border-[#CDD3DF]">KATEGORI</th>
-                        <th class="text-left text-[11px] uppercase tracking-wide text-[#848CA3] font-bold px-3 py-2.5 border-b border-[#CDD3DF] whitespace-nowrap">STATUS</th>
-                        <th class="text-left text-[11px] uppercase tracking-wide text-[#848CA3] font-bold px-3 py-2.5 border-b border-[#CDD3DF] whitespace-nowrap">VIEWS</th>
-                        <th class="text-left text-[11px] uppercase tracking-wide text-[#848CA3] font-bold px-3 py-2.5 border-b border-[#CDD3DF] whitespace-nowrap">TANGGAL</th>
+                        <th class="max-xl:hidden text-left text-[11px] uppercase tracking-wide text-[#848CA3] font-bold px-4 py-2.5 border-b border-[#CDD3DF]">PENULIS</th>
+                        <th class="max-xl:hidden text-left text-[11px] uppercase tracking-wide text-[#848CA3] font-bold px-4 py-2.5 border-b border-[#CDD3DF]">KATEGORI</th>
+                        <th class="max-xl:hidden text-left text-[11px] uppercase tracking-wide text-[#848CA3] font-bold px-3 py-2.5 border-b border-[#CDD3DF] whitespace-nowrap">STATUS</th>
+                        <th class="max-xl:hidden text-left text-[11px] uppercase tracking-wide text-[#848CA3] font-bold px-3 py-2.5 border-b border-[#CDD3DF] whitespace-nowrap">VIEWS</th>
+                        <th class="max-xl:hidden text-left text-[11px] uppercase tracking-wide text-[#848CA3] font-bold px-3 py-2.5 border-b border-[#CDD3DF] whitespace-nowrap">TANGGAL</th>
                         <th class="text-left text-[11px] uppercase tracking-wide text-[#848CA3] font-bold px-3 py-2.5 border-b border-[#CDD3DF] whitespace-nowrap">AKSI</th>
                     </tr>
                 </thead>
@@ -179,22 +179,34 @@
                                     @endif
                                     <span class="font-semibold text-sm leading-snug">{{ $article->title }}</span>
                                 </div>
+                                {{-- Ringkasan kolom yang disembunyikan di layar kecil --}}
+                                <div class="xl:hidden mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11.5px] text-[#6C7387]">
+                                    <span class="badge-{{ $article->status->badge() }}"><span class="badge-dot"></span>{{ ucfirst($article->status->value) }}</span>
+                                    <span>{{ $article->author?->name ?? '-' }}</span>
+                                    <span>·</span>
+                                    <span>{{ $article->category?->name ?? '-' }}</span>
+                                    <span>·</span>
+                                    <span class="font-mono">{{ $article->created_at->format('d/m') }}</span>
+                                    @if (($article->views_count ?? 0) > 0)
+                                        <span>· {{ number_format($article->views_count, 0, ',', '.') }}x dibaca</span>
+                                    @endif
+                                </div>
                             </td>
-                            <td class="px-4 py-3 text-sm truncate">
+                            <td class="max-xl:hidden px-4 py-3 text-sm truncate">
                                 <span class="block truncate">{{ $article->author?->name ?? '-' }}</span>
                             </td>
-                            <td class="px-4 py-3 text-sm truncate">
+                            <td class="max-xl:hidden px-4 py-3 text-sm truncate">
                                 <span class="block truncate">{{ $article->category?->name ?? '-' }}</span>
                             </td>
-                            <td class="px-3 py-3 whitespace-nowrap">
+                            <td class="max-xl:hidden px-3 py-3 whitespace-nowrap">
                                 <span class="badge-{{ $article->status->badge() }}">
                                     <span class="badge-dot"></span>{{ ucfirst($article->status->value) }}
                                 </span>
                             </td>
-                            <td class="px-3 py-3 font-mono text-sm whitespace-nowrap">
+                            <td class="max-xl:hidden px-3 py-3 font-mono text-sm whitespace-nowrap">
                                 {{ ($article->views_count ?? 0) > 0 ? number_format($article->views_count, 0, ',', '.') : '—' }}
                             </td>
-                            <td class="px-3 py-3 font-mono text-sm whitespace-nowrap">
+                            <td class="max-xl:hidden px-3 py-3 font-mono text-sm whitespace-nowrap">
                                 {{ $article->created_at->format('d/m') }}
                             </td>
                             <td class="px-2 py-3">

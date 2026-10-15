@@ -38,10 +38,10 @@
                 <thead>
                     <tr class="text-left text-[#6C7387] border-b border-[#E4E8EF]">
                         <th class="px-5 py-3.5 font-medium">JUDUL</th>
-                        <th class="px-4 py-3.5 font-medium">SLUG</th>
-                        <th class="px-4 py-3.5 font-medium">STATUS</th>
-                        <th class="px-4 py-3.5 font-medium">DIPAKAI DI MENU</th>
-                        <th class="px-4 py-3.5 font-medium">TERAKHIR DIUBAH</th>
+                        <th class="max-lg:hidden px-4 py-3.5 font-medium">SLUG</th>
+                        <th class="max-md:hidden px-4 py-3.5 font-medium">STATUS</th>
+                        <th class="max-lg:hidden px-4 py-3.5 font-medium">DIPAKAI DI MENU</th>
+                        <th class="max-lg:hidden px-4 py-3.5 font-medium">TERAKHIR DIUBAH</th>
                         <th class="px-5 py-3.5 font-medium text-right">AKSI</th>
                     </tr>
                 </thead>
@@ -54,18 +54,24 @@
                                 @else
                                     <span class="font-medium text-[#1B2033]">{{ $page->title }}</span>
                                 @endcan
+                                {{-- Ringkasan kolom yang disembunyikan di layar kecil --}}
+                                <div class="lg:hidden mt-1 flex flex-wrap items-center gap-1.5 text-[11.5px] text-[#848CA3]">
+                                    <span class="md:hidden {{ $page->isPublished() ? 'badge-success' : 'badge-warning' }}">{{ $statuses[$page->isPublished() ? 'published' : 'draft'] }}</span>
+                                    <span class="font-mono">/halaman/{{ $page->slug }}</span>
+                                    <span>· diubah {{ $page->updated_at?->translatedFormat('d M Y') }}</span>
+                                </div>
                             </td>
-                            <td class="px-4 py-3.5 font-mono text-xs text-[#848CA3]">
+                            <td class="max-lg:hidden px-4 py-3.5 font-mono text-xs text-[#848CA3]">
                                 /halaman/{{ $page->slug }}
                             </td>
-                            <td class="px-4 py-3.5">
+                            <td class="max-md:hidden px-4 py-3.5">
                                 @if ($page->isPublished())
                                     <span class="badge-success"><span class="badge-dot"></span>{{ $statuses['published'] }}</span>
                                 @else
                                     <span class="badge-warning"><span class="badge-dot"></span>{{ $statuses['draft'] }}</span>
                                 @endif
                             </td>
-                            <td class="px-4 py-3.5">
+                            <td class="max-lg:hidden px-4 py-3.5">
                                 @php $usedIn = $page->menuItems->pluck('location')->unique(); @endphp
                                 @if ($usedIn->isNotEmpty())
                                     <div class="flex flex-wrap gap-1">
@@ -77,7 +83,7 @@
                                     <span class="text-xs text-[#848CA3]">—</span>
                                 @endif
                             </td>
-                            <td class="px-4 py-3.5 text-xs text-[#6C7387]">
+                            <td class="max-lg:hidden px-4 py-3.5 text-xs text-[#6C7387]">
                                 <div>{{ $page->updated_at?->translatedFormat('d M Y, H:i') }}</div>
                                 @if ($page->editor)
                                     <div class="text-[#848CA3] mt-0.5">oleh {{ $page->editor->name }}</div>

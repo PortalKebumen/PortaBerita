@@ -1,13 +1,13 @@
 <div class="space-y-5">
 
     <div class="flex flex-wrap items-center justify-between gap-3">
-        <div class="flex flex-wrap items-center gap-3">
-            <div class="relative flex-1 max-w-[320px]">
+        <div class="flex flex-wrap items-center gap-3 max-sm:w-full">
+            <div class="relative w-full sm:w-auto sm:flex-1 sm:max-w-[320px]">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#848CA3" stroke-width="2" class="absolute left-3.5 top-1/2 -translate-y-1/2"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
 
                 <input type="text" wire:model.live.debounce.400ms="search" placeholder="Cari nama atau email..." class="form-input pl-9">
             </div>
-            <select wire:model.live="roleFilter" class="form-select w-56">
+            <select wire:model.live="roleFilter" class="form-select max-sm:w-full sm:w-56">
                 <option value="">Semua Role</option>
                 @foreach ($this->roleOptions as $opt)
                     <option value="{{ $opt['name'] }}">{{ $opt['label'] }}</option>
@@ -16,7 +16,7 @@
         </div>
 
         @can('users.create')
-            <button type="button" wire:click="openCreate" class="btn-primary shrink-0">+ Tambah Pengguna</button>
+            <button type="button" wire:click="openCreate" class="btn-primary shrink-0 max-sm:w-full max-sm:justify-center">+ Tambah Pengguna</button>
         @endcan
     </div>
 
@@ -25,9 +25,9 @@
             <thead>
                 <tr class="text-left text-[#6C7387] border-b border-[#E4E8EF]">
                     <th class="px-4 py-3 font-medium">Nama</th>
-                    <th class="px-4 py-3 font-medium">Role</th>
-                    <th class="px-4 py-3 font-medium">Status</th>
-                    <th class="px-4 py-3 font-medium">Login Terakhir</th>
+                    <th class="max-md:hidden px-4 py-3 font-medium">Role</th>
+                    <th class="max-md:hidden px-4 py-3 font-medium">Status</th>
+                    <th class="max-md:hidden px-4 py-3 font-medium">Login Terakhir</th>
                     <th class="px-4 py-3 font-medium text-right">Aksi</th>
                 </tr>
             </thead>
@@ -39,13 +39,20 @@
                                 <div class="h-9 w-9 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center text-xs font-semibold uppercase">
                                     {{ collect(explode(' ', $user->name))->map(fn ($w) => mb_substr($w, 0, 1))->take(2)->implode('') }}
                                 </div>
-                                <div>
+                                <div class="min-w-0">
                                     <div class="font-medium text-[#1B2033]">{{ $user->name }}</div>
-                                    <div class="text-xs text-[#848CA3]">{{ $user->email }}</div>
+                                    <div class="text-xs text-[#848CA3] break-all">{{ $user->email }}</div>
+                                    {{-- Ringkasan kolom yang disembunyikan di layar kecil --}}
+                                    <div class="md:hidden mt-1.5 flex flex-wrap items-center gap-1.5">
+                                        @if ($mobileRole = $user->roles->first()?->name)
+                                            <span class="{{ $this->roleBadgeClass($mobileRole) }}">{{ $this->roleLabel($mobileRole) }}</span>
+                                        @endif
+                                        <span class="{{ $user->is_active ? 'badge-success' : 'badge-danger' }}">{{ $user->is_active ? 'Aktif' : 'Nonaktif' }}</span>
+                                    </div>
                                 </div>
                             </div>
                         </td>
-                        <td class="px-4 py-3">
+                        <td class="max-md:hidden px-4 py-3 whitespace-nowrap">
                             @php($roleName = $user->roles->first()?->name)
                             @if ($roleName)
                                 <span class="{{ $this->roleBadgeClass($roleName) }}">{{ $this->roleLabel($roleName) }}</span>
@@ -53,14 +60,14 @@
                                 <span class="text-xs text-[#848CA3]">Belum ada role</span>
                             @endif
                         </td>
-                        <td class="px-4 py-3">
+                        <td class="max-md:hidden px-4 py-3">
                             @if ($user->is_active)
                                 <span class="badge-success">Aktif</span>
                             @else
                                 <span class="badge-danger">Nonaktif</span>
                             @endif
                         </td>
-                        <td class="px-4 py-3 text-[#6C7387]">
+                        <td class="max-md:hidden px-4 py-3 text-[#6C7387]">
                             {{ $user->last_login_at ? \Illuminate\Support\Carbon::parse($user->last_login_at)->diffForHumans() : 'Belum pernah login' }}
                         </td>
                         <td class="px-4 py-3">

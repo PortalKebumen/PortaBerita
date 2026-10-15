@@ -108,13 +108,13 @@
                 <a href="{{ route('admin.artikel.index') }}" class="text-[12.5px] font-semibold text-brand-600">Lihat Semua</a>
             </div>
             <div class="overflow-x-auto">
-                <table class="w-full min-w-[560px] border-collapse">
+                <table class="w-full xl:min-w-[560px] border-collapse">
                     <thead>
                         <tr>
                             <th class="text-left text-[11px] uppercase tracking-wide text-[#848CA3] font-bold px-5 py-2.5 border-b border-[#E4E8EF]">Judul</th>
-                            <th class="text-left text-[11px] uppercase tracking-wide text-[#848CA3] font-bold px-3 py-2.5 border-b border-[#E4E8EF] whitespace-nowrap">Penulis</th>
+                            <th class="max-xl:hidden text-left text-[11px] uppercase tracking-wide text-[#848CA3] font-bold px-3 py-2.5 border-b border-[#E4E8EF] whitespace-nowrap">Penulis</th>
                             <th class="text-left text-[11px] uppercase tracking-wide text-[#848CA3] font-bold px-3 py-2.5 border-b border-[#E4E8EF] whitespace-nowrap">Status</th>
-                            <th class="text-left text-[11px] uppercase tracking-wide text-[#848CA3] font-bold px-3 py-2.5 border-b border-[#E4E8EF] whitespace-nowrap">Tanggal</th>
+                            <th class="max-xl:hidden text-left text-[11px] uppercase tracking-wide text-[#848CA3] font-bold px-3 py-2.5 border-b border-[#E4E8EF] whitespace-nowrap">Tanggal</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -126,14 +126,15 @@
                                     @else
                                         <span class="text-[13px] font-semibold leading-snug">{{ $article->title }}</span>
                                     @endcan
+                                    <div class="xl:hidden mt-1 text-[11.5px] text-[#848CA3]">{{ $article->author?->name ?? '-' }} · {{ ($article->published_at ?? $article->created_at)->format('d/m') }}</div>
                                 </td>
-                                <td class="px-3 py-3 text-[13px] whitespace-nowrap">{{ $article->author?->name ?? '-' }}</td>
+                                <td class="max-xl:hidden px-3 py-3 text-[13px] whitespace-nowrap">{{ $article->author?->name ?? '-' }}</td>
                                 <td class="px-3 py-3 whitespace-nowrap">
                                     <span class="badge-{{ $article->status->badge() }}">
                                         <span class="badge-dot"></span>{{ ucfirst($article->status->value) }}
                                     </span>
                                 </td>
-                                <td class="px-3 py-3 font-mono text-[12.5px] whitespace-nowrap">
+                                <td class="max-xl:hidden px-3 py-3 font-mono text-[12.5px] whitespace-nowrap">
                                     {{ ($article->published_at ?? $article->created_at)->format('d/m') }}
                                 </td>
                             </tr>

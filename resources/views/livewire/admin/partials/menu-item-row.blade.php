@@ -60,7 +60,8 @@
     </div>
 
     @can('menus.update')
-        <div class="flex items-center gap-0.5 shrink-0">
+        {{-- Di HP tombol aksi turun ke baris sendiri agar nama item tidak terpotong --}}
+        <div class="flex items-center gap-0.5 shrink-0 max-sm:basis-full max-sm:justify-end max-sm:border-t max-sm:border-[#EEF1F5] max-sm:pt-2">
             <button type="button" wire:click="moveUp({{ $item->id }})" @disabled($isFirst)
                 class="btn-icon h-8 w-8 text-[#6C7387] hover:text-brand-600 hover:bg-brand-50 disabled:opacity-30 disabled:pointer-events-none" title="Naikkan">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19V5M5 12l7-7 7 7"/></svg>

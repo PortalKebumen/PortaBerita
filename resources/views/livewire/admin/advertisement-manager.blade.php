@@ -33,7 +33,7 @@
     <div class="flex flex-wrap items-center justify-between gap-3">
         <div class="flex flex-wrap items-center gap-3 flex-1">
             {{-- Search Bar Reaktif --}}
-            <div class="relative flex-1 max-w-[320px]">
+            <div class="relative w-full sm:w-auto sm:flex-1 sm:max-w-[320px]">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#848CA3" stroke-width="2" class="absolute left-3.5 top-1/2 -translate-y-1/2">
                     <circle cx="11" cy="11" r="7"></circle>
                     <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
@@ -45,7 +45,7 @@
             </div>
 
             {{-- Filter Penempatan --}}
-            <select wire:model.live="placementFilter" class="form-select w-44">
+            <select wire:model.live="placementFilter" class="form-select max-sm:flex-1 max-sm:min-w-0 sm:w-44">
                 <option value="all">Semua Penempatan</option>
                 <option value="header">Header</option>
                 <option value="sidebar">Sidebar</option>
@@ -54,7 +54,7 @@
             </select>
 
             {{-- Filter Status --}}
-            <select wire:model.live="statusFilter" class="form-select w-44">
+            <select wire:model.live="statusFilter" class="form-select max-sm:flex-1 max-sm:min-w-0 sm:w-44">
                 <option value="">Semua Status</option>
                 <option value="active">Aktif</option>
                 <option value="scheduled">Terjadwal</option>
@@ -65,7 +65,7 @@
 
         {{-- Tombol + Tambah Iklan --}}
         @can('ads.create')
-            <button type="button" wire:click="openAddModal" class="btn-primary shrink-0">
+            <button type="button" wire:click="openAddModal" class="btn-primary shrink-0 max-sm:w-full max-sm:justify-center">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <line x1="12" y1="5" x2="12" y2="19" stroke-linecap="round"></line>
                     <line x1="5" y1="12" x2="19" y2="12" stroke-linecap="round"></line>
@@ -81,11 +81,11 @@
             <thead>
                 <tr class="text-left text-[#6C7387] border-b border-[#E4E8EF]">
                     <th class="px-5 py-3.5 font-medium">PENGIKLAN</th>
-                    <th class="px-4 py-3.5 font-medium">PENEMPATAN</th>
-                    <th class="px-4 py-3.5 font-medium">PERIODE</th>
-                    <th class="px-4 py-3.5 font-medium">STATUS</th>
-                    <th class="px-4 py-3.5 font-medium text-right">IMPRESI</th>
-                    <th class="px-4 py-3.5 font-medium text-right">KLIK</th>
+                    <th class="max-xl:hidden px-4 py-3.5 font-medium">PENEMPATAN</th>
+                    <th class="max-xl:hidden px-4 py-3.5 font-medium">PERIODE</th>
+                    <th class="max-xl:hidden px-4 py-3.5 font-medium">STATUS</th>
+                    <th class="max-xl:hidden px-4 py-3.5 font-medium text-right">IMPRESI</th>
+                    <th class="max-xl:hidden px-4 py-3.5 font-medium text-right">KLIK</th>
                     <th class="px-5 py-3.5 font-medium text-right">AKSI</th>
                 </tr>
             </thead>
@@ -105,7 +105,7 @@
                     @endphp
                     <tr class="hover:bg-gray-50/50 transition-colors">
                         {{-- Kolom Pengiklan (Banner Thumbnail / Inisial + Nama + Kontak) --}}
-                        <td class="px-5 py-3.5 whitespace-nowrap">
+                        <td class="px-5 py-3.5 xl:whitespace-nowrap max-xl:pl-4 max-xl:pr-2">
                             <div class="flex items-center gap-3">
                                 @if ($ad->banner_url)
                                     <img src="{{ $ad->banner_url }}" alt="{{ $ad->advertiser_name }}" class="w-12 h-9 rounded-lg object-cover border border-[#CDD3DF] shrink-0">
@@ -115,18 +115,27 @@
                                     </div>
                                 @endif
                                 <div class="min-w-0">
-                                    <div class="font-semibold text-[#171B28] truncate">
+                                    <div class="font-semibold text-[#171B28] xl:truncate">
                                         {{ $ad->advertiser_name }}
                                     </div>
-                                    <div class="text-xs text-[#848CA3] truncate">
+                                    <div class="text-xs text-[#848CA3] xl:truncate">
                                         {{ $ad->advertiser_contact ?: '-' }}
+                                    </div>
+                                    {{-- Ringkasan kolom yang disembunyikan di layar kecil --}}
+                                    <div class="xl:hidden mt-1 text-[11.5px] text-[#6C7387]">
+                                        {{ \App\Models\Advertisement::PLACEMENTS[$ad->placement]['label'] ?? $ad->placement }}
+                                        · {{ ['active' => 'Aktif', 'scheduled' => 'Terjadwal', 'expired' => 'Selesai', 'inactive' => 'Nonaktif'][$effectiveStatus] ?? $effectiveStatus }}
+                                        <br>{{ $ad->start_date?->translatedFormat('d M') }} – {{ $ad->end_date?->translatedFormat('d M Y') }}
+                                        @if ($effectiveStatus !== 'scheduled')
+                                            · {{ \App\Models\Advertisement::formatMetricNumber($ad->impressions_count ?? 0) }} impresi, {{ \App\Models\Advertisement::formatMetricNumber($ad->clicks_count ?? 0) }} klik
+                                        @endif
                                     </div>
                                 </div>
                             </div>
                         </td>
 
                         {{-- Kolom Penempatan --}}
-                        <td class="px-4 py-3.5 text-xs text-[#3B4152] font-medium whitespace-nowrap">
+                        <td class="max-xl:hidden px-4 py-3.5 text-xs text-[#3B4152] font-medium whitespace-nowrap">
                             @if ($ad->placement === 'header')
                                 <span class="badge-neutral">Header</span>
                             @elseif ($ad->placement === 'sidebar')
@@ -144,12 +153,12 @@
                         </td>
 
                         {{-- Kolom Periode --}}
-                        <td class="px-4 py-3.5 text-xs text-[#6C7387] whitespace-nowrap font-medium">
+                        <td class="max-xl:hidden px-4 py-3.5 text-xs text-[#6C7387] whitespace-nowrap font-medium">
                             {{ $ad->start_date ? $ad->start_date->translatedFormat('d M') : '' }} – {{ $ad->end_date ? $ad->end_date->translatedFormat('d M Y') : '' }}
                         </td>
 
                         {{-- Kolom Status --}}
-                        <td class="px-4 py-3.5 whitespace-nowrap">
+                        <td class="max-xl:hidden px-4 py-3.5 whitespace-nowrap">
                             @if ($effectiveStatus === 'active')
                                 <span class="badge-success">
                                     <span class="badge-dot"></span>
@@ -174,18 +183,18 @@
                         </td>
 
                         {{-- Kolom Impresi --}}
-                        <td class="px-4 py-3.5 text-right font-mono text-xs font-semibold text-[#171B28] whitespace-nowrap">
+                        <td class="max-xl:hidden px-4 py-3.5 text-right font-mono text-xs font-semibold text-[#171B28] whitespace-nowrap">
                             {{ $effectiveStatus === 'scheduled' ? '—' : \App\Models\Advertisement::formatMetricNumber($ad->impressions_count ?? 0) }}
                         </td>
 
                         {{-- Kolom Klik --}}
-                        <td class="px-4 py-3.5 text-right font-mono text-xs font-semibold text-[#171B28] whitespace-nowrap">
+                        <td class="max-xl:hidden px-4 py-3.5 text-right font-mono text-xs font-semibold text-[#171B28] whitespace-nowrap">
                             {{ $effectiveStatus === 'scheduled' ? '—' : \App\Models\Advertisement::formatMetricNumber($ad->clicks_count ?? 0) }}
                         </td>
 
                         {{-- Kolom Aksi --}}
-                        <td class="px-5 py-3.5 text-right whitespace-nowrap">
-                            <div class="flex items-center justify-end gap-1.5">
+                        <td class="px-5 py-3.5 text-right whitespace-nowrap max-xl:pl-1 max-xl:pr-3">
+                            <div class="flex items-center justify-end gap-1.5 max-xl:flex-col">
                                 @can('ads.update')
                                     <button type="button"
                                         wire:click="openEditModal({{ $ad->id }})"

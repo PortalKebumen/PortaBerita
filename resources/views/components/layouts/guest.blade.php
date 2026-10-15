@@ -15,11 +15,14 @@
         .form-error-text { color: #dc2626; }
     </style>
 </head>
-<body class="bg-[#F1F3F7] text-[#171B28] font-body min-h-screen relative overflow-hidden">
+<body class="bg-[#F1F3F7] text-[#171B28] font-body min-h-screen relative">
 
-    {{-- Dekorasi background lembut, tetap pakai warna brand/accent --}}
-    <div class="pointer-events-none absolute -top-24 -left-24 w-[420px] h-[420px] rounded-full bg-brand-500/10 blur-3xl"></div>
-    <div class="pointer-events-none absolute -bottom-32 -right-16 w-[420px] h-[420px] rounded-full bg-accent-500/10 blur-3xl"></div>
+    {{-- Dekorasi background lembut, tetap pakai warna brand/accent. Dibungkus wadah tetap ber-overflow-hidden
+         (bukan body) agar halaman tetap bisa di-scroll di layar pendek dan tidak bisa digeser ke samping. --}}
+    <div class="pointer-events-none fixed inset-0 overflow-hidden" aria-hidden="true">
+        <div class="absolute -top-24 -left-24 w-[420px] h-[420px] rounded-full bg-brand-500/10 blur-3xl"></div>
+        <div class="absolute -bottom-32 -right-16 w-[420px] h-[420px] rounded-full bg-accent-500/10 blur-3xl"></div>
+    </div>
 
     <div class="relative min-h-screen flex flex-col items-center justify-center p-4">
         <img src="{{ asset('images/logo-full.png') }}" alt="PortalKebumen.com" class="w-64 sm:w-72 h-auto mb-8">
