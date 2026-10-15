@@ -62,12 +62,26 @@ class UpdateGeoIpDatabase extends Command
             $url = str_replace('{month}', $month->format('Y-m'), config('analytics.geoip.download_url'));
             $this->info("Mengunduh {$url} ...");
 
-            $response = Http::connectTimeout(30)->timeout(1800)->withOptions(['sink' => $target])->get($url);
-            if ($response->successful() && filesize($target) > 1_000_000) {
+            // Tulis lewat handle file milik sendiri agar ukuran file bisa diperiksa dengan pasti setelahnya
+            $handle = fopen($target, 'wb');
+            try {
+                $response = Http::connectTimeout(30)->timeout(1800)->withOptions(['sink' => $handle])->get($url);
+            } finally {
+                if (is_resource($handle)) {
+                    fclose($handle);
+                }
+            }
+
+            clearstatcache(true, $target);
+            $size = is_file($target) ? filesize($target) : 0;
+
+            if ($response->successful() && $size > 1_000_000) {
+                $this->info('Terunduh ' . round($size / 1048576) . ' MB.');
+
                 return $url;
             }
 
-            $this->warn("Belum tersedia (HTTP {$response->status()}).");
+            $this->warn("Belum tersedia (HTTP {$response->status()}, " . round($size / 1024) . ' KB).');
         }
 
         throw new \RuntimeException('File database DB-IP tidak ditemukan untuk bulan ini maupun bulan lalu.');
