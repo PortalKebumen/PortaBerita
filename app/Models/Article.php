@@ -18,7 +18,8 @@ class Article extends Model implements HasMedia
 {
     use InteractsWithMedia, LogsModelActivity;
 
-    protected array $logAttributes = ['title', 'slug', 'status', 'excerpt', 'content', 'is_breaking', 'is_advertorial', 'scheduled_at'];
+    // Dipakai juga oleh Riwayat Versi (App\Services\ArticleHistory); SEO & gambar dicatat lewat recordExtras()
+    protected array $logAttributes = ['title', 'slug', 'status', 'excerpt', 'content', 'category_id', 'author_id', 'is_breaking', 'is_advertorial', 'scheduled_at', 'published_at'];
     protected string $logLabel = 'Artikel';
 
     protected $casts = [

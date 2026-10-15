@@ -7,7 +7,9 @@ use App\Models\Article;
 use Illuminate\Support\Facades\Gate;
 use App\Models\Category;
 use App\Models\SeoMeta;
+use App\Services\ArticleHistory;
 use Illuminate\Support\Str;
+use Spatie\Activitylog\Models\Activity;
 use Livewire\Component;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -133,8 +135,13 @@ class ArticleEdit extends Component
 
         $this->authorizeArticleMedia();
 
+        // Riwayat Versi: kondisi SEO & gambar sebelum simpan, untuk dicatat ke log bila berubah
+        $history = app(ArticleHistory::class);
+        $extrasBefore = $history->extrasSnapshot($this->article);
+        $lastActivityId = (int) Activity::max('id');
+
         try {
-            DB::transaction(function () {
+            DB::transaction(function () use ($history, $extrasBefore, $lastActivityId) {
                 $this->article->update([
                     'title' => $this->title,
                     'slug' => $this->article->published_at ? $this->article->slug : $this->slug,
@@ -162,6 +169,8 @@ class ArticleEdit extends Component
                     'nofollow' => $canIndex ? $this->nofollow : (bool) $seoMeta->nofollow,
                 ]);
                 $seoMeta->save();
+
+                $history->recordExtras($this->article, $extrasBefore, $lastActivityId);
             });
         } catch (\Throwable $e) {
             report($e);
@@ -176,6 +185,7 @@ class ArticleEdit extends Component
         $this->status = $this->article->status->value;
 
         $this->resetErrorBag();
+        $this->dispatch('article-saved')->to(ArticleHistoryPanel::class);
         $this->dispatch('flash-message', type: 'success', text: 'Artikel berhasil diperbarui.');
     }
 

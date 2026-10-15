@@ -88,6 +88,13 @@ class ArticlePolicy
         return $user->can('articles.view-history') || $this->owns($user, $article);
     }
 
+    public function restoreVersion(User $user, Article $article): bool
+    {
+        // Mengembalikan isi versi lama = mengedit artikel siapa saja, jadi khusus Redaktur ke atas
+        return $user->can('articles.view-history')
+            && $user->can('articles.update-any');
+    }
+
     private function owns(User $user, Article $article): bool
     {
         return $user->getKey() !== null

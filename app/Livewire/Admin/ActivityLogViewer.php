@@ -2,7 +2,9 @@
 
 namespace App\Livewire\Admin;
 
+use App\Models\Article;
 use App\Models\User;
+use App\Services\ArticleHistory;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Livewire\Attributes\Computed;
@@ -142,7 +144,14 @@ class ActivityLogViewer extends Component
             default => now()->subMonths(3),
         };
 
-        Activity::where('created_at', '<', $cutoff)->delete();
+        // Log artikel = Riwayat Versi (jejak audit redaksi), disimpan minimal ArticleHistory::RETENTION_YEARS tahun
+        $articleCutoff = now()->subYears(ArticleHistory::RETENTION_YEARS);
+
+        Activity::where('created_at', '<', $cutoff)
+            ->where(fn ($q) => $q->whereNull('subject_type')
+                ->orWhere('subject_type', '!=', (new Article)->getMorphClass())
+                ->orWhere('created_at', '<', $articleCutoff))
+            ->delete();
 
         $this->showPurgeModal = false;
         $this->resetPage();
