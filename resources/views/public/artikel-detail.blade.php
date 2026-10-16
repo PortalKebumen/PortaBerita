@@ -42,7 +42,7 @@
     <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
         <div class="grid gap-8 lg:grid-cols-3">
 
-            <article class="lg:col-span-2">
+            <article class="lg:col-span-2" @unless ($isPreview) data-copy-attribution @endunless>
                 {{-- Breadcrumb --}}
                 <nav class="flex flex-wrap items-center gap-1.5 text-xs text-[#848CA3]" aria-label="Breadcrumb">
                     <a href="{{ route('public.beranda') }}" class="hover:text-brand-600">Beranda</a>
@@ -166,4 +166,45 @@
             </aside>
         </div>
     </div>
+
+    @unless ($isPreview)
+        @push('scripts')
+            @php $copySite = \App\Models\SiteSetting::values()['site_name'] ?: 'PortalKebumen.com'; @endphp
+            <script>
+                // Saat teks artikel disalin, hasil tempelan diberi sumber (tautan artikel) & pemberitahuan hak cipta.
+                // Hanya untuk salinan >= 30 karakter dari dalam artikel; kolom isian tidak terpengaruh.
+                (function () {
+                    var article = document.querySelector('[data-copy-attribution]');
+                    if (!article) return;
+
+                    var url = @js($url);
+                    var notice = @js('Anda sedang membaca konten dari ' . $copySite . '. Seluruh teks dan materi dalam artikel ini dilindungi hak cipta.');
+                    var escapeHtml = function (s) {
+                        return s.replace(/[&<>"']/g, function (c) { return {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]; });
+                    };
+
+                    article.addEventListener('copy', function (event) {
+                        var selection = window.getSelection();
+                        var target = event.target;
+                        if (!selection || selection.isCollapsed || !event.clipboardData) return;
+                        if (target && target.closest && target.closest('input, textarea, [contenteditable="true"]')) return;
+
+                        var text = selection.toString();
+                        if (text.trim().length < 30) return;
+
+                        var wrapper = document.createElement('div');
+                        for (var i = 0; i < selection.rangeCount; i++) {
+                            wrapper.appendChild(selection.getRangeAt(i).cloneContents());
+                        }
+
+                        event.clipboardData.setData('text/plain',
+                            text.replace(/\s+$/, '') + '\n\nSumber:\n' + url + '\n\n' + notice);
+                        event.clipboardData.setData('text/html',
+                            wrapper.innerHTML + '<br><br><p>Sumber:<br><a href="' + escapeHtml(url) + '">' + escapeHtml(url) + '</a></p><p>' + escapeHtml(notice) + '</p>');
+                        event.preventDefault();
+                    });
+                })();
+            </script>
+        @endpush
+    @endunless
 </x-layouts.public>
