@@ -12,8 +12,17 @@
     $src = $fallback ?? asset('images/placeholder-article.jpg');
 
     if ($media) {
+        // Lebar foto asli disimpan sekali di custom property; turunan yang lebih lebar dari aslinya
+        // (hasil pembesaran) tidak ditawarkan karena lebih berat tanpa tambahan detail
+        $originalWidth = $media->getCustomProperty('width');
+        if ($originalWidth === null && is_file($path = $media->getPath())) {
+            $originalWidth = (int) (@getimagesize($path)[0] ?? 0);
+            $media->setCustomProperty('width', $originalWidth)->saveQuietly();
+        }
+
         foreach (\App\Models\Article::IMAGE_SIZES as $conversion => $width) {
-            if ($media->hasGeneratedConversion($conversion)) {
+            $fits = ! $originalWidth || $width <= $originalWidth || $srcset === [];
+            if ($fits && $media->hasGeneratedConversion($conversion)) {
                 $srcset[] = $media->getUrl($conversion) . " {$width}w";
             }
         }
