@@ -20,11 +20,18 @@ class NewsArticleSchema
             ?: $article->excerpt
             ?: Str::limit(trim(preg_replace('/\s+/', ' ', strip_tags((string) $article->content))), 160);
 
-        $images = array_values(array_filter([
-            $article->getFirstMediaUrl('featured') ?: null,
-            $article->getFirstMediaUrl('og') ?: null,
+        // Google menyarankan gambar >= 1200px: turunan 1280x720 (16:9) & 1200x630, file asli sebagai cadangan
+        $conversionUrl = function (string $collection, string $conversion) use ($article): ?string {
+            $media = $article->getFirstMedia($collection);
+
+            return $media ? ($media->hasGeneratedConversion($conversion) ? $media->getUrl($conversion) : $media->getUrl()) : null;
+        };
+
+        $images = array_values(array_unique(array_filter([
+            $conversionUrl('featured', 'large'),
+            $conversionUrl('og', 'social') ?? $conversionUrl('featured', 'social'),
             SiteSetting::get('og_image_url'),
-        ]));
+        ])));
 
         $sameAs = array_values(array_filter([
             SiteSetting::get('facebook'),

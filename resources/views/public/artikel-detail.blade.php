@@ -1,7 +1,10 @@
 @php
     $seo = $article->seoMeta;
     $featured = $article->getFirstMedia('featured');
-    $img = $article->getFirstMediaUrl('featured');
+    $img = $featured ? $featured->getUrl() : null;
+    // Pratinjau tautan media sosial: JPEG 1200x630 (gambar OG khusus bila diisi, kalau tidak gambar utama)
+    $ogMedia = $article->getFirstMedia('og') ?? $featured;
+    $socialImage = $ogMedia ? ($ogMedia->hasGeneratedConversion('social') ? $ogMedia->getUrl('social') : $ogMedia->getUrl()) : null;
     $imgAlt = $featured?->getCustomProperty('alt_text') ?: $article->title;
     $imgCaption = $featured?->getCustomProperty('caption');
     $desc = $seo?->meta_description ?: ($article->excerpt ?: \Illuminate\Support\Str::limit(trim(strip_tags($article->content)), 155));
@@ -11,7 +14,7 @@
 <x-layouts.public
     :title="$seo?->meta_title ?: $article->title"
     :description="$desc"
-    :image="$img ?: null"
+    :image="$socialImage"
     type="article"
     :canonical="$url"
     :noindex="$isPreview || (bool) $seo?->noindex">
@@ -84,7 +87,8 @@
 
                 @if ($img)
                     <figure class="mt-5">
-                        <img src="{{ $img }}" alt="{{ $imgAlt }}" class="aspect-[16/9] w-full rounded-card object-cover">
+                        <x-responsive-image :media="$featured" :alt="$imgAlt" priority sizes="(min-width: 1024px) 800px, 100vw"
+                            class="aspect-[16/9] w-full rounded-card object-cover" />
                         @if ($imgCaption)
                             <figcaption class="mt-2 text-[13px] leading-snug text-[#5B6378]">{{ $imgCaption }}</figcaption>
                         @endif

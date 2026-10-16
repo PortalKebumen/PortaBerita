@@ -1,3 +1,25 @@
+# ---------------------------------------------------------------------------
+# Kompresi teks (HTML, CSS, JS, JSON, SVG) sebelum dikirim ke pembaca
+# ---------------------------------------------------------------------------
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/plain text/css text/xml application/xml application/xhtml+xml
+    AddOutputFilterByType DEFLATE application/javascript text/javascript application/json image/svg+xml
+</IfModule>
+
+# ---------------------------------------------------------------------------
+# Cache browser & CDN (Cloudflare) untuk file statis. Halaman HTML tidak disentuh.
+#  - /build/* : CSS/JS hasil Vite, nama file berisi hash -> aman disimpan 1 tahun
+#  - gambar & font : 30 hari (gambar artikel baru selalu mendapat URL baru)
+# ---------------------------------------------------------------------------
+<IfModule mod_headers.c>
+    <If "%{REQUEST_URI} =~ m#^/build/#">
+        Header set Cache-Control "public, max-age=31536000, immutable"
+    </If>
+    <FilesMatch "\.(jpe?g|png|gif|webp|avif|svg|ico|woff2?|ttf)$">
+        Header set Cache-Control "public, max-age=2592000"
+    </FilesMatch>
+</IfModule>
+
 <IfModule mod_rewrite.c>
     <IfModule mod_negotiation.c>
         Options -MultiViews -Indexes

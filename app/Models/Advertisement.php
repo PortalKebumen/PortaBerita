@@ -77,8 +77,8 @@ class Advertisement extends Model implements HasMedia
      */
     public function getBannerUrlAttribute(): ?string
     {
-        if ($this->hasMedia('banner')) {
-            return $this->getFirstMediaUrl('banner');
+        if ($media = $this->getFirstMedia('banner')) {
+            return $media->hasGeneratedConversion('web') ? $media->getUrl('web') : $media->getUrl();
         }
 
         // Check if banner exists in storage/banners directory with convention: ad-{id}.*
@@ -170,5 +170,23 @@ class Advertisement extends Model implements HasMedia
     public function registerMediaCollections(): void
     {
         $this->addMediaCollection('banner')->singleFile();
+    }
+
+    /**
+     * Banner disajikan sebagai WebP terkompresi dengan dimensi tetap (dibatasi 2440px agar file raksasa
+     * tidak terkirim). GIF tidak dikonversi karena animasinya akan hilang.
+     */
+    public function registerMediaConversions(?\Spatie\MediaLibrary\MediaCollections\Models\Media $media = null): void
+    {
+        if ($media && $media->mime_type === 'image/gif') {
+            return;
+        }
+
+        $this->addMediaConversion('web')
+            ->fit(\Spatie\Image\Enums\Fit::Max, 2440, 2440)
+            ->format('webp')
+            ->quality(85)
+            ->performOnCollections('banner')
+            ->nonQueued();
     }
 }

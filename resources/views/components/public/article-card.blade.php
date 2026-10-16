@@ -1,7 +1,9 @@
 @props(['article', 'variant' => 'card', 'fill' => false])
 
 @php
-    $img = $article->getFirstMediaUrl('featured', 'medium');
+    // Gambar disajikan lewat <x-responsive-image> (srcset WebP); tanpa media dipakai placeholder koleksi
+    $media = $article->getFirstMedia('featured');
+    $img = $media || $article->getFallbackMediaUrl('featured');
     $url = $article->publicUrl();
     $catName = $article->category?->name;
     $time = $article->published_at?->translatedFormat('d M Y, H:i');
@@ -12,7 +14,9 @@
     <article {{ $attributes->class(['group relative overflow-hidden rounded-card bg-brand-900', 'h-full' => $fill]) }}>
         <a href="{{ $url }}" @class(['block', 'h-full' => $fill])>
             @if ($img)
-                <img src="{{ $img }}" alt="{{ $article->title }}" @class(['aspect-[16/9] w-full object-cover transition duration-300 group-hover:scale-[1.02]', 'h-full' => $fill])>
+                <x-responsive-image :media="$media" :alt="$article->title" priority
+                    sizes="(min-width: 1024px) 820px, 100vw"
+                    @class(['aspect-[16/9] w-full object-cover transition duration-300 group-hover:scale-[1.02]', 'h-full' => $fill]) />
             @else
                 <div @class(['aspect-[16/9] w-full bg-gradient-to-br from-brand-900 to-brand-600', 'h-full' => $fill])></div>
             @endif
@@ -40,7 +44,8 @@
     <article class="group flex gap-4 rounded-card border border-[#E4E8EF] bg-white p-3">
         <a href="{{ $url }}" class="block w-32 shrink-0 overflow-hidden rounded-md sm:w-48">
             @if ($img)
-                <img src="{{ $img }}" alt="{{ $article->title }}" loading="lazy" class="aspect-[4/3] w-full object-cover transition duration-300 group-hover:scale-[1.04]">
+                <x-responsive-image :media="$media" :alt="$article->title" sizes="(min-width: 640px) 192px, 128px"
+                    class="aspect-[4/3] w-full object-cover transition duration-300 group-hover:scale-[1.04]" />
             @else
                 <div class="aspect-[4/3] w-full bg-gradient-to-br from-brand-900 to-brand-600"></div>
             @endif
@@ -87,7 +92,7 @@
         </div>
         @if ($img)
             <a href="{{ $url }}" class="block h-16 w-20 shrink-0 overflow-hidden rounded-md">
-                <img src="{{ $img }}" alt="" loading="lazy" class="h-full w-full object-cover">
+                <x-responsive-image :media="$media" sizes="80px" class="h-full w-full object-cover" />
             </a>
         @endif
     </article>
@@ -96,7 +101,8 @@
     <article class="group overflow-hidden rounded-card border border-[#E4E8EF] bg-white">
         <a href="{{ $url }}" class="block overflow-hidden">
             @if ($img)
-                <img src="{{ $img }}" alt="{{ $article->title }}" loading="lazy" class="aspect-[16/10] w-full object-cover transition duration-300 group-hover:scale-[1.04]">
+                <x-responsive-image :media="$media" :alt="$article->title" sizes="(min-width: 1024px) 400px, (min-width: 640px) 50vw, 100vw"
+                    class="aspect-[16/10] w-full object-cover transition duration-300 group-hover:scale-[1.04]" />
             @else
                 <div class="aspect-[16/10] w-full bg-gradient-to-br from-brand-900 to-brand-600"></div>
             @endif

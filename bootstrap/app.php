@@ -49,10 +49,15 @@ return Application::configure(basePath: dirname(__DIR__))
         // Anti-spam tanpa CAPTCHA (honeypot + jebakan waktu) untuk form publik; pasangan <x-honeypot />
         $middleware->alias(['antispam' => \App\Http\Middleware\ProtectAgainstSpam::class]);
 
-        // Di balik reverse proxy / Cloudflare: isi TRUSTED_PROXIES (IP proxy, dipisah koma, atau *) agar
-        // IP pembaca asli terbaca untuk statistik lokasi. Kosong = tidak memercayai proxy mana pun.
+        // Di balik reverse proxy / Cloudflare: isi TRUSTED_PROXIES agar IP pembaca asli terbaca (rate limit,
+        // statistik lokasi, activity log). "cloudflare" = rentang IP resmi Cloudflare (bootstrap/cloudflare-ips.php),
+        // atau daftar IP proxy dipisah koma, atau *. Kosong = tidak memercayai proxy mana pun.
         if ($proxies = env('TRUSTED_PROXIES')) {
-            $middleware->trustProxies(at: $proxies === '*' ? '*' : array_map('trim', explode(',', $proxies)));
+            $middleware->trustProxies(at: match ($proxies) {
+                '*' => '*',
+                'cloudflare' => require __DIR__ . '/cloudflare-ips.php',
+                default => array_map('trim', explode(',', $proxies)),
+            });
         }
     })
     ->withExceptions(function (Exceptions $exceptions): void {

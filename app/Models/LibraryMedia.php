@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Spatie\Image\Enums\Fit;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Spatie\MediaLibrary\HasMedia;
@@ -28,23 +29,30 @@ class LibraryMedia extends Model implements HasMedia
 
     public function registerMediaConversions(?Media $media = null): void
     {
+        // Kotak pratinjau di grid Media Library & pemilih media
         $this
             ->addMediaConversion('small')
-            ->width(150)
-            ->height(150)
-            ->sharpen(10)
-            ->performOnCollections('library');
+            ->fit(Fit::Crop, 300, 300)
+            ->format('webp')
+            ->quality(75)
+            ->performOnCollections('library')
+            ->nonQueued();
 
+        // Max = diperkecil bila lebih besar, tidak pernah diperbesar
         $this
             ->addMediaConversion('medium')
-            ->width(400)
-            ->height(400)
-            ->performOnCollections('library');
+            ->fit(Fit::Max, 800, 800)
+            ->format('webp')
+            ->quality(80)
+            ->performOnCollections('library')
+            ->nonQueued();
 
         $this
             ->addMediaConversion('large')
-            ->width(1200)
-            ->height(1200)
-            ->performOnCollections('library');
+            ->fit(Fit::Max, 1600, 1600)
+            ->format('webp')
+            ->quality(80)
+            ->performOnCollections('library')
+            ->nonQueued();
     }
 }
