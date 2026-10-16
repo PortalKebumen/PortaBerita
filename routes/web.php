@@ -48,13 +48,14 @@ Route::post('/ads/{advertisement}/impression', [AdTrackingController::class, 're
 | Autentikasi
 |--------------------------------------------------------------------------
 */
-Route::middleware('guest')->group(function () {
-    // login, forgot-password, reset-password
-    Route::get('login', [AuthenticatedSessionController::class, 'create'])->name('login');
-    Route::post('login', [AuthenticatedSessionController::class, 'store'])->middleware(['throttle:login', 'antispam']);
+// Alamat login rahasia (config auth.login_path / ADMIN_LOGIN_PATH); /login & /forgot-password lama = 404
+Route::middleware('guest')->prefix(config('auth.login_path'))->group(function () {
+    // login, lupa password, reset password
+    Route::get('/', [AuthenticatedSessionController::class, 'create'])->name('login');
+    Route::post('/', [AuthenticatedSessionController::class, 'store'])->middleware(['throttle:login', 'antispam']);
 
-    Route::get('forgot-password', [PasswordResetLinkController::class, 'create'])->name('password.request');
-    Route::post('forgot-password', [PasswordResetLinkController::class, 'store'])->middleware(['throttle:password-reset', 'antispam'])->name('password.email');
+    Route::get('lupa-password', [PasswordResetLinkController::class, 'create'])->name('password.request');
+    Route::post('lupa-password', [PasswordResetLinkController::class, 'store'])->middleware(['throttle:password-reset', 'antispam'])->name('password.email');
 
     Route::get('reset-password/{token}', [NewPasswordController::class, 'create'])->name('password.reset');
     Route::post('reset-password', [NewPasswordController::class, 'store'])->middleware(['throttle:password-reset', 'antispam'])->name('password.store');
@@ -125,3 +126,11 @@ Route::middleware(['auth', 'can:dashboard.view'])
             Route::view('test-editor', 'admin.test-editor')->name('test-editor');
         }
     });
+/*
+|--------------------------------------------------------------------------
+| 404 untuk alamat yang tidak terdaftar
+|--------------------------------------------------------------------------
+| Lewat route (bukan 404 bawaan router) agar middleware web/sesi berjalan, sehingga halaman 404
+| mengenali pengguna yang sudah masuk: tampil di layout admin untuk /admin/*, layout publik selainnya.
+*/
+Route::fallback(fn () => abort(404));

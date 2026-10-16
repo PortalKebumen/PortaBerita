@@ -28,7 +28,7 @@
 
             <div class="flex items-center justify-between gap-2 px-5 h-16 lg:h-[72px] shrink-0">
                 <a href="{{ route('admin.dashboard') }}" class="flex items-center gap-2.5 min-w-0">
-                    <img src="{{ asset('images/logo-full.png') }}" alt="PortalKebumen" class="sidebar-label h-8 w-auto max-w-[168px] object-contain shrink-0">
+                    <img src="{{ asset('images/logo-header.png') }}" alt="PortalKebumen" class="sidebar-label h-8 w-auto max-w-[168px] object-contain shrink-0">
                     <img src="{{ asset('icon.png') }}" alt="PortalKebumen" class="hidden sidebar-collapsed-only h-8 w-8 shrink-0">
                 </a>
                 <label for="sidebar-toggle" aria-label="Tutup menu" class="lg:hidden w-8 h-8 rounded-lg flex items-center justify-center cursor-pointer text-[#B9C3E6] hover:bg-white/10 shrink-0">

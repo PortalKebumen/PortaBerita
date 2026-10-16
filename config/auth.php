@@ -114,4 +114,27 @@ return [
 
     'password_timeout' => env('AUTH_PASSWORD_TIMEOUT', 10800),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Alamat Login Panel Admin (rahasia, untuk semua pengguna)
+    |--------------------------------------------------------------------------
+    |
+    | Halaman login tidak berada di /login agar tidak mudah ditemukan bot/penyerang.
+    | Isi ADMIN_LOGIN_PATH (huruf kecil, angka, tanda hubung, boleh bertingkat dengan "/"),
+    | mis. "ruang-redaksi-7k2p". Bila kosong, dipakai alamat acak unik per instalasi yang
+    | diturunkan dari APP_KEY. Lihat alamat aktif dengan: php artisan admin:login-url
+    |
+    */
+
+    'login_path' => (function () {
+        $reserved = ['admin', 'artikel', 'kategori', 'cari', 'halaman', 'profile', 'penulis', 'ads', 'storage', 'build', 'livewire', 'up', 'login'];
+        $path = trim(strtolower((string) env('ADMIN_LOGIN_PATH', '')), '/');
+
+        $valid = $path !== ''
+            && preg_match('#^[a-z0-9][a-z0-9-]{3,}(/[a-z0-9-]+)*$#', $path)
+            && ! in_array(explode('/', $path)[0], $reserved, true);
+
+        return $valid ? $path : 'masuk-' . substr(hash('sha256', 'login-path|' . env('APP_KEY')), 0, 12);
+    })(),
+
 ];

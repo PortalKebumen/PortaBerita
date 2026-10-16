@@ -4,7 +4,8 @@
     $img = $featured ? $featured->getUrl() : null;
     // Pratinjau tautan media sosial: JPEG 1200x630 (gambar OG khusus bila diisi, kalau tidak gambar utama)
     $ogMedia = $article->getFirstMedia('og') ?? $featured;
-    $socialImage = $ogMedia ? ($ogMedia->hasGeneratedConversion('social') ? $ogMedia->getUrl('social') : $ogMedia->getUrl()) : null;
+    $socialReady = $ogMedia && $ogMedia->hasGeneratedConversion('social');
+    $socialImage = $ogMedia ? ($socialReady ? $ogMedia->getUrl('social') : $ogMedia->getUrl()) : null;
     $imgAlt = $featured?->getCustomProperty('alt_text') ?: $article->title;
     $imgCaption = $featured?->getCustomProperty('caption');
     $desc = $seo?->meta_description ?: ($article->excerpt ?: \Illuminate\Support\Str::limit(trim(strip_tags($article->content)), 155));
@@ -15,6 +16,13 @@
     :title="$seo?->meta_title ?: $article->title"
     :description="$desc"
     :image="$socialImage"
+    :image-width="$socialReady ? 1200 : null"
+    :image-height="$socialReady ? 630 : null"
+    :image-alt="$imgAlt"
+    :published-time="$article->published_at?->toIso8601String()"
+    :modified-time="$article->updated_at?->toIso8601String()"
+    :section="$article->category?->name"
+    :author="$article->author?->name"
     type="article"
     :canonical="$url"
     :noindex="$isPreview || (bool) $seo?->noindex">

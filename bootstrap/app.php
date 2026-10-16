@@ -43,6 +43,12 @@ return Application::configure(basePath: dirname(__DIR__))
             ->daily();
     })
     ->withMiddleware(function (Middleware $middleware): void {
+        // Tamu yang membuka halaman admin mendapat 404, bukan dialihkan ke login: pengalihan akan
+        // membocorkan alamat login rahasia (config auth.login_path). Pengguna yang sudah masuk lalu
+        // membuka halaman login langsung diarahkan ke dashboard.
+        $middleware->redirectGuestsTo(fn () => abort(404));
+        $middleware->redirectUsersTo('/admin');
+
         // Header keamanan HTTP di semua halaman web
         $middleware->web(append: [\App\Http\Middleware\SecurityHeaders::class]);
 

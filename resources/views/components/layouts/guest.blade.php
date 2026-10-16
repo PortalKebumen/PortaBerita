@@ -25,7 +25,7 @@
     </div>
 
     <div class="relative min-h-screen flex flex-col items-center justify-center p-4">
-        <img src="{{ asset('images/logo-full.png') }}" alt="PortalKebumen.com" class="w-64 sm:w-72 h-auto mb-8">
+        <img src="{{ asset('images/logo-header.png') }}" alt="PortalKebumen.com" class="w-64 sm:w-72 h-auto mb-8">
 
         <div class="w-full max-w-[400px] bg-white rounded-card shadow-lg border border-[#E4E8EF] p-7 sm:p-8">
             {{ $slot }}

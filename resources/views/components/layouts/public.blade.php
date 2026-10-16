@@ -5,6 +5,14 @@
     'type' => 'website',
     'canonical' => null,
     'noindex' => false,
+    // Detail gambar & artikel untuk pratinjau share (WhatsApp, Facebook, X, Telegram)
+    'imageWidth' => null,
+    'imageHeight' => null,
+    'imageAlt' => null,
+    'publishedTime' => null,
+    'modifiedTime' => null,
+    'section' => null,
+    'author' => null,
 ])
 
 @php
@@ -12,13 +20,34 @@
 
     $siteName = $site['site_name'] ?: 'PortalKebumen.com';
     $tagline = $site['tagline'];
-    $logo = $site['logo_url'] ?: asset('images/logo-full.png');
+    $logo = $site['logo_url'] ?: asset('images/logo-header.png'); // versi 600px (32 KB) dari logo-full.png (516 KB)
 
     $fullTitle = $title
         ? $title . ' - ' . $siteName
         : ($site['meta_title'] ?: trim($siteName . ($tagline ? ' - ' . $tagline : '')));
     $metaDescription = $description ?: $site['meta_description'];
+    // Gambar pratinjau share: gambar halaman > gambar default di Pengaturan > logo. Selalu URL absolut
+    // (crawler WhatsApp/Facebook tidak mengerti URL relatif) dan https bila situs diakses lewat https.
     $ogImage = $image ?: $site['og_image_url'];
+    if (! $ogImage) {
+        // 1200x630, 36 KB: logo besar (>300 KB, rasio 6:1) tidak ditampilkan WhatsApp sebagai pratinjau
+        $ogImage = asset('images/og-default.jpg');
+        [$imageWidth, $imageHeight] = [1200, 630];
+    }
+    if (! preg_match('#^https?://#i', $ogImage)) {
+        $ogImage = url($ogImage);
+    }
+    if (request()->isSecure()) {
+        $ogImage = preg_replace('#^http://#i', 'https://', $ogImage);
+    }
+    $ogImageType = match (strtolower(pathinfo(parse_url($ogImage, PHP_URL_PATH) ?? '', PATHINFO_EXTENSION))) {
+        'jpg', 'jpeg' => 'image/jpeg',
+        'png' => 'image/png',
+        'webp' => 'image/webp',
+        'gif' => 'image/gif',
+        default => null,
+    };
+    $shareTitle = $title ?: $siteName;
     $canonicalUrl = $canonical ?: url()->current();
     $htmlLang = ($site['locale'] ?? 'id') === 'en' ? 'en' : 'id';
     $ogLocale = $htmlLang === 'en' ? 'en_US' : 'id_ID';
@@ -72,18 +101,38 @@
     {{-- Open Graph & Twitter --}}
     <meta property="og:site_name" content="{{ $siteName }}">
     <meta property="og:type" content="{{ $type }}">
-    <meta property="og:title" content="{{ $title ?: $siteName }}">
+    <meta property="og:title" content="{{ $shareTitle }}">
     @if ($metaDescription)
         <meta property="og:description" content="{{ $metaDescription }}">
     @endif
     <meta property="og:url" content="{{ $canonicalUrl }}">
     <meta property="og:locale" content="{{ $ogLocale }}">
-    @if ($ogImage)
-        <meta property="og:image" content="{{ $ogImage }}">
-        <meta name="twitter:image" content="{{ $ogImage }}">
+    {{-- Lebar & tinggi gambar wajib agar gambar langsung tampil sejak share pertama --}}
+    <meta property="og:image" content="{{ $ogImage }}">
+    @if (str_starts_with($ogImage, 'https://'))
+        <meta property="og:image:secure_url" content="{{ $ogImage }}">
     @endif
-    <meta name="twitter:card" content="{{ $ogImage ? 'summary_large_image' : 'summary' }}">
-    <meta name="twitter:title" content="{{ $title ?: $siteName }}">
+    @if ($ogImageType)
+        <meta property="og:image:type" content="{{ $ogImageType }}">
+    @endif
+    @if ($imageWidth && $imageHeight)
+        <meta property="og:image:width" content="{{ $imageWidth }}">
+        <meta property="og:image:height" content="{{ $imageHeight }}">
+    @endif
+    <meta property="og:image:alt" content="{{ $imageAlt ?: $shareTitle }}">
+    @if ($type === 'article')
+        @if ($publishedTime)<meta property="article:published_time" content="{{ $publishedTime }}">@endif
+        @if ($modifiedTime)<meta property="article:modified_time" content="{{ $modifiedTime }}">@endif
+        @if ($section)<meta property="article:section" content="{{ $section }}">@endif
+        @if ($author)<meta property="article:author" content="{{ $author }}">@endif
+    @endif
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{{ $shareTitle }}">
+    @if ($metaDescription)
+        <meta name="twitter:description" content="{{ $metaDescription }}">
+    @endif
+    <meta name="twitter:image" content="{{ $ogImage }}">
+    <meta name="twitter:image:alt" content="{{ $imageAlt ?: $shareTitle }}">
 
     {{-- Google Analytics & verifikasi Search Console dari Pengaturan --}}
     <x-seo.site-head />
@@ -339,7 +388,7 @@
         <div class="mx-auto grid max-w-7xl gap-10 px-4 py-12 sm:px-6 lg:grid-cols-12 lg:px-8">
             <div class="lg:col-span-4">
                 <a href="{{ route('public.beranda') }}" class="inline-block">
-                    <img src="{{ asset('images/logo-full.png') }}" alt="{{ $siteName }}" class="h-12 w-auto max-w-[260px] object-contain sm:h-14">
+                    <img src="{{ asset('images/logo-header.png') }}" alt="{{ $siteName }}" class="h-12 w-auto max-w-[260px] object-contain sm:h-14">
                 </a>
 
                 @if ($site['meta_description'] || $tagline)

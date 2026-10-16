@@ -20,10 +20,14 @@
             $media->setCustomProperty('width', $originalWidth)->saveQuietly();
         }
 
+        // Ukuran urut membesar: tawarkan semua yang <= lebar asli, plus satu ukuran pertama di atasnya
+        // (paling dekat dengan resolusi asli), lalu berhenti
         foreach (\App\Models\Article::IMAGE_SIZES as $conversion => $width) {
-            $fits = ! $originalWidth || $width <= $originalWidth || $srcset === [];
-            if ($fits && $media->hasGeneratedConversion($conversion)) {
+            if ($media->hasGeneratedConversion($conversion)) {
                 $srcset[] = $media->getUrl($conversion) . " {$width}w";
+            }
+            if ($originalWidth && $width >= $originalWidth) {
+                break;
             }
         }
         $src = $media->hasGeneratedConversion('medium') ? $media->getUrl('medium') : $media->getUrl();
