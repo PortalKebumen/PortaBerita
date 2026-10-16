@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\AnalyticsExportController;
 use App\Http\Controllers\Admin\ArticleLifecycleController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\GlobalSearchController;
@@ -9,6 +10,7 @@ use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Public\AdTrackingController;
 use App\Http\Controllers\Public\PublicController;
 use App\Models\Article;
+use App\Models\User;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -17,13 +19,22 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 | Urutan penting: /kategori/{parent}/{sub} harus di atas /kategori/{slug}.
 */
+// robots.txt dinamis: production mengizinkan crawling + alamat sitemap, testing/staging (SEO_INDEXING=false) melarang semua
+Route::get('/robots.txt', function () {
+    $body = config('system.indexing')
+        ? "User-agent: *\nDisallow:\n\nSitemap: ".url('sitemap.xml')."\n"
+        : "User-agent: *\nDisallow: /\n";
+
+    return response($body, 200, ['Content-Type' => 'text/plain; charset=UTF-8']);
+})->name('robots');
+
 // Batas akses per IP: lihat AppServiceProvider::configureRateLimiting()
 Route::controller(PublicController::class)->name('public.')->middleware('throttle:public')->group(function () {
     Route::get('/', 'beranda')->name('beranda');
     Route::get('/kategori/{parent}/{sub}', 'kategori')->name('kategori.sub');
     Route::get('/kategori/{slug}', 'kategori')->name('kategori');
     Route::get('/profile/{user}/{slug?}', 'byline')->whereNumber('user')->name('byline');
-    Route::get('/penulis/{user}', fn (\App\Models\User $user) => redirect($user->profileUrl(), 301))->whereNumber('user');
+    Route::get('/penulis/{user}', fn (User $user) => redirect($user->profileUrl(), 301))->whereNumber('user');
     Route::get('/artikel/{slug}', 'artikel')->name('artikel');
     Route::get('/cari', 'cari')->middleware('throttle:search')->name('cari');
     Route::get('/halaman/{slug}', 'halaman')->name('halaman');
@@ -113,7 +124,7 @@ Route::middleware(['auth', 'can:dashboard.view'])
         Route::view('pengguna-role', 'admin.pengguna-role')->can('users.view')->name('pengguna-role.index');
         Route::view('activity-log', 'admin.activity-log')->can('activity-log.view')->name('activity-log.index');
         Route::view('analitik', 'admin.analitik', ['title' => 'Laporan Analitik'])->can('view-analytics')->name('analitik.index');
-        Route::get('analitik/ekspor', \App\Http\Controllers\Admin\AnalyticsExportController::class)->can('analytics.export')->name('analitik.ekspor');
+        Route::get('analitik/ekspor', AnalyticsExportController::class)->can('analytics.export')->name('analitik.ekspor');
         Route::view('halaman', 'admin.halaman', ['title' => 'Halaman'])->can('pages.view')->name('halaman.index');
         Route::view('menu', 'admin.menu', ['title' => 'Menu'])->can('menus.view')->name('menu.index');
         Route::view('pengaturan', 'admin.pengaturan', ['title' => 'Pengaturan'])

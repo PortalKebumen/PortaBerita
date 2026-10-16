@@ -29,6 +29,11 @@ class SecurityHeaders
             $headers->set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
         }
 
+        // Server testing/staging tidak boleh masuk hasil pencarian (SEO_INDEXING=false)
+        if (! config('system.indexing')) {
+            $headers->set('X-Robots-Tag', 'noindex, nofollow');
+        }
+
         // Jangan umumkan versi PHP (header ini dikirim PHP sendiri, bukan oleh Laravel)
         $headers->remove('X-Powered-By');
         if (! headers_sent()) {

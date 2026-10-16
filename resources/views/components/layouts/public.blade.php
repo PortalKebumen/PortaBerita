@@ -89,7 +89,7 @@
     @if ($metaDescription)
         <meta name="description" content="{{ $metaDescription }}">
     @endif
-    @if ($noindex)
+    @if ($noindex || ! config('system.indexing'))
         <meta name="robots" content="noindex, nofollow">
     @endif
     <link rel="canonical" href="{{ $canonicalUrl }}">
