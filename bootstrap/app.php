@@ -1,14 +1,17 @@
 <?php
 
+use App\Http\Middleware\EnsureUserIsActive;
+use App\Http\Middleware\ProtectAgainstSpam;
+use App\Http\Middleware\SecurityHeaders;
 use App\Jobs\GenerateSitemap;
+use App\Jobs\NotifyAdStatus;
 use App\Jobs\PublishScheduledArticles;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
-use App\Jobs\NotifyAdStatus;
-use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Http\Request;
+use Illuminate\Notifications\DatabaseNotification;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -36,9 +39,9 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // Bersihkan notifikasi yang sudah dibaca lebih dari 60 hari
         $schedule->call(fn () => DatabaseNotification::query()
-                ->whereNotNull('read_at')
-                ->where('read_at', '<', now()->subDays(60))
-                ->delete())
+            ->whereNotNull('read_at')
+            ->where('read_at', '<', now()->subDays(60))
+            ->delete())
             ->name('prune-read-notifications')
             ->daily();
     })
@@ -50,10 +53,13 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->redirectUsersTo('/admin');
 
         // Header keamanan HTTP di semua halaman web
-        $middleware->web(append: [\App\Http\Middleware\SecurityHeaders::class]);
+        $middleware->web(append: [SecurityHeaders::class]);
+
+        // Akun nonaktif langsung dikeluarkan walau sesinya masih berjalan
+        $middleware->web(append: [EnsureUserIsActive::class]);
 
         // Anti-spam tanpa CAPTCHA (honeypot + jebakan waktu) untuk form publik; pasangan <x-honeypot />
-        $middleware->alias(['antispam' => \App\Http\Middleware\ProtectAgainstSpam::class]);
+        $middleware->alias(['antispam' => ProtectAgainstSpam::class]);
 
         // Di balik reverse proxy / Cloudflare: isi TRUSTED_PROXIES agar IP pembaca asli terbaca (rate limit,
         // statistik lokasi, activity log). "cloudflare" = rentang IP resmi Cloudflare (bootstrap/cloudflare-ips.php),
@@ -61,7 +67,7 @@ return Application::configure(basePath: dirname(__DIR__))
         if ($proxies = env('TRUSTED_PROXIES')) {
             $middleware->trustProxies(at: match ($proxies) {
                 '*' => '*',
-                'cloudflare' => require __DIR__ . '/cloudflare-ips.php',
+                'cloudflare' => require __DIR__.'/cloudflare-ips.php',
                 default => array_map('trim', explode(',', $proxies)),
             });
         }

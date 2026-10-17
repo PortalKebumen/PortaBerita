@@ -138,6 +138,7 @@
                         <div class="relative w-11 h-6 bg-[#D6DAE4] peer-checked:bg-brand-600 rounded-full transition-colors duration-200 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-5 after:w-5 after:shadow after:transition-transform after:duration-200 peer-checked:after:translate-x-5"></div>
                     </label>
                 </div>
+                @error('isActive') <p class="text-xs text-danger -mt-2">{{ $message }}</p> @enderror
                 <div class="flex justify-end gap-2.5 pt-2">
                     <button type="button" wire:click="closeModal" class="btn-secondary">Batal</button>
                     <button type="submit" class="btn-primary">{{ $editingUserId ? 'Simpan Perubahan' : 'Simpan Pengguna' }}</button>

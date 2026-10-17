@@ -26,15 +26,21 @@ class UserManager extends Component
     public string $roleFilter = '';
 
     public bool $showUserModal = false;
+
     public ?int $editingUserId = null;
 
     public string $name = '';
+
     public string $email = '';
+
     public string $role = '';
+
     public string $password = '';
+
     public bool $isActive = true;
 
     public bool $showDeleteModal = false;
+
     public ?int $deletingUserId = null;
 
     protected function rules(): array
@@ -167,6 +173,12 @@ class UserManager extends Component
 
             if ($user->id === Auth::id() && $validated['role'] !== $oldRole) {
                 $this->addError('role', 'Anda tidak bisa mengubah role akun sendiri.');
+
+                return;
+            }
+
+            if ($user->id === Auth::id() && ! $validated['isActive']) {
+                $this->addError('isActive', 'Anda tidak bisa menonaktifkan akun sendiri.');
 
                 return;
             }

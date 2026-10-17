@@ -20,7 +20,12 @@ use Spatie\Permission\Traits\HasRoles;
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable, HasRoles, LogsModelActivity;
+    use HasFactory, HasRoles, LogsModelActivity, Notifiable;
+
+    /** Sama dengan default kolom di database: akun baru aktif kecuali dinonaktifkan admin. */
+    protected $attributes = [
+        'is_active' => true,
+    ];
 
     /**
      * Get the attributes that should be cast.
@@ -37,6 +42,7 @@ class User extends Authenticatable
     }
 
     protected array $logAttributes = ['name', 'email', 'bio', 'is_active'];
+
     protected string $logLabel = 'Pengguna';
 
     /**

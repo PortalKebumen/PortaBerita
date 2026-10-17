@@ -45,6 +45,16 @@ class LoginRequest extends FormRequest
             ]);
         }
 
+        // Akun yang dinonaktifkan admin tidak boleh masuk walau password benar
+        if (! Auth::user()->is_active) {
+            Auth::guard('web')->logout();
+            RateLimiter::hit($this->throttleKey());
+
+            throw ValidationException::withMessages([
+                'email' => trans('auth.inactive'),
+            ]);
+        }
+
         RateLimiter::clear($this->throttleKey());
         $this->session()->forget('login_retry_at');
     }

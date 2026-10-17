@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -24,7 +25,9 @@ class PasswordResetLinkController extends Controller
             'email' => ['required', 'email'],
         ]);
 
-        $status = Password::sendResetLink(
+        // Akun nonaktif tidak dikirimi tautan reset, tetapi jawabannya tetap sama (lihat di bawah)
+        $inactive = User::where('email', $request->input('email'))->where('is_active', false)->exists();
+        $status = $inactive ? Password::INVALID_USER : Password::sendResetLink(
             $request->only('email')
         );
 
