@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Livewire\Concerns\ExplainsUploadErrors;
 use App\Models\LibraryMedia;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\On;
@@ -11,7 +12,9 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 class MediaPicker extends Component
 {
-    use WithFileUploads;
+    use ExplainsUploadErrors, WithFileUploads {
+        ExplainsUploadErrors::_uploadErrored insteadof WithFileUploads;
+    }
 
     public bool $isOpen = false;
     public string $target = '';
@@ -117,8 +120,8 @@ class MediaPicker extends Component
         $this->authorize('media.upload');
 
         $this->validate([
-            'newFile' => 'required|file|max:5120',
-        ]);
+            'newFile' => $this->uploadRule(),
+        ], $this->uploadValidationMessages());
 
         $libraryMedia = LibraryMedia::create(['uploaded_by' => Auth::id()]);
 

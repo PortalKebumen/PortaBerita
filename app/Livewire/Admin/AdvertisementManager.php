@@ -2,9 +2,11 @@
 
 namespace App\Livewire\Admin;
 
+use App\Livewire\Concerns\ExplainsUploadErrors;
 use App\Models\AdMetric;
 use App\Models\Advertisement;
 use App\Models\LibraryMedia;
+use App\Support\UploadLimit;
 use Carbon\Carbon;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
@@ -18,7 +20,9 @@ use Livewire\WithFileUploads;
 
 class AdvertisementManager extends Component
 {
-    use WithPagination, WithFileUploads;
+    use ExplainsUploadErrors, WithFileUploads, WithPagination {
+        ExplainsUploadErrors::_uploadErrored insteadof WithFileUploads;
+    }
 
     public string $search = '';
     public string $placementFilter = 'all';
@@ -211,8 +215,9 @@ class AdvertisementManager extends Component
             'startDate' => 'required|date',
             'endDate' => 'required|date|after_or_equal:startDate',
             'bannerMediaId' => 'nullable|integer',
-            'directBannerFile' => 'nullable|image|max:5120',
-        ], [
+            'directBannerFile' => 'nullable|image|max:'.intdiv(UploadLimit::maxBytes(), 1024),
+        ], $this->uploadValidationMessages('directBannerFile') + [
+            'directBannerFile.image' => 'Banner harus berupa gambar (JPG, PNG, WEBP, GIF).',
             'advertiserName.required' => 'Nama pengiklan wajib diisi.',
             'targetUrl.required' => 'Target URL wajib diisi.',
             'targetUrl.url' => 'Format URL target tidak valid (gunakan https://).',

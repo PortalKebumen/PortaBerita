@@ -166,16 +166,16 @@
 
                     <span class="text-[12.5px] text-[#6C7387]"><span class="font-semibold text-brand-600">Klik untuk
                             unggah</span> atau seret berkas ke sini</span>
-                    <span class="text-[11px] text-[#848CA3]">JPG, PNG, WEBP, PDF hingga 5MB</span>
+                    <span class="text-[11px] text-[#848CA3]">JPG, PNG, WEBP, PDF hingga {{ \App\Support\UploadLimit::label() }}</span>
                     <input type="file" x-ref="fileInput" class="hidden"
                         x-on:change="
                             sizeError = null;
                             const file = $event.target.files[0];
                             if (!file) return;
 
-                            const maxBytes = 5 * 1024 * 1024;
+                            const maxBytes = {{ \App\Support\UploadLimit::maxBytes() }};
                             if (file.size > maxBytes) {
-                                sizeError = 'Ukuran berkas ' + (file.size / 1024 / 1024).toFixed(2) + ' MB, melebihi batas maksimal 5 MB.';
+                                sizeError = 'Ukuran berkas ' + (file.size / 1024 / 1024).toFixed(2) + ' MB, melebihi batas maksimal {{ \App\Support\UploadLimit::label() }}. Kecilkan atau kompres gambar terlebih dahulu.';
                                 preview = null;
                                 $refs.fileInput.value = '';
                                 return;

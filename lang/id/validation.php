@@ -173,5 +173,7 @@ return [
         'image' => 'Gambar',
         'token' => 'Token',
         'username' => 'Nama pengguna',
+        'newFile' => 'Berkas',
+        'directBannerFile' => 'Berkas banner',
     ],
 ];

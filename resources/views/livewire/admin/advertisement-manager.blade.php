@@ -295,9 +295,22 @@
                         @endcanany
                     </div>
 
-                    <div class="mt-2 flex items-center gap-2 text-xs text-[#6C7387]">
-                        <span>Atau unggah file langsung:</span>
-                        <input type="file" wire:model="directBannerFile" accept="image/*" class="text-xs text-[#6C7387]">
+                    <div class="mt-2 flex flex-wrap items-center gap-2 text-xs text-[#6C7387]" x-data="{ sizeError: null }">
+                        <span>Atau unggah file langsung (maks. {{ \App\Support\UploadLimit::label() }}):</span>
+                        <input type="file" accept="image/*" class="text-xs text-[#6C7387]"
+                            x-on:change="
+                                sizeError = null;
+                                const file = $event.target.files[0];
+                                if (!file) return;
+                                if (file.size > {{ \App\Support\UploadLimit::maxBytes() }}) {
+                                    sizeError = 'Ukuran berkas ' + (file.size / 1024 / 1024).toFixed(2) + ' MB, melebihi batas maksimal {{ \App\Support\UploadLimit::label() }}. Kecilkan atau kompres gambar terlebih dahulu.';
+                                    $event.target.value = '';
+                                    return;
+                                }
+                                $wire.upload('directBannerFile', file);
+                            ">
+                        <span wire:loading wire:target="directBannerFile" class="text-brand-600">Mengunggah...</span>
+                        <p x-show="sizeError" x-text="sizeError" x-cloak class="form-error-text w-full"></p>
                     </div>
                     @error('directBannerFile') <p class="form-error-text">{{ $message }}</p> @enderror
                 </div>

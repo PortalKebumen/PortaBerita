@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin;
 
+use App\Livewire\Concerns\ExplainsUploadErrors;
 use App\Models\LibraryMedia;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Computed;
@@ -12,7 +13,9 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 class MediaLibraryManager extends Component
 {
-    use WithFileUploads;
+    use ExplainsUploadErrors, WithFileUploads {
+        ExplainsUploadErrors::_uploadErrored insteadof WithFileUploads;
+    }
     use WithPagination;
 
     public string $search = '';
@@ -64,7 +67,7 @@ class MediaLibraryManager extends Component
 
     public function updatedNewFile(): void
     {
-        $this->validateOnly('newFile', ['newFile' => 'required|file|max:5120']); // 5120 KB = 5 MB
+        $this->validateOnly('newFile', ['newFile' => $this->uploadRule()], $this->uploadValidationMessages());
     }
 
     #[Computed]
@@ -131,10 +134,10 @@ class MediaLibraryManager extends Component
         $this->authorize('media.upload');
 
         $this->validate([
-            'newFile' => 'required|file|max:5120',
+            'newFile' => $this->uploadRule(),
             'newAltText' => 'nullable|string|max:255',
             'newCaption' => 'nullable|string|max:255',
-        ]);
+        ], $this->uploadValidationMessages());
 
         $libraryMedia = LibraryMedia::create([
             'uploaded_by' => Auth::id(),
