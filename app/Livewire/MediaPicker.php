@@ -110,6 +110,7 @@ class MediaPicker extends Component
             'id' => $media->id,
             'url' => $media->getUrl('medium'),
             'alt_text' => $media->getCustomProperty('alt_text', ''),
+            'caption' => $media->getCustomProperty('caption', ''),
         ]);
 
         $this->close();
@@ -151,6 +152,7 @@ class MediaPicker extends Component
             'id' => $media->id,
             'url' => $media->getUrl('medium'),
             'alt_text' => $media->getCustomProperty('alt_text', ''),
+            'caption' => $media->getCustomProperty('caption', ''),
         ]);
 
         $this->close();

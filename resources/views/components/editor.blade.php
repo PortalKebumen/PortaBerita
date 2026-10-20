@@ -76,7 +76,12 @@ window.initRichEditor = function(selector, opts) {
         placeholder: opts.placeholder || 'Tulis konten di sini...',
         branding: true,
         promotion: false,
+        // URL gambar disimpan sebagai /storage/... (bukan ../../storage/...) agar tetap benar di halaman publik mana pun
+        relative_urls: false,
+        remove_script_host: true,
         file_picker_types: 'image',
+        // Dialog gambar punya centang "Keterangan": gambar dibungkus <figure class="image"> + <figcaption>
+        image_caption: true,
         file_picker_callback: opts.filePickerCallback || function(cb) { cb(''); },
         setup: opts.setup || function() {}
     });
@@ -106,6 +111,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         var hostEl = rootEl.closest('[wire\\:id]');
         var wireId = hostEl ? hostEl.getAttribute('wire:id') : null;
+        var pendingCaption = null; // { url, text } dari Media Picker, dipakai saat gambar disisipkan
 
         initRichEditor(targetSelector, {
             placeholder: placeholderText,
@@ -124,6 +130,30 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 editor.on('change input undo redo', syncToLivewire);
                 editor.on('init', syncToLivewire);
+
+                // Keterangan (caption) gambar dari Media Picker: dialog TinyMCE tidak bisa diisi keterangan
+                // lewat file_picker_callback, jadi centang keterangan diaktifkan saat gambar disisipkan
+                // lalu teks bawaan "Caption" diganti dengan keterangan dari Pustaka Media.
+                editor.on('BeforeExecCommand', function(e) {
+                    if (e.command === 'mceUpdateImage' && pendingCaption && e.value && e.value.src === pendingCaption.url) {
+                        e.value.caption = true;
+                    }
+                });
+                editor.on('ExecCommand', function(e) {
+                    if (e.command !== 'mceUpdateImage' || !pendingCaption) {
+                        return;
+                    }
+                    var pending = pendingCaption;
+                    pendingCaption = null;
+                    // Gambar yang baru disisipkan sedang terpilih; src-nya sudah diubah TinyMCE, jadi jangan dicocokkan lewat URL
+                    var figure = editor.dom.getParent(editor.selection.getNode(), 'figure.image');
+                    var placeholders = editor.getBody().querySelectorAll('figure.image > figcaption');
+                    var caption = figure ? figure.querySelector('figcaption') : placeholders[placeholders.length - 1];
+                    if (caption && caption.textContent.trim() === 'Caption') {
+                        caption.textContent = pending.text;
+                        syncToLivewire();
+                    }
+                });
             },
             filePickerCallback: function(cb, value, meta) {
                 if (meta.filetype !== 'image' || typeof Livewire === 'undefined') {
@@ -143,6 +173,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (data.target !== targetId) {
                         return;
                     }
+                    pendingCaption = data.media.caption ? { url: data.media.url, text: data.media.caption } : null;
                     cb(data.media.url, { alt: data.media.alt_text || '' });
                     cleanup();
                 });

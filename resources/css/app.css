@@ -174,3 +174,15 @@
   .breaking-ticker__viewport { overflow-x: auto; scrollbar-width: none; }
   .breaking-ticker__track > ul[aria-hidden="true"] { display: none; }
 }
+
+/* Gambar berketerangan dari editor (TinyMCE: <figure class="image"><img><figcaption>).
+   Di luar @layer agar menang atas utilitas [&_img]:my-5 pada wadah isi artikel/halaman. */
+.rich-content figure.image { display: table; margin-block: 1.25rem; max-width: 100%; }
+.rich-content figure.image.align-center { margin-inline: auto; }
+.rich-content figure.image.align-right { margin-left: auto; }
+.rich-content figure.image img { display: block; margin: 0; }
+.rich-content figure.image figcaption {
+  display: table-caption; caption-side: bottom;
+  margin-top: .5rem; font-size: 13px; line-height: 1.45; color: #5B6378;
+}
+.rich-content figure.image.align-center figcaption { text-align: center; }

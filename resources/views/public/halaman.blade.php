@@ -24,7 +24,7 @@
                     <p class="mt-2 text-xs text-[#848CA3]">Diperbarui {{ $page->updated_at->translatedFormat('d F Y') }}</p>
                     <span class="mt-4 block h-1 w-12 rounded bg-accent-500"></span>
 
-                    <div class="mt-6 text-[16px] leading-8 text-[#2A3040]
+                    <div class="rich-content mt-6 text-[16px] leading-8 text-[#2A3040]
                         [&_p]:mb-5 [&_h2]:mb-3 [&_h2]:mt-8 [&_h2]:text-xl [&_h2]:font-bold [&_h2]:text-[#171B28]
                         [&_h3]:mb-2 [&_h3]:mt-6 [&_h3]:text-lg [&_h3]:font-bold [&_h3]:text-[#171B28]
                         [&_a]:text-brand-600 [&_a]:underline
