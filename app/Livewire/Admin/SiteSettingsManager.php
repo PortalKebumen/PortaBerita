@@ -6,10 +6,12 @@ use App\Jobs\GenerateSitemap;
 use App\Models\Article;
 use App\Models\SiteSetting;
 use App\Models\User;
+use App\Services\AccountCredentials;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\On;
@@ -228,6 +230,60 @@ class SiteSettingsManager extends Component
 
         unset($this->sitemapInfo);
         $this->dispatch('flash-message', type: 'success', text: 'Sitemap berhasil diperbarui.');
+    }
+
+    // ==================== UJI EMAIL ====================
+
+    public string $testMailTo = '';
+
+    /** Hasil uji terakhir: ['ok' => bool, 'message' => string] */
+    public ?array $testMailResult = null;
+
+    /** Pengaturan email yang sedang dipakai server (tanpa kata sandi), untuk dicocokkan dengan .env */
+    #[Computed]
+    public function mailInfo(): array
+    {
+        $mailer = config('mail.default');
+        $smtp = config("mail.mailers.{$mailer}", []);
+
+        return [
+            'mailer' => $mailer,
+            'host' => $smtp['host'] ?? '-',
+            'port' => $smtp['port'] ?? '-',
+            'scheme' => $smtp['scheme'] ?? ($smtp['encryption'] ?? '-'),
+            'username' => $smtp['username'] ?? '-',
+            'from' => config('mail.from.address').' ('.config('mail.from.name').')',
+        ];
+    }
+
+    public function sendTestMail(): void
+    {
+        $this->authorize('settings.update');
+
+        $this->validate(['testMailTo' => ['required', 'email']], [
+            'testMailTo.required' => 'Isi alamat email tujuan.',
+            'testMailTo.email' => 'Format email tidak valid.',
+        ]);
+
+        if (! in_array(config('mail.default'), ['smtp', 'sendmail', 'ses', 'postmark', 'resend', 'mailgun', 'failover', 'roundrobin'], true)) {
+            $this->testMailResult = ['ok' => false, 'message' => 'MAIL_MAILER di .env bernilai "'.config('mail.default').'", sehingga email hanya dicatat/dibuang dan tidak pernah dikirim. Ubah menjadi smtp lalu jalankan php artisan config:clear.'];
+
+            return;
+        }
+
+        try {
+            Mail::raw(
+                "Ini email uji dari panel admin PortalKebumen.\n\nJika email ini sampai, pengaturan SMTP sudah benar dan email reset kata sandi maupun info login juga dapat dikirim.\n\nDikirim oleh: ".auth()->user()->name.' pada '.now()->translatedFormat('d M Y, H:i'),
+                fn ($message) => $message->to($this->testMailTo)->subject('Email Uji PortalKebumen')
+            );
+        } catch (\Throwable $e) {
+            report($e);
+            $this->testMailResult = ['ok' => false, 'message' => 'Gagal dikirim: '.AccountCredentials::describeMailError($e)];
+
+            return;
+        }
+
+        $this->testMailResult = ['ok' => true, 'message' => "Email uji diterima server SMTP untuk {$this->testMailTo}. Periksa kotak masuk dan folder Spam dalam 1-5 menit."];
     }
 
     // ==================== ZONA BAHAYA ====================

@@ -25,6 +25,7 @@ class User extends Authenticatable
     /** Sama dengan default kolom di database: akun baru aktif kecuali dinonaktifkan admin. */
     protected $attributes = [
         'is_active' => true,
+        'must_change_password' => false,
     ];
 
     /**
@@ -38,6 +39,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_active' => 'boolean',
+            'must_change_password' => 'boolean',
         ];
     }
 

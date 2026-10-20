@@ -193,6 +193,13 @@
                                 <div class="text-[13px] font-semibold truncate">{{ auth()->user()->name }}</div>
                                 <div class="text-[11.5px] text-[#848CA3] truncate">{{ auth()->user()->email }}</div>
                             </div>
+                            <a href="{{ route('admin.profil') }}" class="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-[13px] text-[#1B2033] hover:bg-[#F1F3F7] transition-colors">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="8" r="4"/>
+                                    <path d="M4 21a8 8 0 0 1 16 0"/>
+                                </svg>
+                                Profil Saya
+                            </a>
                             <form method="POST" action="{{ route('logout') }}">
                                 @csrf
                                 <button type="submit" class="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-[13px] text-danger hover:bg-danger-bg transition-colors rounded-b-xl">

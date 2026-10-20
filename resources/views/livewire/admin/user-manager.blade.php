@@ -66,6 +66,9 @@
                             @else
                                 <span class="badge-danger">Nonaktif</span>
                             @endif
+                            @if ($user->must_change_password)
+                                <span class="badge-warning mt-1" title="Masuk dengan kata sandi sementara dan belum menggantinya">Sandi sementara</span>
+                            @endif
                         </td>
                         <td class="max-md:hidden px-4 py-3 text-[#6C7387]">
                             {{ $user->last_login_at ? \Illuminate\Support\Carbon::parse($user->last_login_at)->diffForHumans() : 'Belum pernah login' }}
@@ -73,6 +76,11 @@
                         <td class="px-4 py-3">
                             <div class="flex justify-end gap-2">
                                 @can('users.update')
+                                    @if ($user->id !== auth()->id())
+                                        <button type="button" wire:click="confirmSendCredentials({{ $user->id }})" class="btn-icon" title="Kirim info login ke email">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="14" rx="2"></rect><path d="m3 7 9 6 9-6"></path></svg>
+                                        </button>
+                                    @endif
                                     <button type="button" wire:click="openEdit({{ $user->id }})" class="btn-icon" title="Edit">
                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg>
                                     </button>
@@ -128,9 +136,17 @@
                 </div>
                 <div>
                     <label class="form-label">Kata Sandi</label>
-                    <input type="password" wire:model="password" class="form-input" placeholder="{{ $editingUserId ? 'Kosongkan jika tidak diubah' : '' }}">
+                    <input type="password" wire:model="password" class="form-input" autocomplete="new-password" placeholder="{{ $editingUserId ? 'Kosongkan jika tidak diubah' : 'Kosongkan agar dibuatkan otomatis' }}">
                     @error('password') <p class="text-xs text-danger mt-1">{{ $message }}</p> @enderror
                 </div>
+                @unless ($editingUserId)
+                    <label class="flex items-start gap-2.5 text-sm text-[#1B2033] cursor-pointer">
+                        <input type="checkbox" wire:model.live="sendCredentials" class="form-checkbox mt-0.5">
+                        <span>Kirim info login ke email pengguna
+                            <span class="block text-xs text-[#848CA3]">Email berisi alamat login, email, dan kata sandi sementara. Pengguna wajib menggantinya saat pertama masuk.</span>
+                        </span>
+                    </label>
+                @endunless
                 <div class="flex items-center justify-between">
                     <span class="text-sm text-[#1B2033]">Akun aktif</span>
                     <label class="inline-flex items-center cursor-pointer">
@@ -144,6 +160,20 @@
                     <button type="submit" class="btn-primary">{{ $editingUserId ? 'Simpan Perubahan' : 'Simpan Pengguna' }}</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <div class="modal-overlay {{ $showCredentialsModal ? 'flex' : 'hidden' }} fixed inset-0 bg-black/40 items-center justify-center z-50">
+        <div class="bg-white rounded-xl w-full max-w-sm p-6 space-y-4">
+            <h3 class="font-semibold text-[#1B2033]">Kirim Info Login</h3>
+            <p class="text-sm text-[#6C7387]">Sistem akan membuat <strong>kata sandi sementara baru</strong> dan mengirimkannya bersama alamat login ke email pengguna. Kata sandi lama tidak berlaku lagi, dan pengguna wajib menggantinya saat masuk.</p>
+            <div class="flex justify-end gap-2.5">
+                <button type="button" wire:click="closeCredentialsModal" class="btn-secondary">Batal</button>
+                <button type="button" wire:click="sendCredentialsNow" class="btn-primary" wire:loading.attr="disabled" wire:target="sendCredentialsNow">
+                    <span wire:loading.remove wire:target="sendCredentialsNow">Kirim Email</span>
+                    <span wire:loading wire:target="sendCredentialsNow">Mengirim...</span>
+                </button>
+            </div>
         </div>
     </div>
 

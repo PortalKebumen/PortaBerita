@@ -81,7 +81,15 @@ Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])
 | Admin
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth', 'can:dashboard.view'])
+Route::middleware(['auth', \App\Http\Middleware\EnsurePasswordIsChanged::class])
+    ->prefix('admin')
+    ->name('admin.')
+    ->group(function () {
+        // Profil Saya: semua pengguna yang login, termasuk yang wajib mengganti kata sandi sementara
+        Route::view('profil', 'admin.profil')->name('profil');
+    });
+
+Route::middleware(['auth', \App\Http\Middleware\EnsurePasswordIsChanged::class, 'can:dashboard.view'])
     ->prefix('admin')
     ->name('admin.')
     ->group(function () {

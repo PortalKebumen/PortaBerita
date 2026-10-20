@@ -13,6 +13,7 @@
         <button type="button" class="tab-btn whitespace-nowrap" :class="{ 'is-active': tab === 'seo' }" @click="tab = 'seo'">SEO</button>
         <button type="button" class="tab-btn whitespace-nowrap" :class="{ 'is-active': tab === 'sosial' }" @click="tab = 'sosial'">Media Sosial</button>
         @can('settings.update')
+            <button type="button" class="tab-btn whitespace-nowrap" :class="{ 'is-active': tab === 'email' }" @click="tab = 'email'; $wire.testMailTo || $wire.set('testMailTo', @js(auth()->user()->email))">Email</button>
             <button type="button" class="tab-btn whitespace-nowrap text-danger" :class="{ 'is-active': tab === 'bahaya' }" @click="tab = 'bahaya'">Zona Bahaya</button>
         @endcan
     </div>
@@ -231,6 +232,43 @@
             </div>
         @endcan
     </form>
+
+    {{-- ===== TAB EMAIL (di luar form) ===== --}}
+    @can('settings.update')
+        <div x-show="tab === 'email'" style="display: none;">
+            <div class="card card-body space-y-5">
+                <div>
+                    <h2 class="text-[15px] font-bold">Uji Pengiriman Email</h2>
+                    <p class="text-[12.5px] text-[#6C7387] mt-1">Dipakai untuk email reset kata sandi dan info login pengguna. Pengaturan diambil dari file <code>.env</code> server (MAIL_*), bukan dari halaman ini.</p>
+                </div>
+
+                <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-[13px]">
+                    <div class="flex gap-2"><dt class="text-[#6C7387] w-28 shrink-0">Mailer</dt><dd class="font-mono break-all">{{ $this->mailInfo['mailer'] }}</dd></div>
+                    <div class="flex gap-2"><dt class="text-[#6C7387] w-28 shrink-0">Host : Port</dt><dd class="font-mono break-all">{{ $this->mailInfo['host'] }} : {{ $this->mailInfo['port'] }}</dd></div>
+                    <div class="flex gap-2"><dt class="text-[#6C7387] w-28 shrink-0">Enkripsi</dt><dd class="font-mono break-all">{{ $this->mailInfo['scheme'] ?: '-' }}</dd></div>
+                    <div class="flex gap-2"><dt class="text-[#6C7387] w-28 shrink-0">Username</dt><dd class="font-mono break-all">{{ $this->mailInfo['username'] ?: '-' }}</dd></div>
+                    <div class="flex gap-2 sm:col-span-2"><dt class="text-[#6C7387] w-28 shrink-0">Pengirim</dt><dd class="font-mono break-all">{{ $this->mailInfo['from'] }}</dd></div>
+                </dl>
+
+                <form wire:submit="sendTestMail" class="flex flex-col sm:flex-row gap-2.5 sm:items-start">
+                    <div class="flex-1 min-w-0">
+                        <input type="email" wire:model="testMailTo" class="form-input @error('testMailTo') is-error @enderror" placeholder="email.tujuan@gmail.com">
+                        @error('testMailTo') <p class="form-error-text">{{ $message }}</p> @enderror
+                    </div>
+                    <button type="submit" class="btn-primary shrink-0" wire:loading.attr="disabled" wire:target="sendTestMail">
+                        <span wire:loading.remove wire:target="sendTestMail">Kirim Email Uji</span>
+                        <span wire:loading wire:target="sendTestMail">Mengirim...</span>
+                    </button>
+                </form>
+
+                @if ($testMailResult)
+                    <div class="{{ $testMailResult['ok'] ? 'alert-info' : 'alert-warning' }}">
+                        <div class="break-words min-w-0">{{ $testMailResult['message'] }}</div>
+                    </div>
+                @endif
+            </div>
+        </div>
+    @endcan
 
     {{-- ===== TAB ZONA BAHAYA (di luar form) ===== --}}
     @can('settings.update')

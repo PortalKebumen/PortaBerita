@@ -8,8 +8,10 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Password;
 use Illuminate\View\View;
+use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 
 class PasswordResetLinkController extends Controller
 {
@@ -27,9 +29,31 @@ class PasswordResetLinkController extends Controller
 
         // Akun nonaktif tidak dikirimi tautan reset, tetapi jawabannya tetap sama (lihat di bawah)
         $inactive = User::where('email', $request->input('email'))->where('is_active', false)->exists();
-        $status = $inactive ? Password::INVALID_USER : Password::sendResetLink(
-            $request->only('email')
-        );
+
+        try {
+            $status = $inactive ? Password::INVALID_USER : Password::sendResetLink(
+                $request->only('email')
+            );
+        } catch (TransportExceptionInterface $e) {
+            // Server email menolak/tidak terjangkau: catat penyebabnya untuk admin, beri tahu pengguna
+            Log::error('Email reset kata sandi gagal dikirim', ['email' => $request->input('email'), 'error' => $e->getMessage()]);
+
+            return back()->withInput($request->only('email'))
+                ->withErrors(['email' => 'Email belum dapat dikirim karena gangguan pada server email. Coba lagi beberapa saat atau hubungi administrator.']);
+        }
+
+        // Jejak untuk admin (storage/logs): layar pengguna sengaja selalu sama, jadi log inilah
+        // satu-satunya cara mengetahui apakah email benar-benar dikirim
+        Log::info('Permintaan reset kata sandi', [
+            'email' => $request->input('email'),
+            'hasil' => match (true) {
+                $inactive => 'akun nonaktif, email tidak dikirim',
+                $status === Password::RESET_LINK_SENT => 'email reset terkirim ke server SMTP',
+                $status === Password::RESET_THROTTLED => 'ditahan: permintaan terlalu cepat',
+                $status === Password::INVALID_USER => 'email tidak terdaftar, email tidak dikirim',
+                default => $status,
+            },
+        ]);
 
         // Jawaban & jeda kirim ulang dibuat sama untuk email terdaftar maupun tidak, sehingga form ini
         // tidak bisa dipakai menebak email mana yang punya akun (account enumeration).

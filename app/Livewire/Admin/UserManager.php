@@ -4,9 +4,11 @@ namespace App\Livewire\Admin;
 
 use App\Models\Article;
 use App\Models\User;
+use App\Services\AccountCredentials;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Url;
@@ -43,6 +45,13 @@ class UserManager extends Component
 
     public ?int $deletingUserId = null;
 
+    /** Akun baru: kirim info login (email + kata sandi sementara) ke email pengguna */
+    public bool $sendCredentials = true;
+
+    public bool $showCredentialsModal = false;
+
+    public ?int $credentialsUserId = null;
+
     protected function rules(): array
     {
         return [
@@ -52,7 +61,8 @@ class UserManager extends Component
                 Rule::unique('users', 'email')->ignore($this->editingUserId),
             ],
             'role' => ['required', Rule::exists('roles', 'name')],
-            'password' => [$this->editingUserId ? 'nullable' : 'required', 'min:8'],
+            // Akun baru boleh tanpa kata sandi bila info login dikirim: sistem membuatkan kata sandi sementara
+            'password' => [$this->editingUserId || $this->sendCredentials ? 'nullable' : 'required', 'min:8'],
             'isActive' => ['boolean'],
         ];
     }
@@ -208,7 +218,7 @@ class UserManager extends Component
             $user = User::create([
                 'name' => $validated['name'],
                 'email' => $validated['email'],
-                'password' => Hash::make($validated['password']),
+                'password' => Hash::make($validated['password'] ?: AccountCredentials::generatePassword()),
                 'is_active' => $validated['isActive'],
                 'email_verified_at' => now(),
             ]);
@@ -219,6 +229,27 @@ class UserManager extends Component
                 ->performedOn($user)
                 ->withProperties(['role' => $validated['role']])
                 ->log("Pengguna \"{$user->name}\" dibuat dengan role ".$this->roleLabel($validated['role']));
+
+            if ($this->sendCredentials) {
+                try {
+                    app(AccountCredentials::class)->send($user, $validated['password'] ?: null, isNewAccount: true);
+                } catch (\Throwable $e) {
+                    Log::error('Gagal mengirim info login akun baru', ['user_id' => $user->id, 'error' => $e->getMessage()]);
+                    $this->showUserModal = false;
+                    $this->resetForm();
+                    unset($this->users);
+                    $this->dispatch('flash-message', type: 'error', text: 'Pengguna dibuat, tetapi email info login gagal dikirim ('.AccountCredentials::describeMailError($e).'). Perbaiki pengaturan email, lalu pakai tombol Kirim Info Login.');
+
+                    return;
+                }
+
+                $this->showUserModal = false;
+                $this->resetForm();
+                unset($this->users);
+                $this->dispatch('flash-message', type: 'success', text: "Pengguna dibuat dan info login dikirim ke {$user->email}.");
+
+                return;
+            }
         }
 
         $this->showUserModal = false;
@@ -288,6 +319,51 @@ class UserManager extends Component
         $this->dispatch('flash-message', type: 'success', text: 'Pengguna berhasil dihapus, artikel miliknya dipindahkan ke akun Redaksi.');
     }
 
+    public function confirmSendCredentials(int $userId): void
+    {
+        $this->authorize('users.update');
+
+        if ($userId === Auth::id()) {
+            $this->dispatch('flash-message', type: 'error', text: 'Untuk akun sendiri, ganti kata sandi lewat menu Profil Saya.');
+
+            return;
+        }
+
+        $this->credentialsUserId = User::findOrFail($userId)->id;
+        $this->showCredentialsModal = true;
+    }
+
+    public function sendCredentialsNow(): void
+    {
+        $this->authorize('users.update');
+
+        $user = User::findOrFail($this->credentialsUserId);
+        $this->showCredentialsModal = false;
+        $this->credentialsUserId = null;
+
+        if ($user->id === Auth::id()) {
+            return;
+        }
+
+        try {
+            app(AccountCredentials::class)->send($user);
+        } catch (\Throwable $e) {
+            Log::error('Gagal mengirim info login', ['user_id' => $user->id, 'error' => $e->getMessage()]);
+            $this->dispatch('flash-message', type: 'error', text: 'Email gagal dikirim, kata sandi pengguna tidak diubah. Penyebab: '.AccountCredentials::describeMailError($e));
+
+            return;
+        }
+
+        unset($this->users);
+        $this->dispatch('flash-message', type: 'success', text: "Info login dengan kata sandi sementara baru dikirim ke {$user->email}.");
+    }
+
+    public function closeCredentialsModal(): void
+    {
+        $this->showCredentialsModal = false;
+        $this->credentialsUserId = null;
+    }
+
     public function closeDeleteModal(): void
     {
         $this->showDeleteModal = false;
@@ -304,6 +380,7 @@ class UserManager extends Component
     {
         $this->reset(['editingUserId', 'name', 'email', 'role', 'password']);
         $this->isActive = true;
+        $this->sendCredentials = true;
         $this->resetErrorBag();
     }
 
