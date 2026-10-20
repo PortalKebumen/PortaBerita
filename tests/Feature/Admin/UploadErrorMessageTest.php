@@ -35,8 +35,8 @@ class UploadErrorMessageTest extends TestCase
     {
         Livewire::actingAs($this->admin())
             ->test(MediaLibraryManager::class)
-            ->call('_uploadErrored', 'newFile', null, false)
-            ->assertHasErrors('newFile')
+            ->call('_uploadErrored', 'newFiles.1', null, false)
+            ->assertHasErrors('newFiles.1')
             ->assertSee('Unggahan terputus sebelum selesai')
             ->assertDontSee('newFile gagal diunggah');
     }
@@ -47,8 +47,8 @@ class UploadErrorMessageTest extends TestCase
 
         Livewire::actingAs($this->admin())
             ->test(MediaLibraryManager::class)
-            ->call('_uploadErrored', 'newFile', $errors, false)
-            ->assertHasErrors('newFile')
+            ->call('_uploadErrored', 'newFiles.1', $errors, false)
+            ->assertHasErrors('newFiles.1')
             ->assertSee('Server menolak berkas')
             ->assertSee(UploadLimit::label());
     }

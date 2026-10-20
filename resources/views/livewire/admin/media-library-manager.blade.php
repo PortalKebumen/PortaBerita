@@ -130,103 +130,141 @@
         {{ $this->mediaItems->links() }}
     </div>
 
-    {{-- Modal: Upload --}}
+    {{-- Modal: Upload (banyak berkas sekaligus) --}}
+    <script>
+        // Unggah banyak berkas: dikirim satu per satu (antre) agar tiap request tetap di bawah batas
+        // ukuran server, dengan progres per berkas. Berkas yang selesai tampil dari data server.
+        window.mediaMultiUpload = window.mediaMultiUpload || function (maxBytes, maxLabel, maxFiles) {
+            return {
+                pending: [], errors: [], counter: 0, dragging: false, queue: Promise.resolve(),
+                pick(fileList) {
+                    this.errors = [];
+                    const files = Array.from(fileList || []);
+                    let room = maxFiles - Object.keys(this.$wire.newFiles || {}).length - this.pending.length;
+                    files.forEach((file) => {
+                        if (room <= 0) {
+                            this.errors.push('"' + file.name + '": melebihi batas ' + maxFiles + ' berkas sekali unggah.');
+                            return;
+                        }
+                        if (file.size > maxBytes) {
+                            this.errors.push('"' + file.name + '": ' + (file.size / 1024 / 1024).toFixed(2) + ' MB, melebihi batas maksimal ' + maxLabel + '. Kecilkan atau kompres terlebih dahulu.');
+                            return;
+                        }
+                        room--;
+                        const key = Date.now() % 100000000 * 100 + (this.counter++ % 100);
+                        this.pending.push({ key, name: file.name, progress: 0, preview: file.type.startsWith('image/') ? URL.createObjectURL(file) : null });
+                        this.queue = this.queue.then(() => new Promise((resolve) => {
+                            this.$wire.upload('newFiles.' + key, file,
+                                () => { this.drop(key); resolve(); },
+                                () => { this.drop(key); resolve(); },
+                                (e) => { const item = this.pending.find((p) => p.key === key); if (item) item.progress = e.detail.progress; });
+                        }));
+                    });
+                    if (this.$refs.fileInput) this.$refs.fileInput.value = '';
+                },
+                drop(key) {
+                    const i = this.pending.findIndex((p) => p.key === key);
+                    if (i < 0) return;
+                    if (this.pending[i].preview) URL.revokeObjectURL(this.pending[i].preview);
+                    this.pending.splice(i, 1);
+                },
+                clear() {
+                    this.pending.forEach((p) => p.preview && URL.revokeObjectURL(p.preview));
+                    this.pending = [];
+                    this.errors = [];
+                },
+            };
+        };
+    </script>
     <div
         class="modal-overlay {{ $showUploadModal ? 'flex' : 'hidden' }} fixed inset-0 z-50 items-center justify-center p-4 bg-black/40"
-        x-data="{ preview: null, sizeError: null }"
-        x-on:flash-message.window="preview = null; sizeError = null">
-        <div class="bg-white rounded-card max-w-[500px] w-full p-6 shadow-xl">
-            <form wire:submit="saveUpload">
-                <div class="flex justify-between items-center mb-4">
+        x-data="mediaMultiUpload({{ \App\Support\UploadLimit::maxBytes() }}, @js(\App\Support\UploadLimit::label()), {{ \App\Livewire\Admin\MediaLibraryManager::MAX_FILES }})"
+        x-on:flash-message.window="clear()">
+        <div class="bg-white rounded-card max-w-[640px] w-full max-h-[calc(100vh-2rem)] flex flex-col shadow-xl">
+            <form wire:submit="saveUpload" class="flex flex-col min-h-0">
+                <div class="flex justify-between items-center px-6 pt-6 pb-4">
                     <h3 class="text-[16px] font-bold">Unggah Media Baru</h3>
-                    <button type="button" wire:click="closeUploadModal" @click="preview = null; sizeError = null; $refs.fileInput.value = ''" class="btn-icon bg-[#F1F3F7]"
-                        aria-label="Tutup">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2">
-                            <path d="M18 6L6 18M6 6l12 12"></path>
-                        </svg>
+                    <button type="button" wire:click="closeUploadModal" @click="clear()" class="btn-icon bg-[#F1F3F7]" aria-label="Tutup">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"></path></svg>
                     </button>
                 </div>
 
-                <label
-                    class="flex flex-col items-center justify-center gap-2 border border-dashed border-[#CDD3DF] rounded-lg py-6 px-4 cursor-pointer hover:bg-[#F8F9FB] transition-colors mb-4 overflow-hidden"
-                    wire:loading.class="opacity-50 pointer-events-none" wire:target="newFile">
-
-                    <template x-if="preview">
-                        <img :src="preview" class="h-24 w-auto object-contain rounded-md">
-                    </template>
-
-                    <template x-if="!preview">
-                        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#848CA3"
-                            stroke-width="1.8">
+                <div class="px-6 overflow-y-auto min-h-0">
+                    <label
+                        class="flex flex-col items-center justify-center gap-2 border border-dashed rounded-lg py-6 px-4 cursor-pointer transition-colors mb-4"
+                        :class="dragging ? 'border-brand-500 bg-brand-50' : 'border-[#CDD3DF] hover:bg-[#F8F9FB]'"
+                        x-on:dragover.prevent="dragging = true"
+                        x-on:dragleave.prevent="dragging = false"
+                        x-on:drop.prevent="dragging = false; pick($event.dataTransfer.files)">
+                        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#848CA3" stroke-width="1.8">
                             <path d="M12 16V4M12 4l-4 4M12 4l4 4"></path>
                             <path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2"></path>
                         </svg>
+                        <span class="text-[12.5px] text-[#6C7387] text-center"><span class="font-semibold text-brand-600">Klik untuk pilih berkas</span> atau seret ke sini &mdash; bisa banyak sekaligus</span>
+                        <span class="text-[11px] text-[#848CA3]">JPG, PNG, WEBP, PDF &middot; maks. {{ \App\Support\UploadLimit::label() }} per berkas &middot; {{ \App\Livewire\Admin\MediaLibraryManager::MAX_FILES }} berkas sekali unggah</span>
+                        <input type="file" multiple x-ref="fileInput" class="hidden" x-on:change="pick($event.target.files)">
+                    </label>
+
+                    <template x-for="msg in errors" :key="msg">
+                        <p class="text-[12px] text-danger mb-1.5" x-text="msg"></p>
+                    </template>
+                    @foreach (collect($errors->getMessages())->filter(fn ($m, $k) => str_starts_with($k, 'newFiles'))->flatten() as $message)
+                        <p class="text-[12px] text-danger mb-1.5">{{ $message }}</p>
+                    @endforeach
+
+                    {{-- Sedang diunggah --}}
+                    <template x-for="item in pending" :key="item.key">
+                        <div class="flex items-center gap-3 border border-[#E4E8EF] rounded-lg p-2.5 mb-2.5">
+                            <div class="w-12 h-12 rounded-md bg-[#F1F3F7] overflow-hidden shrink-0 flex items-center justify-center">
+                                <template x-if="item.preview"><img :src="item.preview" alt="" class="w-full h-full object-cover"></template>
+                            </div>
+                            <div class="min-w-0 flex-1">
+                                <div class="text-[12.5px] font-medium truncate" x-text="item.name"></div>
+                                <div class="h-1.5 rounded-full bg-[#E4E8EF] mt-1.5 overflow-hidden">
+                                    <div class="h-full bg-brand-600 transition-all" :style="'width:' + item.progress + '%'"></div>
+                                </div>
+                                <div class="text-[11px] text-[#848CA3] mt-1" x-text="item.progress < 100 ? 'Mengunggah… ' + item.progress + '%' : 'Memproses…'"></div>
+                            </div>
+                        </div>
                     </template>
 
-                    <span class="text-[12.5px] text-[#6C7387]"><span class="font-semibold text-brand-600">Klik untuk
-                            unggah</span> atau seret berkas ke sini</span>
-                    <span class="text-[11px] text-[#848CA3]">JPG, PNG, WEBP, PDF hingga {{ \App\Support\UploadLimit::label() }}</span>
-                    <input type="file" x-ref="fileInput" class="hidden"
-                        x-on:change="
-                            sizeError = null;
-                            const file = $event.target.files[0];
-                            if (!file) return;
-
-                            const maxBytes = {{ \App\Support\UploadLimit::maxBytes() }};
-                            if (file.size > maxBytes) {
-                                sizeError = 'Ukuran berkas ' + (file.size / 1024 / 1024).toFixed(2) + ' MB, melebihi batas maksimal {{ \App\Support\UploadLimit::label() }}. Kecilkan atau kompres gambar terlebih dahulu.';
-                                preview = null;
-                                $refs.fileInput.value = '';
-                                return;
-                            }
-
-                            if (preview) { URL.revokeObjectURL(preview); }
-                            preview = file.type.startsWith('image/') ? URL.createObjectURL(file) : null;
-
-                            $wire.upload('newFile', file);
-                        ">
-                </label>
-
-                <div wire:loading wire:target="newFile"
-                    class="text-[12px] text-brand-600 mb-3 flex items-center gap-2">
-                    <svg class="animate-spin" width="14" height="14" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" stroke-width="3">
-                        <circle cx="12" cy="12" r="9" stroke-opacity="0.25"></circle>
-                        <path d="M21 12a9 9 0 00-9-9"></path>
-                    </svg>
-                    Mengunggah berkas ke server, mohon tunggu sebentar...
+                    {{-- Siap disimpan --}}
+                    @foreach ($newFiles as $key => $file)
+                        <div wire:key="newfile-{{ $key }}" class="flex gap-3 border border-[#E4E8EF] rounded-lg p-2.5 mb-2.5">
+                            <div class="w-16 h-16 rounded-md bg-[#F1F3F7] overflow-hidden shrink-0 flex items-center justify-center text-[10px] font-bold text-[#848CA3]">
+                                @if (method_exists($file, 'isPreviewable') && $file->isPreviewable())
+                                    <img src="{{ $file->temporaryUrl() }}" alt="" class="w-full h-full object-cover">
+                                @else
+                                    {{ strtoupper($file->getClientOriginalExtension()) }}
+                                @endif
+                            </div>
+                            <div class="min-w-0 flex-1 space-y-1.5">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-[12.5px] font-medium truncate flex-1" title="{{ $file->getClientOriginalName() }}">{{ $file->getClientOriginalName() }}</span>
+                                    <span class="badge-success shrink-0">Siap</span>
+                                    <button type="button" wire:click="removeNewFile({{ $key }})" class="text-[#848CA3] hover:text-danger shrink-0" title="Batalkan berkas ini" aria-label="Batalkan {{ $file->getClientOriginalName() }}">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"></path></svg>
+                                    </button>
+                                </div>
+                                <input type="text" wire:model="newMeta.{{ $key }}.alt" class="form-input !py-1.5 text-[12.5px]" placeholder="Teks alternatif (alt): deskripsi gambar untuk SEO & aksesibilitas">
+                                <input type="text" wire:model="newMeta.{{ $key }}.caption" maxlength="255" class="form-input !py-1.5 text-[12.5px]" placeholder="Keterangan (caption), contoh: Warga memadati Pantai Menganti. (Foto: Dok. PortalKebumen)">
+                            </div>
+                        </div>
+                    @endforeach
                 </div>
 
-                <p x-show="sizeError" x-text="sizeError" x-cloak class="text-[12px] text-danger mb-3"></p>
-
-                @if ($newFile)
-                    <p class="text-[12px] text-[#6C7387] mb-3" wire:loading.remove wire:target="newFile">Berkas siap:
-                        {{ $newFile->getClientOriginalName() }}</p>
-                @endif
-                @error('newFile')
-                    <p class="text-[12px] text-danger mb-3">{{ $message }}</p>
-                @enderror
-
-                <div class="mb-4">
-                    <label class="form-label">Teks Alternatif (Alt Text)</label>
-                    <input type="text" wire:model="newAltText" class="form-input"
-                        placeholder="Deskripsi gambar untuk SEO & aksesibilitas">
-                </div>
-                <div class="mb-5">
-                    <label class="form-label">Keterangan (Caption)</label>
-                    <textarea wire:model="newCaption" rows="3" maxlength="255" class="form-textarea resize-y"
-                        placeholder="Keterangan yang tampil di bawah gambar, contoh: Warga memadati Pantai Menganti saat libur panjang. (Foto: Dok. PortalKebumen)"></textarea>
-                </div>
-
-                <div class="flex justify-end gap-2.5">
-                    <button type="button" wire:click="closeUploadModal" @click="preview = null; sizeError = null; $refs.fileInput.value = ''" class="btn-secondary">Batal</button>
-                    <button type="submit" wire:loading.attr="disabled" wire:target="newFile,saveUpload"
-                        class="btn-primary disabled:opacity-50 disabled:cursor-not-allowed">
-                        <span wire:loading.remove wire:target="newFile,saveUpload">Unggah</span>
-                        <span wire:loading wire:target="newFile">Menunggu berkas...</span>
-                        <span wire:loading wire:target="saveUpload">Menyimpan...</span>
-                    </button>
+                <div class="flex items-center justify-between gap-2.5 px-6 py-4 border-t border-[#E4E8EF] mt-2">
+                    <span class="text-[12px] text-[#6C7387]">
+                        {{ count($newFiles) }} berkas siap<span x-show="pending.length" x-cloak x-text="' · ' + pending.length + ' sedang diunggah'"></span>
+                    </span>
+                    <div class="flex gap-2.5">
+                        <button type="button" wire:click="closeUploadModal" @click="clear()" class="btn-secondary">Batal</button>
+                        <button type="submit" :disabled="pending.length > 0" wire:loading.attr="disabled" wire:target="saveUpload"
+                            class="btn-primary disabled:opacity-50 disabled:cursor-not-allowed">
+                            <span wire:loading.remove wire:target="saveUpload" x-text="pending.length ? 'Menunggu berkas…' : 'Unggah {{ count($newFiles) > 1 ? count($newFiles).' Berkas' : '' }}'"></span>
+                            <span wire:loading wire:target="saveUpload">Menyimpan...</span>
+                        </button>
+                    </div>
                 </div>
             </form>
         </div>

@@ -5,6 +5,7 @@ namespace App\Livewire\Admin;
 use App\Livewire\Concerns\ExplainsUploadErrors;
 use App\Models\LibraryMedia;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
 use Livewire\WithFileUploads;
@@ -26,10 +27,16 @@ class MediaLibraryManager extends Component
 
     public string $dateTo = '';
 
+    /** Maksimal berkas dalam satu kali unggah */
+    public const MAX_FILES = 20;
+
     public bool $showUploadModal = false;
-    public $newFile = null;
-    public string $newAltText = '';
-    public string $newCaption = '';
+
+    /** Berkas yang sudah selesai diunggah sementara, key = nomor urut dari browser */
+    public array $newFiles = [];
+
+    /** Alt text & keterangan per berkas: [nomor => ['alt' => '', 'caption' => '']] */
+    public array $newMeta = [];
 
     public bool $showEditModal = false;
     public ?int $editingMediaId = null;
@@ -65,9 +72,38 @@ class MediaLibraryManager extends Component
         $this->resetPage();
     }
 
-    public function updatedNewFile(): void
+    /** Dipanggil tiap satu berkas selesai diunggah sementara (newFiles.N): cek ukurannya langsung. */
+    public function updatedNewFiles($value, $key): void
     {
-        $this->validateOnly('newFile', ['newFile' => $this->uploadRule()], $this->uploadValidationMessages());
+        if (! is_numeric($key)) {
+            return;
+        }
+
+        $this->newMeta[$key] ??= ['alt' => '', 'caption' => ''];
+
+        try {
+            $this->validateOnly("newFiles.{$key}", ["newFiles.{$key}" => $this->uploadRule()], $this->uploadMessagesFor("newFiles.{$key}"));
+        } catch (ValidationException $e) {
+            // Berkas tidak lolos dibuang dari daftar; pesan errornya tetap tampil
+            unset($this->newFiles[$key], $this->newMeta[$key]);
+
+            throw $e;
+        }
+    }
+
+    public function removeNewFile(int $key): void
+    {
+        unset($this->newFiles[$key], $this->newMeta[$key]);
+        $this->resetErrorBag("newFiles.{$key}");
+    }
+
+    /** Pesan validasi dengan nama berkas, agar jelas berkas mana yang bermasalah. */
+    protected function uploadMessagesFor(string $field): array
+    {
+        $file = data_get($this, $field);
+        $name = is_object($file) && method_exists($file, 'getClientOriginalName') ? '"'.$file->getClientOriginalName().'": ' : '';
+
+        return array_map(fn ($message) => $name.$message, $this->uploadValidationMessages($field));
     }
 
     #[Computed]
@@ -119,36 +155,80 @@ class MediaLibraryManager extends Component
     {
         $this->authorize('media.upload');
 
-        $this->reset(['newFile', 'newAltText', 'newCaption']);
+        $this->reset(['newFiles', 'newMeta']);
+        $this->resetErrorBag();
         $this->showUploadModal = true;
     }
 
     public function closeUploadModal(): void
     {
         $this->showUploadModal = false;
-        $this->reset(['newFile', 'newAltText', 'newCaption']);
+        $this->reset(['newFiles', 'newMeta']);
+        $this->resetErrorBag();
     }
 
     public function saveUpload(): void
     {
         $this->authorize('media.upload');
 
-        $this->validate([
-            'newFile' => $this->uploadRule(),
-            'newAltText' => 'nullable|string|max:255',
-            'newCaption' => 'nullable|string|max:255',
-        ], $this->uploadValidationMessages());
+        $this->newFiles = array_filter($this->newFiles);
 
+        $rules = [
+            'newFiles' => ['required', 'array', 'max:'.self::MAX_FILES],
+            'newMeta.*.alt' => 'nullable|string|max:255',
+            'newMeta.*.caption' => 'nullable|string|max:255',
+        ];
+        $messages = [
+            'newFiles.required' => 'Belum ada berkas yang berhasil diunggah. Pilih berkas, tunggu sampai semua bertanda "Siap", lalu klik Unggah.',
+            'newFiles.max' => 'Maksimal '.self::MAX_FILES.' berkas sekali unggah.',
+            'newMeta.*.alt.max' => 'Teks alternatif maksimal 255 karakter.',
+            'newMeta.*.caption.max' => 'Keterangan maksimal 255 karakter.',
+        ];
+        foreach (array_keys($this->newFiles) as $key) {
+            $rules["newFiles.{$key}"] = $this->uploadRule();
+            $messages += $this->uploadMessagesFor("newFiles.{$key}");
+        }
+        $this->validate($rules, $messages);
+
+        $saved = 0;
+        $failed = [];
+        foreach ($this->newFiles as $key => $file) {
+            $alt = trim((string) data_get($this->newMeta, "{$key}.alt", ''));
+            $caption = trim((string) data_get($this->newMeta, "{$key}.caption", ''));
+
+            try {
+                $this->storeUpload($file, $alt, $caption);
+                $saved++;
+            } catch (\Throwable $e) {
+                report($e);
+                $failed[] = $file->getClientOriginalName();
+            }
+        }
+
+        $this->closeUploadModal();
+        unset($this->mediaItems);
+
+        if ($failed) {
+            $this->dispatch('flash-message', type: 'error', text: "{$saved} media diunggah, ".count($failed).' gagal: '.implode(', ', $failed).'.');
+
+            return;
+        }
+
+        $this->dispatch('flash-message', type: 'success', text: $saved === 1 ? 'Media berhasil diunggah.' : "{$saved} media berhasil diunggah.");
+    }
+
+    protected function storeUpload($file, string $alt, string $caption): void
+    {
         $libraryMedia = LibraryMedia::create([
             'uploaded_by' => Auth::id(),
         ]);
 
         $media = $libraryMedia
-            ->addMedia($this->newFile->getRealPath())
-            ->usingFileName($this->newFile->getClientOriginalName())
+            ->addMedia($file->getRealPath())
+            ->usingFileName($file->getClientOriginalName())
             ->withCustomProperties([
-                'alt_text' => $this->newAltText,
-                'caption' => $this->newCaption,
+                'alt_text' => $alt,
+                'caption' => $caption,
             ])
             ->toMediaCollection('library');
 
@@ -166,15 +246,11 @@ class MediaLibraryManager extends Component
         $activity->attribute_changes = [
             'attributes' => [
                 'file_name' => $media->file_name,
-                'alt_text' => $this->newAltText,
-                'caption' => $this->newCaption,
+                'alt_text' => $alt,
+                'caption' => $caption,
             ],
         ];
         $activity->save();
-
-        $this->closeUploadModal();
-        unset($this->mediaItems);
-        $this->dispatch('flash-message', type: 'success', text: 'Media berhasil diunggah.');
     }
 
     public function openEditModal(int $mediaId): void
