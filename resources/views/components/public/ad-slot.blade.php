@@ -3,7 +3,7 @@
     'label' => 'Advertisement',
     'height' => 'h-32',
     'placeholder' => true,
-    'interval' => 4,
+    'interval' => 3,
     'start' => 0,
 ])
 
@@ -37,7 +37,7 @@
 @if ($ads->isNotEmpty())
     <div {{ $attributes->merge(['class' => 'mx-auto w-full']) }}
          data-ad-slot data-ad-interval="{{ max(2, (int) $interval) * 1000 }}"
-         role="complementary" aria-label="Iklan">
+         role="complementary" aria-label="Iklan" @if ($ads->count() > 1) aria-roledescription="carousel" @endif>
         {{-- Slide ditumpuk di sel grid yang sama; tinggi ruang mengikuti banner tertinggi, banner lain di tengah --}}
         <div class="grid">
             @foreach ($ads as $i => $ad)
@@ -61,6 +61,16 @@
                 </div>
             @endforeach
         </div>
+
+        @if ($ads->count() > 1)
+            <div class="mt-2 flex items-center justify-center gap-1.5" data-ad-dots>
+                @foreach ($ads as $i => $ad)
+                    <button type="button" data-ad-dot="{{ $i }}" aria-label="Tampilkan iklan {{ $i + 1 }} dari {{ $ads->count() }}"
+                            @if ($i === 0) aria-current="true" @endif
+                            class="h-1.5 rounded-full transition-all duration-300 {{ $i === 0 ? 'w-4 bg-brand-600' : 'w-1.5 bg-[#CDD3DF] hover:bg-[#9AA3B8]' }}"></button>
+                @endforeach
+            </div>
+        @endif
     </div>
 
     @once
@@ -82,7 +92,8 @@
 
                 document.querySelectorAll('[data-ad-slot]').forEach(function (slot) {
                     var slides = Array.prototype.slice.call(slot.querySelectorAll('[data-ad-slide]'));
-                    var interval = parseInt(slot.dataset.adInterval, 10) || 4000;
+                    var dots = Array.prototype.slice.call(slot.querySelectorAll('[data-ad-dot]'));
+                    var interval = parseInt(slot.dataset.adInterval, 10) || 3000;
                     var current = 0, visible = false, paused = false, timer = null;
 
                     var show = function (index) {
@@ -93,6 +104,14 @@
                             slide.classList.toggle('opacity-0', !active);
                             slide.inert = !active;
                             if (active) slide.removeAttribute('aria-hidden'); else slide.setAttribute('aria-hidden', 'true');
+                        });
+                        dots.forEach(function (dot, i) {
+                            var active = i === current;
+                            dot.classList.toggle('w-4', active);
+                            dot.classList.toggle('bg-brand-600', active);
+                            dot.classList.toggle('w-1.5', !active);
+                            dot.classList.toggle('bg-[#CDD3DF]', !active);
+                            if (active) dot.setAttribute('aria-current', 'true'); else dot.removeAttribute('aria-current');
                         });
                         if (visible) send(slides[current]);
                     };
@@ -105,6 +124,33 @@
                             timer = setInterval(function () { show(current + 1); }, interval);
                         }
                     };
+
+                    // Geser manual: titik penanda dan swipe di layar sentuh; timer otomatis dimulai ulang
+                    var go = function (index) { show(index); schedule(); };
+                    dots.forEach(function (dot) {
+                        dot.addEventListener('click', function () { go(parseInt(dot.dataset.adDot, 10)); });
+                    });
+                    var touchX = null, touchY = null;
+                    slot.addEventListener('touchstart', function (e) {
+                        touchX = e.touches[0].clientX; touchY = e.touches[0].clientY;
+                    }, { passive: true });
+                    slot.addEventListener('touchend', function (e) {
+                        if (touchX === null || slides.length < 2) return;
+                        var dx = e.changedTouches[0].clientX - touchX, dy = e.changedTouches[0].clientY - touchY;
+                        touchX = null;
+                        // Geser horizontal yang jelas saja, agar tidak bentrok dengan scroll halaman
+                        if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+                            slot.dataset.adSwiped = '1';
+                            go(current + (dx < 0 ? 1 : -1));
+                        }
+                    });
+                    // Swipe tidak boleh ikut dihitung sebagai klik iklan
+                    slot.addEventListener('click', function (e) {
+                        if (slot.dataset.adSwiped) {
+                            delete slot.dataset.adSwiped;
+                            if (e.target.closest('a')) e.preventDefault();
+                        }
+                    }, true);
 
                     slot.addEventListener('mouseenter', function () { paused = true; schedule(); });
                     slot.addEventListener('mouseleave', function () { paused = false; schedule(); });
