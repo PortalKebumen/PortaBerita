@@ -52,7 +52,7 @@
                 Ekspor
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
             </summary>
-            <div class="absolute right-0 z-20 mt-1.5 w-60 overflow-hidden rounded-xl border border-[#E4E8EF] bg-white py-1 shadow-lg">
+            <div class="absolute left-0 xl:left-auto xl:right-0 z-20 mt-1.5 w-60 max-w-[calc(100vw-2rem)] overflow-hidden rounded-xl border border-[#E4E8EF] bg-white py-1 shadow-lg">
                 @foreach (['xlsx' => ['Excel (.xlsx)', 'Satu tabel per sheet, siap diolah'], 'csv' => ['CSV (.csv)', 'Untuk Google Sheets / aplikasi lain']] as $format => [$label, $hint])
                     <a href="{{ route('admin.analitik.ekspor', array_merge($this->periodQuery(), ['tab' => $tab, 'format' => $format])) }}"
                        class="block px-4 py-2.5 hover:bg-[#F7F8FA]">

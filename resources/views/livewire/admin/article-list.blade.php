@@ -42,7 +42,7 @@
                         <path d="M6 9l6 6 6-6"></path>
                     </svg>
                 </button>
-                <div class="hidden absolute right-0 top-full mt-1 bg-white rounded-lg shadow-lg border border-[#E4E8EF] min-w-[180px] z-10" data-dropdown-menu>
+                <div class="hidden absolute left-0 lg:left-auto lg:right-0 top-full mt-1 bg-white rounded-lg shadow-lg border border-[#E4E8EF] min-w-[180px] max-w-[calc(100vw-2rem)] z-10" data-dropdown-menu>
                     @if (count($selectedIds) === 0)
                         <div class="px-4 py-2.5 text-[12px] text-[#848CA3]">
                             Pilih artikel terlebih dahulu.

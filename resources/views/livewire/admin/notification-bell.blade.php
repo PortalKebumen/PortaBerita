@@ -18,7 +18,7 @@
     </button>
 
     <div x-show="open" x-transition.opacity style="display: none;"
-        class="absolute right-0 mt-2 w-[calc(100vw-2rem)] sm:w-96 max-w-[24rem] rounded-xl bg-white border border-[#E4E8EF] shadow-lg z-30 overflow-hidden">
+        class="fixed inset-x-3 top-[68px] sm:absolute sm:inset-x-auto sm:top-auto sm:right-0 sm:mt-2 sm:w-96 rounded-xl bg-white border border-[#E4E8EF] shadow-lg z-30 overflow-hidden">
 
         <div class="flex items-center justify-between px-4 py-3 border-b border-[#E4E8EF]">
             <div class="text-[13px] font-semibold">
@@ -34,7 +34,7 @@
             @endif
         </div>
 
-        <div class="max-h-[420px] overflow-y-auto">
+        <div class="max-h-[min(420px,calc(100dvh-170px))] overflow-y-auto">
             @forelse ($this->items as $n)
                 @php
                     $kind = $n->data['kind'] ?? 'info';
