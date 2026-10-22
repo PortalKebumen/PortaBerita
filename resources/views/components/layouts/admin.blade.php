@@ -110,8 +110,17 @@
                     </div>
                 @endforeach
 
+                <div class="border-t border-white/10 mt-auto pt-3 space-y-0.5">
+                    <a href="{{ route('admin.panduan') }}"
+                    title="Panduan"
+                    class="sidebar-nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13.5px] font-medium transition-colors
+                            {{ request()->routeIs('admin.panduan')
+                                    ? 'bg-white/10 text-white font-semibold'
+                                    : 'text-[#B9C3E6] hover:bg-white/[0.05] hover:text-white' }}">
+                        <x-admin-menu-icon name="panduan" />
+                        <span class="sidebar-label truncate">Panduan</span>
+                    </a>
                 @can('settings.view')
-                <div class="border-t border-white/10 mt-auto pt-3">
                     <a href="{{ route('admin.pengaturan.index') }}"
                     title="Pengaturan"
                     class="sidebar-nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13.5px] font-medium transition-colors
@@ -121,8 +130,8 @@
                         <x-admin-menu-icon name="pengaturan" />
                         <span class="sidebar-label truncate">Pengaturan</span>
                     </a>
-                </div>
                 @endcan
+                </div>
             </nav>
 
             <div class="flex items-center gap-2.5 px-4 py-4 border-t border-white/10 shrink-0">
@@ -199,6 +208,13 @@
                                     <path d="M4 21a8 8 0 0 1 16 0"/>
                                 </svg>
                                 Profil Saya
+                            </a>
+                            <a href="{{ route('admin.panduan') }}" class="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-[13px] text-[#1B2033] hover:bg-[#F1F3F7] transition-colors">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="9"/>
+                                    <path d="M9.5 9.2a2.6 2.6 0 015 .8c0 1.7-2.5 2.2-2.5 3.6M12 17h.01"/>
+                                </svg>
+                                Panduan Pengguna
                             </a>
                             <form method="POST" action="{{ route('logout') }}">
                                 @csrf

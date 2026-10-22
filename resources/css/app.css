@@ -186,3 +186,21 @@
   margin-top: .5rem; font-size: 13px; line-height: 1.45; color: #5B6378;
 }
 .rich-content figure.image.align-center figcaption { text-align: center; }
+
+/* Halaman Panduan Pengguna (admin): tipografi isi panduan */
+.panduan section h2 { font-size: 18px; font-weight: 700; color: #171B28; margin-bottom: .75rem; }
+.panduan section h3 { font-size: 15px; font-weight: 700; color: #171B28; margin: 1.4rem 0 .5rem; }
+.panduan section p, .panduan section li, .panduan section dd { font-size: 14px; line-height: 1.7; color: #3B4257; }
+.panduan section p { margin-bottom: .75rem; }
+.panduan section ol, .panduan section ul { margin: .25rem 0 .75rem 1.25rem; }
+.panduan section ol { list-style: decimal; }
+.panduan section ul { list-style: disc; }
+.panduan section li { margin-bottom: .35rem; padding-left: .15rem; }
+.panduan section a:not([class]) { color: var(--color-brand-600, #1E398E); text-decoration: underline; }
+.panduan section code { font-size: 12.5px; background: #F1F3F7; border-radius: 4px; padding: 1px 5px; }
+.panduan .kbd { display: inline-block; min-width: 1.6em; text-align: center; font-size: 12px; font-weight: 600; border: 1px solid #CDD3DF; border-bottom-width: 2px; border-radius: 5px; padding: 0 5px; background: #fff; color: #171B28; }
+.panduan-table { width: 100%; min-width: 520px; border-collapse: collapse; font-size: 13.5px; margin: .5rem 0 1rem; }
+.panduan-table th { text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: .03em; color: #6C7387; background: #F7F8FA; padding: .6rem .75rem; border-bottom: 1px solid #E4E8EF; }
+.panduan-table td { padding: .6rem .75rem; border-bottom: 1px solid #EEF1F5; vertical-align: top; color: #3B4257; }
+.panduan-faq dt { font-size: 14px; font-weight: 700; color: #171B28; margin-top: 1rem; }
+.panduan-faq dd { margin-top: .25rem; }

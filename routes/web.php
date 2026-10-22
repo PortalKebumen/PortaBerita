@@ -87,6 +87,8 @@ Route::middleware(['auth', \App\Http\Middleware\EnsurePasswordIsChanged::class])
     ->group(function () {
         // Profil Saya: semua pengguna yang login, termasuk yang wajib mengganti kata sandi sementara
         Route::view('profil', 'admin.profil')->name('profil');
+        // Panduan pengguna: isi menyesuaikan role masing-masing
+        Route::view('panduan', 'admin.panduan')->name('panduan');
     });
 
 Route::middleware(['auth', \App\Http\Middleware\EnsurePasswordIsChanged::class, 'can:dashboard.view'])
