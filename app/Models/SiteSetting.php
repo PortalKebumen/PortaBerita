@@ -26,6 +26,8 @@ class SiteSetting
             'og_image' => null,    // path relatif di disk public
             'ga_id' => null,
             'gsc_verification' => null,
+            'adsense_publisher_id' => null, // format ca-pub-XXXXXXXXXXXXXXXX
+            'adsense_auto_ads' => null,     // '1' = pasang skrip AdSense (iklan otomatis)
             'facebook' => null,
             'instagram' => null,
             'x_twitter' => null,

@@ -35,6 +35,8 @@ class SiteSettingsManager extends Component
     public string $metaDescription = '';
     public string $gaId = '';
     public string $gscVerification = '';
+    public string $adsensePublisherId = '';
+    public bool $adsenseAutoAds = false;
 
     // Media sosial
     public string $facebook = '';
@@ -76,6 +78,8 @@ class SiteSettingsManager extends Component
             'metaDescription' => 'nullable|string|max:160',
             'gaId' => ['nullable', 'regex:/^(G|GT|UA|AW)-[A-Za-z0-9\-]+$/'],
             'gscVerification' => ['nullable', 'string', 'max:255', 'regex:/^[A-Za-z0-9_\-]+$/'],
+            'adsensePublisherId' => ['nullable', 'regex:/^ca-pub-\d{10,20}$/'],
+            'adsenseAutoAds' => ['boolean'],
 
             'facebook' => 'nullable|url|max:255',
             'instagram' => 'nullable|url|max:255',
@@ -98,6 +102,7 @@ class SiteSettingsManager extends Component
             'metaDescription.max' => 'Meta description maksimal 160 karakter.',
             'gaId.regex' => 'Format Google Analytics ID tidak valid (contoh: G-ABC123XYZ).',
             'gscVerification.regex' => 'Isi hanya kode verifikasinya (tanpa tag <meta>).',
+            'adsensePublisherId.regex' => 'Format ID penayang AdSense tidak valid (contoh: ca-pub-1234567890123456).',
             'facebook.url' => 'Tautan Facebook harus berupa URL lengkap (https://...).',
             'instagram.url' => 'Tautan Instagram harus berupa URL lengkap (https://...).',
             'xTwitter.url' => 'Tautan X (Twitter) harus berupa URL lengkap (https://...).',
@@ -144,6 +149,10 @@ class SiteSettingsManager extends Component
 
         // Boleh paste seluruh tag <meta ... content="KODE">: ambil kodenya saja.
         $this->gscVerification = $this->normalizeVerification($this->gscVerification);
+        $this->adsensePublisherId = $this->normalizeAdsenseId($this->adsensePublisherId);
+        if ($this->adsensePublisherId === '') {
+            $this->adsenseAutoAds = false;
+        }
 
         try {
             $this->validate();
@@ -173,6 +182,8 @@ class SiteSettingsManager extends Component
                 'og_image' => $og,
                 'ga_id' => $this->gaId ?: null,
                 'gsc_verification' => $this->gscVerification ?: null,
+                'adsense_publisher_id' => $this->adsensePublisherId ?: null,
+                'adsense_auto_ads' => $this->adsenseAutoAds ? '1' : null,
                 'facebook' => $this->facebook ?: null,
                 'instagram' => $this->instagram ?: null,
                 'x_twitter' => $this->xTwitter ?: null,
@@ -398,6 +409,8 @@ class SiteSettingsManager extends Component
         $this->metaDescription = (string) $s['meta_description'];
         $this->gaId = (string) $s['ga_id'];
         $this->gscVerification = (string) $s['gsc_verification'];
+        $this->adsensePublisherId = (string) $s['adsense_publisher_id'];
+        $this->adsenseAutoAds = (bool) $s['adsense_auto_ads'];
 
         $this->facebook = (string) $s['facebook'];
         $this->instagram = (string) $s['instagram'];
@@ -455,10 +468,25 @@ class SiteSettingsManager extends Component
         return $value;
     }
 
+    /**
+     * Terima tag <meta name="google-adsense-account" content="ca-pub-...">, cuplikan ads.txt,
+     * "pub-..." maupun "ca-pub-...": disimpan seragam sebagai ca-pub-ANGKA.
+     */
+    private function normalizeAdsenseId(string $value): string
+    {
+        $value = trim($value);
+
+        if (preg_match('/(?:ca-)?pub-(\d{10,20})/i', $value, $m)) {
+            return 'ca-pub-'.$m[1];
+        }
+
+        return $value;
+    }
+
     private function tabForField(string $field): string
     {
         return match (true) {
-            in_array($field, ['metaTitle', 'metaDescription', 'gaId', 'gscVerification', 'ogMediaId'], true) => 'seo',
+            in_array($field, ['metaTitle', 'metaDescription', 'gaId', 'gscVerification', 'adsensePublisherId', 'ogMediaId'], true) => 'seo',
             in_array($field, ['facebook', 'instagram', 'xTwitter', 'youtube', 'whatsapp', 'whatsappChannel'], true) => 'sosial',
             default => 'umum',
         };

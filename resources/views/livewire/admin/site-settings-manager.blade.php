@@ -150,6 +150,18 @@
                             <input type="text" wire:model="gscVerification" placeholder="Kode verifikasi meta tag" class="form-input font-mono @error('gscVerification') is-error @enderror">
                             @error('gscVerification') <p class="form-error-text">{{ $message }}</p> @enderror
                         </div>
+                        <div class="md:col-span-2 rounded-lg border border-[#E4E8EF] p-4">
+                            <label class="form-label">Google AdSense — ID Penayang</label>
+                            <input type="text" wire:model="adsensePublisherId" placeholder="ca-pub-1234567890123456" class="form-input font-mono @error('adsensePublisherId') is-error @enderror">
+                            @error('adsensePublisherId') <p class="form-error-text">{{ $message }}</p> @enderror
+                            <p class="text-[12px] text-[#6C7387] mt-1.5">Boleh tempel seluruh tag <code>&lt;meta name="google-adsense-account" …&gt;</code> dari AdSense. Bila diisi, situs otomatis memasang tag verifikasi dan menyediakan <code>/ads.txt</code>.</p>
+                            <label class="mt-3 flex items-start gap-2.5 text-sm text-[#1B2033] cursor-pointer">
+                                <input type="checkbox" wire:model="adsenseAutoAds" class="form-checkbox mt-0.5">
+                                <span>Pasang skrip iklan AdSense di situs publik
+                                    <span class="block text-xs text-[#848CA3]">Aktifkan setelah situs <strong>disetujui</strong> AdSense. Penempatan iklan otomatis diatur dari dasbor AdSense (Iklan otomatis).</span>
+                                </span>
+                            </label>
+                        </div>
                     </div>
                 </div>
 

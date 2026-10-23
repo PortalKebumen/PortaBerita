@@ -28,6 +28,14 @@ Route::get('/robots.txt', function () {
     return response($body, 200, ['Content-Type' => 'text/plain; charset=UTF-8']);
 })->name('robots');
 
+// ads.txt untuk Google AdSense: dibuat dari ID penayang di Pengaturan > SEO (404 bila belum diisi)
+Route::get('/ads.txt', function () {
+    $publisher = \App\Models\SiteSetting::get('adsense_publisher_id');
+    abort_unless($publisher, 404);
+
+    return response('google.com, '.str_replace('ca-pub-', 'pub-', $publisher).", DIRECT, f08c47fec0942fa0\n", 200, ['Content-Type' => 'text/plain; charset=UTF-8']);
+})->name('ads-txt');
+
 // Batas akses per IP: lihat AppServiceProvider::configureRateLimiting()
 Route::controller(PublicController::class)->name('public.')->middleware('throttle:public')->group(function () {
     Route::get('/', 'beranda')->name('beranda');
