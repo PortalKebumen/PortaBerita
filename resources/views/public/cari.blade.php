@@ -22,7 +22,7 @@
 
                 {{-- Judul hasil --}}
                 <header class="border-b-2 border-brand-600 pb-3">
-                    <p class="text-xs font-semibold uppercase tracking-wide text-[#848CA3]">Pencarian</p>
+                    <p class="text-xs font-semibold uppercase tracking-wide text-[#6C7387]">Pencarian</p>
                     <h1 class="mt-1 text-xl font-extrabold text-[#171B28] sm:text-2xl">
                         @if ($q !== '')
                             &ldquo;{{ $q }}&rdquo;
@@ -52,7 +52,7 @@
 
                                 <div class="space-y-5 p-4">
                                     <div>
-                                        <label for="filter-kategori" class="text-xs font-bold uppercase tracking-wide text-[#848CA3]">Kategori</label>
+                                        <label for="filter-kategori" class="text-xs font-bold uppercase tracking-wide text-[#6C7387]">Kategori</label>
                                         <select id="filter-kategori" name="kategori"
                                                 class="mt-2 w-full rounded-lg border border-[#CDD3DF] bg-white px-3 py-2.5 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20">
                                             <option value="">Semua kategori</option>
@@ -72,7 +72,7 @@
                                     </div>
 
                                     <fieldset>
-                                        <legend class="text-xs font-bold uppercase tracking-wide text-[#848CA3]">Waktu terbit</legend>
+                                        <legend class="text-xs font-bold uppercase tracking-wide text-[#6C7387]">Waktu terbit</legend>
                                         <div class="mt-2 flex flex-wrap gap-2">
                                             @foreach (PublicController::SEARCH_TIMES as $value => $label)
                                                 <label class="cursor-pointer">

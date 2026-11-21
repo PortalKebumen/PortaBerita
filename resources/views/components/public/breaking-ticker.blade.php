@@ -2,7 +2,7 @@
     {{-- Teks berjalan: daftar diulang dua kali agar loop mulus, salinan kedua disembunyikan dari pembaca layar --}}
     <div class="breaking-ticker border-b border-[#CDD3DF] bg-white" role="region" aria-label="Breaking news">
         <div class="mx-auto flex max-w-7xl items-stretch px-4 sm:px-6 lg:px-8">
-            <span class="relative z-10 flex shrink-0 items-center gap-2 bg-accent-500 py-2 pl-3 pr-4 text-[11px] font-bold uppercase tracking-wide text-white sm:text-xs">
+            <span class="relative z-10 flex shrink-0 items-center gap-2 bg-accent-700 py-2 pl-3 pr-4 text-[11px] font-bold uppercase tracking-wide text-white sm:text-xs">
                 <span class="relative flex h-2 w-2">
                     <span class="breaking-ticker__ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
                     <span class="relative inline-flex h-2 w-2 rounded-full bg-white"></span>
@@ -22,7 +22,7 @@
                                     <a href="{{ $item->url }}" @if ($isClone) tabindex="-1" @endif
                                        class="font-semibold text-[#171B28] hover:text-brand-600 hover:underline">{{ $item->title }}</a>
                                     @if ($item->published_at)
-                                        <time datetime="{{ $item->published_at }}" class="text-[11.5px] text-[#848CA3]">
+                                        <time datetime="{{ $item->published_at }}" class="text-[11.5px] text-[#6C7387]">
                                             {{ \Illuminate\Support\Carbon::parse($item->published_at)->diffForHumans() }}
                                         </time>
                                     @endif

@@ -2,7 +2,7 @@
     <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
 
         @if ($featured->isEmpty())
-            <div class="rounded-card border border-dashed border-[#CDD3DF] bg-white p-10 text-center text-sm text-[#848CA3]">
+            <div class="rounded-card border border-dashed border-[#CDD3DF] bg-white p-10 text-center text-sm text-[#6C7387]">
                 Belum ada artikel yang terbit.
             </div>
         @else

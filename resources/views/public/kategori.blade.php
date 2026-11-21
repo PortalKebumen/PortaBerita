@@ -17,7 +17,7 @@
     <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
 
         {{-- Breadcrumb --}}
-        <nav class="flex flex-wrap items-center gap-1.5 text-xs text-[#848CA3]" aria-label="Breadcrumb">
+        <nav class="flex flex-wrap items-center gap-1.5 text-xs text-[#6C7387]" aria-label="Breadcrumb">
             <a href="{{ route('public.beranda') }}" class="hover:text-brand-600">Beranda</a>
             @if ($parent)
                 <span>/</span>
@@ -35,7 +35,7 @@
                     <p class="mt-1 text-sm text-[#5B6378]">{{ $description }}</p>
                 </div>
                 @if ($articles->total() > 0)
-                    <span class="text-xs text-[#848CA3]">{{ number_format($articles->total(), 0, ',', '.') }} artikel</span>
+                    <span class="text-xs text-[#6C7387]">{{ number_format($articles->total(), 0, ',', '.') }} artikel</span>
                 @endif
             </div>
 
@@ -63,7 +63,7 @@
             <div class="lg:col-span-2">
                 @if ($items->isEmpty())
                     <div class="rounded-card border border-dashed border-[#CDD3DF] bg-white px-6 py-16 text-center">
-                        <p class="text-sm text-[#848CA3]">Belum ada artikel pada kategori ini.</p>
+                        <p class="text-sm text-[#6C7387]">Belum ada artikel pada kategori ini.</p>
                         <a href="{{ route('public.beranda') }}" class="mt-3 inline-block text-sm font-semibold text-brand-600 hover:underline">Kembali ke Beranda</a>
                     </div>
                 @else

@@ -17,7 +17,7 @@
                     </span>
                     <span class="min-w-0 flex-1">
                         <span class="block text-sm font-semibold text-[#171B28] group-hover:text-brand-600">{{ $social['label'] }}</span>
-                        <span class="block truncate text-[11px] text-[#848CA3]">{{ $social['chat'] ? 'Chat redaksi' : preg_replace('#^https?://(www\.)?#', '', rtrim($social['url'], '/')) }}</span>
+                        <span class="block truncate text-[11px] text-[#6C7387]">{{ $social['chat'] ? 'Chat redaksi' : preg_replace('#^https?://(www\.)?#', '', rtrim($social['url'], '/')) }}</span>
                     </span>
                     <span class="shrink-0 text-[11px] font-semibold text-brand-600">{{ $social['chat'] ? 'Chat' : 'Ikuti' }}</span>
                 </a>

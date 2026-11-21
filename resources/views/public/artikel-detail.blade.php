@@ -44,7 +44,7 @@
 
             <article class="lg:col-span-2" @unless ($isPreview) data-copy-attribution @endunless>
                 {{-- Breadcrumb --}}
-                <nav class="flex flex-wrap items-center gap-1.5 text-xs text-[#848CA3]" aria-label="Breadcrumb">
+                <nav class="flex flex-wrap items-center gap-1.5 text-xs text-[#6C7387]" aria-label="Breadcrumb">
                     <a href="{{ route('public.beranda') }}" class="hover:text-brand-600">Beranda</a>
                     @if ($article->category?->parent)
                         <span>/</span>
@@ -58,7 +58,7 @@
                 </nav>
 
                 @if ($article->is_breaking)
-                    <span class="mt-3 inline-block rounded bg-accent-500 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-white">Breaking News</span>
+                    <span class="mt-3 inline-block rounded bg-accent-700 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-white">Breaking News</span>
                 @endif
                 @if ($article->is_advertorial)
                     <span class="mt-3 inline-block rounded bg-[#E4E8EF] px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-[#3B4152]">Advertorial</span>
@@ -110,7 +110,7 @@
                     [&_ul]:mb-5 [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:mb-5 [&_ol]:list-decimal [&_ol]:pl-6
                     [&_img]:my-5 [&_img]:h-auto [&_img]:max-w-full [&_img]:rounded-lg
                     [&_blockquote]:my-5 [&_blockquote]:border-l-4 [&_blockquote]:border-brand-500 [&_blockquote]:pl-4 [&_blockquote]:italic
-                    [&_figure]:my-5 [&_figcaption]:mt-1 [&_figcaption]:text-sm [&_figcaption]:text-[#848CA3]">
+                    [&_figure]:my-5 [&_figcaption]:mt-1 [&_figcaption]:text-sm [&_figcaption]:text-[#6C7387]">
                     {!! $article->content !!}
                 </div>
 

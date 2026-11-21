@@ -78,7 +78,7 @@ class Article extends Model implements HasMedia
      * dipakai sebagai srcset lewat <x-responsive-image> sehingga HP mengunduh versi kecil.
      * Dibuat langsung saat disimpan (nonQueued) karena hosting tidak menjalankan queue worker.
      */
-    public const IMAGE_SIZES = ['thumb' => 320, 'medium' => 640, 'large' => 1280];
+    public const IMAGE_SIZES = ['thumb' => 320, 'medium' => 640, 'wide' => 960, 'large' => 1280];
 
     public function registerMediaConversions(?\Spatie\MediaLibrary\MediaCollections\Models\Media $media = null): void
     {

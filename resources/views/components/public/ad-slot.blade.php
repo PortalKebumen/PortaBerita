@@ -71,11 +71,13 @@
         </div>
 
         @if ($ads->count() > 1)
-            <div class="mt-2 flex items-center justify-center gap-1.5" data-ad-dots>
+            <div class="mt-1 flex items-center justify-center" data-ad-dots>
                 @foreach ($ads as $i => $ad)
                     <button type="button" data-ad-dot="{{ $i }}" aria-label="Tampilkan iklan {{ $i + 1 }} dari {{ $ads->count() }}"
                             @if ($i === 0) aria-current="true" @endif
-                            class="h-1.5 rounded-full transition-all duration-300 {{ $i === 0 ? 'w-4 bg-brand-600' : 'w-1.5 bg-[#CDD3DF] hover:bg-[#9AA3B8]' }}"></button>
+                            class="group/dot flex h-6 min-w-6 items-center justify-center px-1">
+                        <span class="block h-1.5 rounded-full transition-all duration-300 {{ $i === 0 ? 'w-4 bg-brand-600' : 'w-1.5 bg-[#CDD3DF] group-hover/dot:bg-[#9AA3B8]' }}"></span>
+                    </button>
                 @endforeach
             </div>
         @endif
@@ -114,11 +116,12 @@
                             if (active) slide.removeAttribute('aria-hidden'); else slide.setAttribute('aria-hidden', 'true');
                         });
                         dots.forEach(function (dot, i) {
+                            var bar = dot.firstElementChild;
                             var active = i === current;
-                            dot.classList.toggle('w-4', active);
-                            dot.classList.toggle('bg-brand-600', active);
-                            dot.classList.toggle('w-1.5', !active);
-                            dot.classList.toggle('bg-[#CDD3DF]', !active);
+                            bar.classList.toggle('w-4', active);
+                            bar.classList.toggle('bg-brand-600', active);
+                            bar.classList.toggle('w-1.5', !active);
+                            bar.classList.toggle('bg-[#CDD3DF]', !active);
                             if (active) dot.setAttribute('aria-current', 'true'); else dot.removeAttribute('aria-current');
                         });
                         if (visible) send(slides[current]);
@@ -185,7 +188,7 @@
         </script>
     @endonce
 @elseif ($placeholder)
-    <div {{ $attributes->merge(['class' => "flex $height w-full items-center justify-center rounded-card border border-dashed border-[#CDD3DF] bg-[#F1F3F7] text-xs font-semibold uppercase tracking-wide text-[#848CA3]"]) }}>
+    <div {{ $attributes->merge(['class' => "flex $height w-full items-center justify-center rounded-card border border-dashed border-[#CDD3DF] bg-[#F1F3F7] text-xs font-semibold uppercase tracking-wide text-[#6C7387]"]) }}>
         {{ $label }}
     </div>
 @endif

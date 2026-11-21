@@ -17,7 +17,7 @@
 @endphp
 
 <div {{ $attributes->merge(['class' => 'flex flex-wrap items-center gap-2']) }} data-share data-share-url="{{ $url }}" data-share-title="{{ $title }}">
-    <span class="mr-1 text-xs font-semibold uppercase tracking-wide text-[#848CA3]">Bagikan</span>
+    <span class="mr-1 text-xs font-semibold uppercase tracking-wide text-[#6C7387]">Bagikan</span>
     @foreach ($platforms as $p)
         <a href="{{ $p['href'] }}" target="_blank" rel="noopener noreferrer" aria-label="Bagikan ke {{ $p['label'] }}" title="{{ $p['label'] }}"
            class="flex h-8 w-8 items-center justify-center rounded-full text-white transition hover:-translate-y-0.5 hover:brightness-95"

@@ -16,7 +16,7 @@
 
             @foreach ($elements as $element)
                 @if (is_string($element))
-                    <span class="px-1 text-[#848CA3]">{{ $element }}</span>
+                    <span class="px-1 text-[#6C7387]">{{ $element }}</span>
                 @elseif (is_array($element))
                     @foreach ($element as $page => $url)
                         @if ($page == $paginator->currentPage())

@@ -20,7 +20,7 @@
 
     $siteName = $site['site_name'] ?: 'PortalKebumen.com';
     $tagline = $site['tagline'];
-    $logo = $site['logo_url'] ?: asset('images/logo-header.png'); // versi 600px (32 KB) dari logo-full.png (516 KB)
+    $logo = $site['logo_url'] ?: asset('images/logo-header.webp'); // versi WebP 520px (21 KB) dari logo-full.png (516 KB)
 
     $fullTitle = $title
         ? $title . ' - ' . $siteName
@@ -197,7 +197,7 @@
 
             <div class="hidden flex-1 sm:block">
                 <form action="{{ route('public.cari') }}" method="GET" class="relative mx-auto max-w-md" role="search">
-                    <svg class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#848CA3]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <svg class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#6C7387]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 10a7 7 0 11-14 0 7 7 0 0114 0z"/>
                     </svg>
                     <input id="header-search" type="search" name="q" value="{{ request('q') }}" placeholder="Cari berita, topik, atau tokoh..." aria-label="Cari berita"
@@ -206,15 +206,17 @@
             </div>
 
             <div class="ml-auto flex items-center gap-1 sm:ml-0">
-                <label for="mobile-search-toggle" aria-label="Cari"
+                <label for="mobile-search-toggle"
                        class="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full text-[#3B4152] hover:bg-[#F1F3F7] sm:hidden">
+                    <span class="sr-only">Cari</span>
                     <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 10a7 7 0 11-14 0 7 7 0 0114 0z"/>
                     </svg>
                 </label>
 
-                <label for="mobile-nav-toggle" aria-label="Menu kategori"
+                <label for="mobile-nav-toggle"
                        class="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full text-[#3B4152] hover:bg-[#F1F3F7] lg:hidden">
+                    <span class="sr-only">Menu kategori</span>
                     <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
                     </svg>
@@ -272,7 +274,7 @@
                                         <a href="{{ $item['url'] }}" @if ($item['new_tab']) target="_blank" rel="noopener" @endif
                                            class="block px-4 py-2 text-sm font-semibold hover:bg-[#F1F3F7] hover:text-brand-600 {{ $isActiveUrl($item['url']) ? 'text-brand-600' : 'text-[#3B4152]' }}">{{ $item['label'] }}</a>
                                     @else
-                                        <span class="block px-4 py-2 text-xs font-bold uppercase tracking-wide text-[#848CA3]">{{ $item['label'] }}</span>
+                                        <span class="block px-4 py-2 text-xs font-bold uppercase tracking-wide text-[#6C7387]">{{ $item['label'] }}</span>
                                     @endif
                                     @foreach ($item['children'] as $child)
                                         <a href="{{ $child['url'] ?? '#' }}" @if ($child['new_tab']) target="_blank" rel="noopener" @endif
@@ -344,7 +346,7 @@
                     <details class="group/m" @if ($isActiveUrl($item['url']) || collect($item['children'])->contains(fn ($c) => $isActiveUrl($c['url']))) open @endif>
                         <summary class="flex cursor-pointer list-none items-center justify-between rounded-md px-3 py-2.5 text-sm font-medium text-[#3B4152] hover:bg-[#F1F3F7] [&::-webkit-details-marker]:hidden">
                             {{ $item['label'] }}
-                            <svg class="h-4 w-4 text-[#848CA3] transition group-open/m:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <svg class="h-4 w-4 text-[#6C7387] transition group-open/m:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
                             </svg>
                         </summary>
@@ -388,7 +390,7 @@
         <div class="mx-auto grid max-w-7xl gap-10 px-4 py-12 sm:px-6 lg:grid-cols-12 lg:px-8">
             <div class="lg:col-span-4">
                 <a href="{{ route('public.beranda') }}" class="inline-block">
-                    <img src="{{ asset('images/logo-header.png') }}" alt="{{ $siteName }}" width="600" height="98" loading="lazy" class="h-12 w-auto max-w-[260px] object-contain sm:h-14">
+                    <img src="{{ asset('images/logo-header.webp') }}" alt="{{ $siteName }}" width="520" height="85" loading="lazy" class="h-12 w-auto max-w-[260px] object-contain sm:h-14">
                 </a>
 
                 @if ($site['meta_description'] || $tagline)
@@ -473,7 +475,7 @@
                                         @if ($pop['image'])
                                             <img src="{{ $pop['image'] }}" alt="" loading="lazy" class="h-full w-full object-cover transition duration-300 group-hover:scale-105">
                                         @endif
-                                        <span class="absolute left-0 top-0 flex h-6 w-6 items-center justify-center rounded-br-md bg-accent-500 text-xs font-extrabold text-white">{{ $i + 1 }}</span>
+                                        <span class="absolute left-0 top-0 flex h-6 w-6 items-center justify-center rounded-br-md bg-accent-700 text-xs font-extrabold text-white">{{ $i + 1 }}</span>
                                     </span>
                                     <span class="min-w-0">
                                         @if ($pop['category'])
@@ -499,7 +501,7 @@
                 <div class="flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5">
                     @foreach ($footerBottom as $link)
                         @if ($link['url'])
-                            <a href="{{ $link['url'] }}" @if ($link['new_tab']) target="_blank" rel="noopener" @endif class="hover:text-white">{{ $link['label'] }}</a>
+                            <a href="{{ $link['url'] }}" @if ($link['new_tab']) target="_blank" rel="noopener" @endif class="inline-block py-1 hover:text-white">{{ $link['label'] }}</a>
                         @endif
                     @endforeach
                 </div>

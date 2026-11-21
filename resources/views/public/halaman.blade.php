@@ -13,7 +13,7 @@
     <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
         <div class="grid gap-8 lg:grid-cols-3">
             <article class="min-w-0 lg:col-span-2">
-                <nav class="flex flex-wrap items-center gap-1.5 text-xs text-[#848CA3]" aria-label="Breadcrumb">
+                <nav class="flex flex-wrap items-center gap-1.5 text-xs text-[#6C7387]" aria-label="Breadcrumb">
                     <a href="{{ route('public.beranda') }}" class="hover:text-brand-600">Beranda</a>
                     <span>/</span>
                     <span class="font-medium text-[#3B4152]">{{ $page->title }}</span>
@@ -21,7 +21,7 @@
 
                 <div class="mt-3 rounded-card border border-[#E4E8EF] bg-white p-5 sm:p-8">
                     <h1 class="text-2xl font-extrabold leading-tight text-[#171B28] sm:text-3xl">{{ $page->title }}</h1>
-                    <p class="mt-2 text-xs text-[#848CA3]">Diperbarui {{ $page->updated_at->translatedFormat('d F Y') }}</p>
+                    <p class="mt-2 text-xs text-[#6C7387]">Diperbarui {{ $page->updated_at->translatedFormat('d F Y') }}</p>
                     <span class="mt-4 block h-1 w-12 rounded bg-accent-500"></span>
 
                     <div class="rich-content mt-6 text-[16px] leading-8 text-[#2A3040]

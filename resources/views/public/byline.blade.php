@@ -46,7 +46,7 @@
             </nav>
 
             <div class="mt-5 flex flex-col gap-5 sm:flex-row sm:items-start">
-                <div class="flex h-24 w-24 shrink-0 items-center justify-center rounded-full bg-accent-500 text-3xl font-extrabold text-white ring-4 ring-white/15" aria-hidden="true">
+                <div class="flex h-24 w-24 shrink-0 items-center justify-center rounded-full bg-accent-700 text-3xl font-extrabold text-white ring-4 ring-white/15" aria-hidden="true">
                     {{ $initials }}
                 </div>
                 <div class="min-w-0 flex-1">
@@ -82,13 +82,13 @@
                 <h2 class="mb-4 border-b-2 border-brand-600 pb-2 text-lg font-bold text-[#171B28]">
                     Artikel oleh {{ $penulis->name }}
                     @if ($articles->currentPage() > 1)
-                        <span class="text-sm font-medium text-[#848CA3]">&middot; Halaman {{ $articles->currentPage() }}</span>
+                        <span class="text-sm font-medium text-[#6C7387]">&middot; Halaman {{ $articles->currentPage() }}</span>
                     @endif
                 </h2>
 
                 @if ($articles->isEmpty())
                     <div class="rounded-card border border-dashed border-[#CDD3DF] bg-white px-6 py-16 text-center">
-                        <p class="text-sm text-[#848CA3]">Penulis ini belum memiliki artikel yang dipublikasikan.</p>
+                        <p class="text-sm text-[#6C7387]">Penulis ini belum memiliki artikel yang dipublikasikan.</p>
                     </div>
                 @else
                     <div class="space-y-4">
@@ -113,7 +113,7 @@
                                     <a href="{{ $cat->parent_id && $cat->parent ? route('public.kategori.sub', [$cat->parent->slug, $cat->slug]) : route('public.kategori', $cat->slug) }}"
                                        class="inline-flex items-center gap-1.5 rounded-full border border-[#E4E8EF] px-3 py-1 text-xs font-semibold text-[#3B4152] transition hover:border-brand-600 hover:text-brand-600">
                                         {{ $cat->name }}
-                                        <span class="rounded-full bg-[#F1F3F7] px-1.5 text-[10px] text-[#848CA3]">{{ $cat->articles_count }}</span>
+                                        <span class="rounded-full bg-[#F1F3F7] px-1.5 text-[10px] text-[#6C7387]">{{ $cat->articles_count }}</span>
                                     </a>
                                 </li>
                             @endforeach
