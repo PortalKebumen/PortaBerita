@@ -192,7 +192,7 @@
         {{-- Baris 1: logo + pencarian + tombol mobile --}}
         <div class="mx-auto flex max-w-7xl items-center gap-4 px-4 py-3 sm:px-6 lg:px-8">
             <a href="{{ route('public.beranda') }}" class="shrink-0">
-                <img src="{{ $logo }}" alt="{{ $siteName }}" class="h-9 w-auto max-w-[200px] object-contain sm:h-10 sm:max-w-[240px]">
+                <img src="{{ $logo }}" alt="{{ $siteName }}" @unless ($site['logo_url']) width="600" height="98" @endunless class="h-9 w-auto max-w-[200px] object-contain sm:h-10 sm:max-w-[240px]">
             </a>
 
             <div class="hidden flex-1 sm:block">
@@ -388,7 +388,7 @@
         <div class="mx-auto grid max-w-7xl gap-10 px-4 py-12 sm:px-6 lg:grid-cols-12 lg:px-8">
             <div class="lg:col-span-4">
                 <a href="{{ route('public.beranda') }}" class="inline-block">
-                    <img src="{{ asset('images/logo-header.png') }}" alt="{{ $siteName }}" class="h-12 w-auto max-w-[260px] object-contain sm:h-14">
+                    <img src="{{ asset('images/logo-header.png') }}" alt="{{ $siteName }}" width="600" height="98" loading="lazy" class="h-12 w-auto max-w-[260px] object-contain sm:h-14">
                 </a>
 
                 @if ($site['meta_description'] || $tagline)

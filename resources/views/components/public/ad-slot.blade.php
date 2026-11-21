@@ -27,10 +27,10 @@
     // Ruang maksimal per lokasi (lihat Advertisement::PLACEMENTS). Lebar dibatasi kolom tempat slot berada,
     // tinggi dibatasi di sini. Banner ukuran apa pun tampil utuh: diperkecil bila lebih besar, tidak diperbesar.
     // Kelas ditulis lengkap agar terbaca Tailwind; $fallbackRatio hanya untuk iklan tanpa gambar.
-    [$maxHeight, $fallbackRatio] = match ($placement) {
-        'sidebar' => ['max-h-[600px]', 'aspect-[300/250]'],
-        'header', 'footer' => ['max-h-[250px]', 'aspect-[970/250]'],
-        default => ['max-h-[250px]', 'aspect-[728/90]'],
+    [$maxHeight, $fallbackRatio, $sizes] = match ($placement) {
+        'sidebar' => ['max-h-[600px]', 'aspect-[300/250]', '(min-width: 1024px) 384px, 100vw'],
+        'header', 'footer' => ['max-h-[250px]', 'aspect-[970/250]', '(min-width: 1280px) 1216px, 100vw'],
+        default => ['max-h-[250px]', 'aspect-[728/90]', '(min-width: 900px) 800px, 100vw'],
     };
 @endphp
 
@@ -47,7 +47,15 @@
                     <a href="{{ route('ads.click', $ad) }}" target="_blank" rel="sponsored noopener noreferrer"
                        class="relative block max-w-full overflow-hidden rounded-card {{ $ad->banner_url ? '' : 'w-full' }}">
                         @if ($ad->banner_url)
-                            <img src="{{ $ad->banner_url }}" alt="Iklan: {{ $ad->advertiser_name }}" loading="lazy"
+                            @php
+                                $banner = $ad->bannerImage();
+                                // Banner header pertama terlihat tanpa scroll: dimuat segera agar LCP cepat
+                                $eager = $i === 0 && $placement === 'header' && (int) $start === 0;
+                            @endphp
+                            <img src="{{ $banner['src'] }}" alt="Iklan: {{ $ad->advertiser_name }}"
+                                 @if ($banner['srcset']) srcset="{{ $banner['srcset'] }}" sizes="{{ $sizes }}" @endif
+                                 @if ($banner['width']) width="{{ $banner['width'] }}" height="{{ $banner['height'] }}" @endif
+                                 @if ($eager) fetchpriority="high" @else loading="lazy" @endif decoding="async"
                                  class="block h-auto w-auto max-w-full {{ $maxHeight }} transition-transform duration-300 group-hover:scale-[1.01]">
                         @else
                             <div class="flex {{ $fallbackRatio }} w-full flex-col items-center justify-center bg-gradient-to-r from-brand-700 to-brand-500 p-4 text-center text-white">

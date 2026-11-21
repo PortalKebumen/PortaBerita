@@ -73,6 +73,38 @@ class Advertisement extends Model implements HasMedia
     }
 
     /**
+     * Data <img> banner untuk situs publik: src, srcset (versi HP "web-sm" bila sudah dibuat),
+     * serta width/height asli agar browser menyiapkan ruang sejak awal (tanpa layout shift).
+     *
+     * @return array{src: string, srcset: ?string, width: ?int, height: ?int}|null
+     */
+    public function bannerImage(): ?array
+    {
+        $src = $this->banner_url;
+        if (! $src) {
+            return null;
+        }
+
+        $media = $this->getFirstMedia('banner');
+        $srcset = null;
+        [$width, $height] = [null, null];
+
+        if ($media) {
+            $main = $media->hasGeneratedConversion('web') ? 'web' : '';
+            [$width, $height] = \Illuminate\Support\Facades\Cache::rememberForever(
+                "ad-banner-size.{$media->id}.{$media->updated_at?->timestamp}",
+                fn () => @getimagesize($media->getPath($main)) ?: [null, null],
+            );
+
+            if ($media->hasGeneratedConversion('web-sm') && $width > 828) {
+                $srcset = $media->getUrl('web-sm').' 828w, '.$src.' '.$width.'w';
+            }
+        }
+
+        return ['src' => $src, 'srcset' => $srcset, 'width' => $width, 'height' => $height];
+    }
+
+    /**
      * Get banner URL: media library first, then check local banner file in storage, then fallback.
      */
     public function getBannerUrlAttribute(): ?string
@@ -186,6 +218,14 @@ class Advertisement extends Model implements HasMedia
             ->fit(\Spatie\Image\Enums\Fit::Max, 2440, 2440)
             ->format('webp')
             ->quality(85)
+            ->performOnCollections('banner')
+            ->nonQueued();
+
+        // Versi ringan untuk layar HP (lebar 828px = 414px x 2), dipakai lewat srcset
+        $this->addMediaConversion('web-sm')
+            ->fit(\Spatie\Image\Enums\Fit::Max, 828, 828)
+            ->format('webp')
+            ->quality(80)
             ->performOnCollections('banner')
             ->nonQueued();
     }
