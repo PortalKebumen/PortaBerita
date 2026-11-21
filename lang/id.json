@@ -7,5 +7,13 @@
     "Server Error": "Terjadi kesalahan pada server",
     "Service Unavailable": "Layanan sementara tidak tersedia",
     "Payment Required": "Pembayaran diperlukan",
-    "Go Home": "Kembali ke beranda"
+    "Go Home": "Kembali ke beranda",
+    "Showing": "Menampilkan",
+    "to": "sampai",
+    "of": "dari",
+    "results": "data",
+    "Pagination Navigation": "Navigasi halaman",
+    "Go to page :page": "Ke halaman :page",
+    "Previous": "Sebelumnya",
+    "Next": "Berikutnya"
 }
