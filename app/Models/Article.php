@@ -114,5 +114,13 @@ class Article extends Model implements HasMedia
                 $article->slug = Str::slug($article->title);
             }
         });
+
+        // Slug artikel yang pernah terbit diganti: alamat lama dialihkan (301) ke alamat baru
+        static::updated(function (Article $article) {
+            $oldSlug = $article->getOriginal('slug');
+            if ($article->wasChanged('slug') && $oldSlug && $article->published_at) {
+                Redirect::forArticleSlugChange($oldSlug, $article->slug);
+            }
+        });
     }
 }

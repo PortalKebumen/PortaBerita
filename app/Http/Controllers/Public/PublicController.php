@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Article;
 use App\Models\Category;
 use App\Models\Page;
+use App\Models\Redirect;
 use App\Models\User;
 use App\Services\Analytics\GeoLocator;
 use App\Support\BotDetector;
@@ -201,12 +202,20 @@ class PublicController extends Controller
         ]);
     }
 
-    public function artikel(string $slug): View
+    public function artikel(string $slug): View|RedirectResponse
     {
         $article = Article::query()
             ->where('slug', $slug)
             ->with(['author', 'category.parent', 'media', 'seoMeta'])
-            ->firstOrFail();
+            ->first();
+
+        // Slug lama (judul/alamat pernah diganti): alihkan ke alamat baru, selain itu 404
+        if (! $article) {
+            $redirect = Redirect::resolve(request()->path());
+            abort_unless($redirect, 404);
+
+            return redirect($redirect->new_url, $redirect->status_code);
+        }
 
         $isPublished = $article->status->value === 'published'
             && (! $article->published_at || $article->published_at->lte(now()));

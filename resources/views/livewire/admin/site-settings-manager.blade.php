@@ -12,6 +12,7 @@
         <button type="button" class="tab-btn whitespace-nowrap" :class="{ 'is-active': tab === 'umum' }" @click="tab = 'umum'">Umum</button>
         <button type="button" class="tab-btn whitespace-nowrap" :class="{ 'is-active': tab === 'seo' }" @click="tab = 'seo'">SEO</button>
         <button type="button" class="tab-btn whitespace-nowrap" :class="{ 'is-active': tab === 'sosial' }" @click="tab = 'sosial'">Media Sosial</button>
+        <button type="button" class="tab-btn whitespace-nowrap" :class="{ 'is-active': tab === 'pengalihan' }" @click="tab = 'pengalihan'">Pengalihan</button>
         @can('settings.update')
             <button type="button" class="tab-btn whitespace-nowrap" :class="{ 'is-active': tab === 'email' }" @click="tab = 'email'; $wire.testMailTo || $wire.set('testMailTo', @js(auth()->user()->email))">Email</button>
             <button type="button" class="tab-btn whitespace-nowrap text-danger" :class="{ 'is-active': tab === 'bahaya' }" @click="tab = 'bahaya'">Zona Bahaya</button>
@@ -234,7 +235,7 @@
 
         {{-- Bar simpan (sticky) --}}
         @can('settings.update')
-            <div x-show="tab !== 'bahaya'"
+            <div x-show="! ['bahaya', 'pengalihan'].includes(tab)"
                 class="flex flex-wrap justify-end gap-2.5 mt-6 sticky bottom-0 bg-[#F7F8FA]/95 backdrop-blur-sm py-3 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 border-t border-[#E4E8EF] z-10">
                 <button type="button" class="btn-secondary" wire:click="cancelChanges">Batalkan Perubahan</button>
                 <button type="submit" class="btn-primary" wire:loading.attr="disabled" wire:target="save">
@@ -244,6 +245,11 @@
             </div>
         @endcan
     </form>
+
+    {{-- ===== TAB PENGALIHAN (di luar form, komponen sendiri) ===== --}}
+    <div x-show="tab === 'pengalihan'" style="display: none;">
+        <livewire:admin.redirect-manager />
+    </div>
 
     {{-- ===== TAB EMAIL (di luar form) ===== --}}
     @can('settings.update')

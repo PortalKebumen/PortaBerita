@@ -157,9 +157,15 @@ Route::middleware(['auth', \App\Http\Middleware\EnsurePasswordIsChanged::class, 
     });
 /*
 |--------------------------------------------------------------------------
-| 404 untuk alamat yang tidak terdaftar
+| Pengalihan alamat lama, lalu 404 untuk alamat yang tidak terdaftar
 |--------------------------------------------------------------------------
 | Lewat route (bukan 404 bawaan router) agar middleware web/sesi berjalan, sehingga halaman 404
 | mengenali pengguna yang sudah masuk: tampil di layout admin untuk /admin/*, layout publik selainnya.
 */
-Route::fallback(fn () => abort(404));
+Route::fallback(function () {
+    // Alamat lama yang didaftarkan di Pengaturan > Pengalihan dialihkan dulu sebelum dianggap 404
+    $redirect = \App\Models\Redirect::resolve(request()->path());
+    abort_unless($redirect, 404);
+
+    return redirect($redirect->new_url, $redirect->status_code);
+});
