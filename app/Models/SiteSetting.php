@@ -28,6 +28,8 @@ class SiteSetting
             'gsc_verification' => null,
             'adsense_publisher_id' => null, // format ca-pub-XXXXXXXXXXXXXXXX
             'adsense_auto_ads' => null,     // '1' = pasang skrip AdSense (iklan otomatis)
+            'adsense_slot_inline' => null,  // ID unit iklan AdSense untuk slot Inline Artikel (angka)
+            'adsense_slot_sidebar' => null, // ID unit iklan AdSense untuk slot Sidebar (angka)
             'facebook' => null,
             'instagram' => null,
             'x_twitter' => null,

@@ -34,6 +34,11 @@
                         [&_table]:my-5 [&_table]:w-full [&_td]:border [&_td]:border-[#E4E8EF] [&_td]:px-3 [&_td]:py-2 [&_th]:border [&_th]:border-[#E4E8EF] [&_th]:bg-[#F1F3F7] [&_th]:px-3 [&_th]:py-2 [&_th]:text-left">
                         {!! $page->content !!}
                     </div>
+
+                    {{-- Halaman Pasang Iklan dilengkapi kit media otomatis (data pembaca, lokasi & ukuran iklan, kontak) --}}
+                    @if ($page->slug === 'pasang-iklan')
+                        <x-public.media-kit class="mt-8 border-t border-[#E4E8EF] pt-6" />
+                    @endif
                 </div>
             </article>
 

@@ -4,7 +4,7 @@
 @endif
 @if (!empty($site['adsense_publisher_id']))
     <meta name="google-adsense-account" content="{{ $site['adsense_publisher_id'] }}">
-    @if (!empty($site['adsense_auto_ads']))
+    @if (!empty($site['adsense_auto_ads']) || !empty($site['adsense_slot_inline']) || !empty($site['adsense_slot_sidebar']))
         <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client={{ $site['adsense_publisher_id'] }}" crossorigin="anonymous"></script>
     @endif
 @endif

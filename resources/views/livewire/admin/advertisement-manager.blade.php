@@ -195,6 +195,15 @@
                         {{-- Kolom Aksi --}}
                         <td class="px-5 py-3.5 text-right whitespace-nowrap max-xl:pl-1 max-xl:pr-3">
                             <div class="flex items-center justify-end gap-1.5 max-xl:flex-col">
+                                @can('ads.view-reports')
+                                    <a href="{{ $ad->reportUrl() }}" target="_blank" rel="noopener"
+                                        title="Laporan untuk pengiklan (salin tautannya dan kirim ke pengiklan)"
+                                        class="btn-icon text-[#6C7387] hover:text-brand-600 hover:bg-brand-50">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                            <path d="M4 20V10M10 20V4M16 20v-7M22 20H2"></path>
+                                        </svg>
+                                    </a>
+                                @endcan
                                 @can('ads.update')
                                     <button type="button"
                                         wire:click="openEditModal({{ $ad->id }})"

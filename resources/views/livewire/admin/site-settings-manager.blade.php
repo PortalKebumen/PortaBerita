@@ -162,6 +162,19 @@
                                     <span class="block text-xs text-[#848CA3]">Aktifkan setelah situs <strong>disetujui</strong> AdSense. Penempatan iklan otomatis diatur dari dasbor AdSense (Iklan otomatis).</span>
                                 </span>
                             </label>
+                            <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <div>
+                                    <label class="form-label">Unit iklan — Inline Artikel</label>
+                                    <input type="text" wire:model="adsenseSlotInline" placeholder="1234567890" class="form-input font-mono @error('adsenseSlotInline') is-error @enderror">
+                                    @error('adsenseSlotInline') <p class="form-error-text">{{ $message }}</p> @enderror
+                                </div>
+                                <div>
+                                    <label class="form-label">Unit iklan — Sidebar</label>
+                                    <input type="text" wire:model="adsenseSlotSidebar" placeholder="1234567890" class="form-input font-mono @error('adsenseSlotSidebar') is-error @enderror">
+                                    @error('adsenseSlotSidebar') <p class="form-error-text">{{ $message }}</p> @enderror
+                                </div>
+                            </div>
+                            <p class="text-[12px] text-[#6C7387] mt-1.5">Opsional. Buat unit iklan di dasbor AdSense (Iklan &gt; Menurut unit iklan), lalu tempel angka <code>data-ad-slot</code> atau seluruh kodenya. Iklan AdSense hanya tampil di lokasi yang sedang <strong>tidak</strong> diisi iklan langsung, jadi pengiklan langsung tetap diutamakan.</p>
                         </div>
                     </div>
                 </div>

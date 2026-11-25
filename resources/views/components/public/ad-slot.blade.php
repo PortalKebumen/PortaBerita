@@ -32,6 +32,19 @@
         'header', 'footer' => ['max-h-[250px]', 'aspect-[970/250]', '(min-width: 1280px) 1216px, 100vw'],
         default => ['max-h-[250px]', 'aspect-[728/90]', '(min-width: 900px) 800px, 100vw'],
     };
+
+    // Unit AdSense manual hanya untuk lokasi Inline Artikel & Sidebar, dan hanya bila tidak ada iklan langsung
+    $adsenseSlot = null;
+    $adsenseClient = null;
+    if ($ads->isEmpty() && (int) $start === 0) {
+        $siteValues = \App\Models\SiteSetting::values();
+        $adsenseClient = $siteValues['adsense_publisher_id'] ?? null;
+        $adsenseSlot = $adsenseClient ? match ($placement) {
+            'inline_artikel' => $siteValues['adsense_slot_inline'] ?? null,
+            'sidebar' => $siteValues['adsense_slot_sidebar'] ?? null,
+            default => null,
+        } : null;
+    }
 @endphp
 
 @if ($ads->isNotEmpty())
@@ -187,6 +200,13 @@
             });
         </script>
     @endonce
+@elseif ($adsenseSlot)
+    {{-- Lokasi kosong dari iklan langsung: diisi unit iklan AdSense (Pengaturan > SEO) --}}
+    <div {{ $attributes->merge(['class' => 'mx-auto w-full']) }} role="complementary" aria-label="Iklan">
+        <ins class="adsbygoogle" style="display:block" data-ad-client="{{ $adsenseClient }}" data-ad-slot="{{ $adsenseSlot }}"
+             data-ad-format="auto" data-full-width-responsive="true"></ins>
+        <script>(window.adsbygoogle = window.adsbygoogle || []).push({});</script>
+    </div>
 @elseif ($placeholder)
     <div {{ $attributes->merge(['class' => "flex $height w-full items-center justify-center rounded-card border border-dashed border-[#CDD3DF] bg-[#F1F3F7] text-xs font-semibold uppercase tracking-wide text-[#6C7387]"]) }}>
         {{ $label }}

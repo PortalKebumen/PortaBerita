@@ -37,6 +37,8 @@ class SiteSettingsManager extends Component
     public string $gscVerification = '';
     public string $adsensePublisherId = '';
     public bool $adsenseAutoAds = false;
+    public string $adsenseSlotInline = '';
+    public string $adsenseSlotSidebar = '';
 
     // Media sosial
     public string $facebook = '';
@@ -81,6 +83,8 @@ class SiteSettingsManager extends Component
             'gscVerification' => ['nullable', 'string', 'max:255', 'regex:/^[A-Za-z0-9_\-]+$/'],
             'adsensePublisherId' => ['nullable', 'regex:/^ca-pub-\d{10,20}$/'],
             'adsenseAutoAds' => ['boolean'],
+            'adsenseSlotInline' => ['nullable', 'regex:/^\d{6,20}$/'],
+            'adsenseSlotSidebar' => ['nullable', 'regex:/^\d{6,20}$/'],
 
             'facebook' => 'nullable|url|max:255',
             'instagram' => 'nullable|url|max:255',
@@ -104,6 +108,8 @@ class SiteSettingsManager extends Component
             'metaDescription.max' => 'Meta description maksimal 160 karakter.',
             'gaId.regex' => 'Format Google Analytics ID tidak valid (contoh: G-ABC123XYZ).',
             'gscVerification.regex' => 'Isi hanya kode verifikasinya (tanpa tag <meta>).',
+            'adsenseSlotInline.regex' => 'ID unit iklan berupa angka saja (data-ad-slot dari kode AdSense).',
+            'adsenseSlotSidebar.regex' => 'ID unit iklan berupa angka saja (data-ad-slot dari kode AdSense).',
             'adsensePublisherId.regex' => 'Format ID penayang AdSense tidak valid (contoh: ca-pub-1234567890123456).',
             'facebook.url' => 'Tautan Facebook harus berupa URL lengkap (https://...).',
             'instagram.url' => 'Tautan Instagram harus berupa URL lengkap (https://...).',
@@ -154,6 +160,9 @@ class SiteSettingsManager extends Component
         // Boleh paste seluruh tag <meta ... content="KODE">: ambil kodenya saja.
         $this->gscVerification = $this->normalizeVerification($this->gscVerification);
         $this->adsensePublisherId = $this->normalizeAdsenseId($this->adsensePublisherId);
+        // Boleh paste seluruh kode unit iklan: ambil angka data-ad-slot saja
+        $this->adsenseSlotInline = $this->normalizeAdSlot($this->adsenseSlotInline);
+        $this->adsenseSlotSidebar = $this->normalizeAdSlot($this->adsenseSlotSidebar);
         if ($this->adsensePublisherId === '') {
             $this->adsenseAutoAds = false;
         }
@@ -188,6 +197,8 @@ class SiteSettingsManager extends Component
                 'gsc_verification' => $this->gscVerification ?: null,
                 'adsense_publisher_id' => $this->adsensePublisherId ?: null,
                 'adsense_auto_ads' => $this->adsenseAutoAds ? '1' : null,
+                'adsense_slot_inline' => $this->adsenseSlotInline ?: null,
+                'adsense_slot_sidebar' => $this->adsenseSlotSidebar ?: null,
                 'facebook' => $this->facebook ?: null,
                 'instagram' => $this->instagram ?: null,
                 'x_twitter' => $this->xTwitter ?: null,
@@ -416,6 +427,8 @@ class SiteSettingsManager extends Component
         $this->gscVerification = (string) $s['gsc_verification'];
         $this->adsensePublisherId = (string) $s['adsense_publisher_id'];
         $this->adsenseAutoAds = (bool) $s['adsense_auto_ads'];
+        $this->adsenseSlotInline = (string) $s['adsense_slot_inline'];
+        $this->adsenseSlotSidebar = (string) $s['adsense_slot_sidebar'];
 
         $this->facebook = (string) $s['facebook'];
         $this->instagram = (string) $s['instagram'];
@@ -489,10 +502,18 @@ class SiteSettingsManager extends Component
         return $value;
     }
 
+    /** Terima angka data-ad-slot atau seluruh kode <ins class="adsbygoogle" ... data-ad-slot="123">. */
+    private function normalizeAdSlot(string $value): string
+    {
+        $value = trim($value);
+
+        return preg_match('/data-ad-slot\s*=\s*["\']?(\d+)/i', $value, $m) ? $m[1] : $value;
+    }
+
     private function tabForField(string $field): string
     {
         return match (true) {
-            in_array($field, ['metaTitle', 'metaDescription', 'gaId', 'gscVerification', 'adsensePublisherId', 'ogMediaId'], true) => 'seo',
+            in_array($field, ['metaTitle', 'metaDescription', 'gaId', 'gscVerification', 'adsensePublisherId', 'adsenseSlotInline', 'adsenseSlotSidebar', 'ogMediaId'], true) => 'seo',
             in_array($field, ['facebook', 'instagram', 'xTwitter', 'youtube', 'whatsapp', 'whatsappChannel', 'googleNewsUrl'], true) => 'sosial',
             default => 'umum',
         };

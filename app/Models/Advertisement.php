@@ -55,6 +55,17 @@ class Advertisement extends Model implements HasMedia
     ];
 
     /**
+     * Tautan laporan untuk pengiklan (tanpa login), berlaku sampai 90 hari setelah iklan berakhir
+     * (minimal 30 hari dari sekarang untuk iklan yang sudah lama berakhir).
+     */
+    public function reportUrl(): string
+    {
+        $expires = max($this->end_date->copy()->addDays(90)->endOfDay(), now()->addDays(30));
+
+        return \Illuminate\Support\Facades\URL::temporarySignedRoute('ads.report', $expires, ['advertisement' => $this->id]);
+    }
+
+    /**
      * Relationship to ad metrics.
      */
     public function metrics(): HasMany

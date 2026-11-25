@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\GlobalSearchController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
+use App\Http\Controllers\Public\AdReportController;
 use App\Http\Controllers\Public\AdTrackingController;
 use App\Http\Controllers\Public\FeedController;
 use App\Http\Controllers\Public\NewsSitemapController;
@@ -72,6 +73,11 @@ Route::get('/ads/{advertisement}/click', [AdTrackingController::class, 'trackCli
 Route::post('/ads/{advertisement}/impression', [AdTrackingController::class, 'recordImpression'])
     ->middleware('throttle:ads-impression')
     ->name('ads.impression');
+
+// Laporan untuk pengiklan: tautan bertanda tangan dari Admin > Iklan (Advertisement::reportUrl), tanpa login
+Route::get('/laporan-iklan/{advertisement}', AdReportController::class)
+    ->middleware(['signed', 'throttle:public'])
+    ->name('ads.report');
 
 /*
 |--------------------------------------------------------------------------
