@@ -95,7 +95,7 @@
     <link rel="canonical" href="{{ $canonicalUrl }}">
 
     <link rel="icon" href="{{ asset('favicon.ico') }}" sizes="any">
-    <link rel="icon" href="{{ asset('icon.png') }}" type="image/png">
+    <link rel="icon" href="{{ asset('icon.png') }}" type="image/png" sizes="192x192">
     <link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}">
 
     {{-- Open Graph & Twitter --}}
@@ -155,6 +155,8 @@
                 [
                     '@type' => 'WebSite',
                     'name' => $siteName,
+                    // Nama situs di hasil Google (dan judul publikasi di Google News) + variasi yang dicari orang
+                    'alternateName' => ['PortalKebumen', 'Portal Kebumen'],
                     'url' => url('/'),
                     'inLanguage' => $htmlLang === 'en' ? 'en-US' : 'id-ID',
                     'publisher' => ['@id' => url('/') . '#organization'],
