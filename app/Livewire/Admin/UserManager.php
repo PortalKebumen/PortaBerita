@@ -319,6 +319,19 @@ class UserManager extends Component
         $this->dispatch('flash-message', type: 'success', text: 'Pengguna berhasil dihapus, artikel miliknya dipindahkan ke akun Redaksi.');
     }
 
+    /** Reset verifikasi dua langkah (HP hilang/ganti). Hanya Super Admin; pengguna mengaktifkan lagi saat login. */
+    public function resetTwoFactor(int $userId): void
+    {
+        abort_unless(Auth::user()->hasRole('Super Admin'), 403);
+
+        $user = User::findOrFail($userId);
+        app(\App\Services\TwoFactor::class)->reset($user);
+
+        activity('pengguna')->causedBy(Auth::user())->performedOn($user)->log('Mereset verifikasi dua langkah');
+        unset($this->users);
+        $this->dispatch('flash-message', type: 'success', text: "Verifikasi dua langkah {$user->name} direset. Ia akan diminta mengaktifkannya lagi saat masuk.");
+    }
+
     public function confirmSendCredentials(int $userId): void
     {
         $this->authorize('users.update');

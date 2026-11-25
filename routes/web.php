@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\GlobalSearchController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
+use App\Http\Controllers\Auth\TwoFactorChallengeController;
 use App\Http\Controllers\Public\AdReportController;
 use App\Http\Controllers\Public\AdTrackingController;
 use App\Http\Controllers\Public\FeedController;
@@ -90,6 +91,10 @@ Route::middleware('guest')->prefix(config('auth.login_path'))->group(function ()
     Route::get('/', [AuthenticatedSessionController::class, 'create'])->name('login');
     Route::post('/', [AuthenticatedSessionController::class, 'store'])->middleware(['throttle:login', 'antispam']);
 
+    // Langkah kedua login: kode dari aplikasi authenticator
+    Route::get('verifikasi', [TwoFactorChallengeController::class, 'create'])->name('two-factor.challenge');
+    Route::post('verifikasi', [TwoFactorChallengeController::class, 'store'])->middleware('throttle:login');
+
     Route::get('lupa-password', [PasswordResetLinkController::class, 'create'])->name('password.request');
     Route::post('lupa-password', [PasswordResetLinkController::class, 'store'])->middleware(['throttle:password-reset', 'antispam'])->name('password.email');
 
@@ -106,17 +111,19 @@ Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])
 | Admin
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth', \App\Http\Middleware\EnsurePasswordIsChanged::class])
+Route::middleware(['auth', \App\Http\Middleware\EnsurePasswordIsChanged::class, \App\Http\Middleware\EnsureTwoFactorEnabled::class])
     ->prefix('admin')
     ->name('admin.')
     ->group(function () {
         // Profil Saya: semua pengguna yang login, termasuk yang wajib mengganti kata sandi sementara
         Route::view('profil', 'admin.profil')->name('profil');
+        // Keamanan Akun: verifikasi dua langkah (wajib untuk semua akun)
+        Route::view('keamanan', 'admin.keamanan')->name('keamanan');
         // Panduan pengguna: isi menyesuaikan role masing-masing
         Route::view('panduan', 'admin.panduan')->name('panduan');
     });
 
-Route::middleware(['auth', \App\Http\Middleware\EnsurePasswordIsChanged::class, 'can:dashboard.view'])
+Route::middleware(['auth', \App\Http\Middleware\EnsurePasswordIsChanged::class, \App\Http\Middleware\EnsureTwoFactorEnabled::class, 'can:dashboard.view'])
     ->prefix('admin')
     ->name('admin.')
     ->group(function () {

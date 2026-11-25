@@ -81,6 +81,13 @@
                                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="14" rx="2"></rect><path d="m3 7 9 6 9-6"></path></svg>
                                         </button>
                                     @endif
+                                    @if (auth()->user()->hasRole('Super Admin') && $user->two_factor_confirmed_at)
+                                        <button type="button" wire:click="resetTwoFactor({{ $user->id }})"
+                                                wire:confirm="Reset verifikasi dua langkah {{ $user->name }}? Pakai bila HP-nya hilang atau ganti HP."
+                                                class="btn-icon" title="Reset verifikasi dua langkah (HP hilang/ganti)">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 7.5-2"></path></svg>
+                                        </button>
+                                    @endif
                                     <button type="button" wire:click="openEdit({{ $user->id }})" class="btn-icon" title="Edit">
                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg>
                                     </button>

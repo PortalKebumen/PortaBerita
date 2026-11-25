@@ -61,7 +61,12 @@ class LoginEndToEndTest extends TestCase
             'password' => 'password',
         ]);
 
-        $response->assertRedirectToRoute('admin.dashboard');
+        // Kata sandi benar belum cukup: lanjut ke kode verifikasi dua langkah
+        $response->assertRedirectToRoute('two-factor.challenge');
+        $this->assertGuest();
+
+        $this->post(route('two-factor.challenge'), ['code' => $this->twoFactorCode()])
+            ->assertRedirectToRoute('admin.dashboard');
         $this->assertAuthenticatedAs($user);
     }
 
@@ -133,8 +138,7 @@ class LoginEndToEndTest extends TestCase
         $this->get(route('login'))->assertSee('data-auth-countdown="40"', false);
         $this->travel(41)->seconds();
         $this->post(route('login'), ['email' => 'countdown@example.test', 'password' => 'password'])
-            ->assertRedirectToRoute('admin.dashboard');
-        $this->assertAuthenticated();
+            ->assertRedirectToRoute('two-factor.challenge');
     }
 
     public function test_reset_link_countdown_uses_remaining_time_and_allows_resending_after_wait(): void

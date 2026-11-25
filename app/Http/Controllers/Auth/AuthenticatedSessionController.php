@@ -20,6 +20,20 @@ class AuthenticatedSessionController extends Controller
     {
         $request->authenticate();
 
+        // Akun dengan verifikasi dua langkah: keluar dulu, lanjut ke halaman kode (TwoFactorChallengeController)
+        $user = Auth::user();
+        if ($user->hasTwoFactorEnabled()) {
+            Auth::guard('web')->logout();
+            $request->session()->regenerate();
+            $request->session()->put(TwoFactorChallengeController::SESSION_KEY, [
+                'user_id' => $user->id,
+                'remember' => $request->boolean('remember'),
+                'expires_at' => now()->addMinutes(5)->timestamp,
+            ]);
+
+            return redirect()->route('two-factor.challenge');
+        }
+
         $request->session()->regenerate();
 
         return redirect()->intended(route('admin.dashboard', absolute: false));

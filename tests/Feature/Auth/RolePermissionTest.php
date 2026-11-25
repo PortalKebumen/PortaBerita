@@ -36,7 +36,9 @@ class RolePermissionTest extends TestCase
             $user = User::where('email', $email)->firstOrFail();
             $this->assertAuthenticatedAs($user);
             $this->assertSame([$role], $user->getRoleNames()->all());
-            $this->get(route('admin.dashboard'))->assertOk();
+            // Akun demo belum mengaktifkan verifikasi dua langkah: diarahkan ke Keamanan Akun dulu
+            $this->get(route('admin.dashboard'))->assertRedirectToRoute('admin.keamanan');
+            $this->get(route('admin.keamanan'))->assertOk();
             $this->post(route('logout'));
         }
     }
