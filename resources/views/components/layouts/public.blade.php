@@ -97,6 +97,7 @@
     <link rel="icon" href="{{ asset('favicon.ico') }}" sizes="any">
     <link rel="icon" href="{{ asset('icon.png') }}" type="image/png" sizes="192x192">
     <link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}">
+    <link rel="alternate" type="application/rss+xml" title="{{ $siteName }}" href="{{ route('feed') }}">
 
     {{-- Open Graph & Twitter --}}
     <meta property="og:site_name" content="{{ $siteName }}">

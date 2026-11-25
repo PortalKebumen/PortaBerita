@@ -45,6 +45,7 @@ class SiteSettingsManager extends Component
     public string $youtube = '';
     public string $whatsapp = '';
     public string $whatsappChannel = '';
+    public string $googleNewsUrl = '';
 
     // Gambar (lewat MediaPicker)
     public ?int $logoMediaId = null;
@@ -87,6 +88,7 @@ class SiteSettingsManager extends Component
             'youtube' => 'nullable|url|max:255',
             'whatsapp' => ['nullable', 'regex:/^\+?[0-9\s\-]{8,20}$/'],
             'whatsappChannel' => ['nullable', 'url', 'max:255', 'regex:#^https://(www\.)?whatsapp\.com/channel/#'],
+            'googleNewsUrl' => ['nullable', 'url', 'max:500', 'regex:#^https://news\.google\.com/#'],
 
             'logoMediaId' => 'nullable|integer|exists:media,id',
             'ogMediaId' => 'nullable|integer|exists:media,id',
@@ -110,6 +112,8 @@ class SiteSettingsManager extends Component
             'whatsapp.regex' => 'Nomor WhatsApp tidak valid (contoh: +62 812-3456-7890).',
             'whatsappChannel.url' => 'Tautan WhatsApp Channel harus berupa URL lengkap (https://...).',
             'whatsappChannel.regex' => 'Tautan WhatsApp Channel harus diawali https://whatsapp.com/channel/.',
+            'googleNewsUrl.url' => 'Tautan Google News harus berupa URL lengkap (https://...).',
+            'googleNewsUrl.regex' => 'Tautan Google News harus diawali https://news.google.com/.',
         ];
     }
 
@@ -190,6 +194,7 @@ class SiteSettingsManager extends Component
                 'youtube' => $this->youtube ?: null,
                 'whatsapp' => $this->whatsapp ?: null,
                 'whatsapp_channel' => $this->whatsappChannel ?: null,
+                'google_news_url' => $this->googleNewsUrl ?: null,
             ]);
         } catch (\Throwable $e) {
             report($e);
@@ -418,6 +423,7 @@ class SiteSettingsManager extends Component
         $this->youtube = (string) $s['youtube'];
         $this->whatsapp = (string) $s['whatsapp'];
         $this->whatsappChannel = (string) $s['whatsapp_channel'];
+        $this->googleNewsUrl = (string) $s['google_news_url'];
 
         $this->logoMediaId = null;
         $this->logoPreviewUrl = $s['logo_url'];
@@ -487,7 +493,7 @@ class SiteSettingsManager extends Component
     {
         return match (true) {
             in_array($field, ['metaTitle', 'metaDescription', 'gaId', 'gscVerification', 'adsensePublisherId', 'ogMediaId'], true) => 'seo',
-            in_array($field, ['facebook', 'instagram', 'xTwitter', 'youtube', 'whatsapp', 'whatsappChannel'], true) => 'sosial',
+            in_array($field, ['facebook', 'instagram', 'xTwitter', 'youtube', 'whatsapp', 'whatsappChannel', 'googleNewsUrl'], true) => 'sosial',
             default => 'umum',
         };
     }

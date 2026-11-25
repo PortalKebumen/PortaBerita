@@ -8,6 +8,7 @@ use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Public\AdTrackingController;
+use App\Http\Controllers\Public\FeedController;
 use App\Http\Controllers\Public\NewsSitemapController;
 use App\Http\Controllers\Public\PublicController;
 use App\Models\Article;
@@ -33,6 +34,9 @@ Route::get('/robots.txt', function () {
 // Sitemap Google News: artikel 2 hari terakhir, selalu terbaru (cache 5 menit); tercantum di sitemap.xml
 Route::get('/sitemap-news.xml', NewsSitemapController::class)->name('sitemap.news');
 
+// Feed RSS 2.0: 30 artikel terbaru (agregator berita, pembaca RSS, otomasi unggah ke media sosial/Telegram)
+Route::get('/feed', FeedController::class)->name('feed');
+
 // ads.txt untuk Google AdSense: dibuat dari ID penayang di Pengaturan > SEO (404 bila belum diisi)
 Route::get('/ads.txt', function () {
     $publisher = \App\Models\SiteSetting::get('adsense_publisher_id');
@@ -50,6 +54,8 @@ Route::controller(PublicController::class)->name('public.')->middleware('throttl
     Route::get('/penulis/{user}', fn (User $user) => redirect($user->profileUrl(), 301))->whereNumber('user');
     Route::get('/artikel/{slug}', 'artikel')->name('artikel');
     Route::get('/cari', 'cari')->middleware('throttle:search')->name('cari');
+    Route::get('/tag/{slug}', 'tag')->name('tag');
+    Route::get('/indeks', 'indeks')->name('indeks');
     Route::get('/halaman/{slug}', 'halaman')->name('halaman');
 });
 

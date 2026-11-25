@@ -228,6 +228,12 @@
                             <p class="mt-1 text-[11.5px] text-[#848CA3]">Jika diisi, tombol WhatsApp di widget Ikuti Kami & footer mengarah ke channel ini.</p>
                             @error('whatsappChannel') <p class="form-error-text">{{ $message }}</p> @enderror
                         </div>
+                        <div>
+                            <label class="form-label">Google News</label>
+                            <input type="url" wire:model="googleNewsUrl" placeholder="https://news.google.com/publications/..." class="form-input @error('googleNewsUrl') is-error @enderror">
+                            <p class="mt-1 text-[11.5px] text-[#848CA3]">Alamat halaman PortalKebumen di Google News (cari "PortalKebumen" di news.google.com, buka halaman sumbernya, salin alamatnya). Jika diisi, tombol "Ikuti di Google News" tampil di akhir artikel.</p>
+                            @error('googleNewsUrl') <p class="form-error-text">{{ $message }}</p> @enderror
+                        </div>
                     </div>
                 </div>
             </div>

@@ -6,6 +6,7 @@ use App\Models\Article;
 use App\Models\ArticleStatus;
 use App\Models\Category;
 use App\Models\Page;
+use App\Models\Tag;
 use App\Services\SystemNotifier;
 use Carbon\Carbon;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
@@ -47,6 +48,19 @@ class GenerateSitemap implements ShouldQueue, ShouldBeUnique
                         ->setPriority(0.6)
                 );
             });
+
+        // Indeks berita harian
+        $pages->add(Url::create(route('public.indeks'))->setChangeFrequency(Url::CHANGE_FREQUENCY_HOURLY)->setPriority(0.7));
+
+        // Tag dengan minimal 2 artikel terbit (tag berisi 1 artikel = halaman tipis, tidak diindeks)
+        Tag::query()->whereNotNull('slug')
+            ->withCount(['articles' => fn ($q) => $q->where('status', ArticleStatus::Published->value)->where('published_at', '<=', Carbon::now())])
+            ->orderBy('id')
+            ->get(['id', 'slug'])
+            ->filter(fn (Tag $tag) => $tag->articles_count >= 2)
+            ->each(fn (Tag $tag) => $pages->add(
+                Url::create(route('public.tag', $tag->slug))->setChangeFrequency(Url::CHANGE_FREQUENCY_DAILY)->setPriority(0.5)
+            ));
 
         // Halaman statis yang terbit (Tentang Kami, Redaksi, Pedoman Media Siber, Kebijakan Privasi, dst.)
         Page::published()->whereNotNull('slug')->orderBy('id')->get(['id', 'slug', 'updated_at'])

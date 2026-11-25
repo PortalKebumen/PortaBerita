@@ -34,6 +34,7 @@ class SiteSetting
             'youtube' => null,
             'whatsapp' => null,
             'whatsapp_channel' => null,
+            'google_news_url' => null, // halaman publikasi di news.google.com (tombol "Ikuti di Google News")
         ];
     }
 

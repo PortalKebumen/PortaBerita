@@ -112,14 +112,29 @@
                     [&_img]:my-5 [&_img]:h-auto [&_img]:max-w-full [&_img]:rounded-lg
                     [&_blockquote]:my-5 [&_blockquote]:border-l-4 [&_blockquote]:border-brand-500 [&_blockquote]:pl-4 [&_blockquote]:italic
                     [&_figure]:my-5 [&_figcaption]:mt-1 [&_figcaption]:text-sm [&_figcaption]:text-[#6C7387]">
-                    {!! $article->content !!}
+                    {!! \App\Support\ArticleContent::insertAfterParagraph(
+                        $article->content,
+                        view('components.public.read-also', ['articles' => $readAlso])->render()
+                    ) !!}
                 </div>
+
+                {{-- Tag artikel: menuju halaman kumpulan berita bertopik sama --}}
+                @if ($article->tags->isNotEmpty())
+                    <div class="mt-6 flex flex-wrap items-center gap-2">
+                        <span class="text-xs font-semibold uppercase tracking-wide text-[#6C7387]">Tag</span>
+                        @foreach ($article->tags as $tag)
+                            <a href="{{ route('public.tag', $tag->slug) }}"
+                               class="rounded-full border border-[#CDD3DF] bg-white px-3 py-1 text-[13px] font-medium text-[#3B4152] hover:border-brand-600 hover:text-brand-600">#{{ $tag->name }}</a>
+                        @endforeach
+                    </div>
+                @endif
 
                 <x-public.ad-slot placement="inline_artikel" height="h-28" :placeholder="false" class="my-6" />
 
                 {{-- Bagikan (bawah) --}}
                 @unless ($isPreview)
                     <x-public.share-buttons :url="$url" :title="$article->title" class="mt-6 border-t border-[#E4E8EF] pt-5" />
+                    <x-public.follow-cta class="mt-6" />
                 @endunless
 
                 {{-- Terkait --}}

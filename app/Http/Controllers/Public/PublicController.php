@@ -7,6 +7,7 @@ use App\Models\Article;
 use App\Models\Category;
 use App\Models\Page;
 use App\Models\Redirect;
+use App\Models\Tag;
 use App\Models\User;
 use App\Services\Analytics\GeoLocator;
 use App\Support\BotDetector;
@@ -206,7 +207,7 @@ class PublicController extends Controller
     {
         $article = Article::query()
             ->where('slug', $slug)
-            ->with(['author', 'category.parent', 'media', 'seoMeta'])
+            ->with(['author', 'category.parent', 'media', 'seoMeta', 'tags'])
             ->first();
 
         // Slug lama (judul/alamat pernah diganti): alihkan ke alamat baru, selain itu 404
@@ -257,25 +258,75 @@ class PublicController extends Controller
             }
         }
 
-        $relatedArticles = self::published()
+        // 2 artikel terkait pertama disisipkan di tengah isi ("Baca juga"), sisanya di bawah artikel
+        $related = self::published()
             ->where('category_id', $article->category_id)
             ->where('id', '!=', $article->id)
-            ->take(4)
+            ->take(6)
             ->get();
+        $readAlso = $related->take(2);
+        $relatedArticles = $related->slice(2)->values();
+        // Kategori sepi: "Baca juga" dilengkapi berita terbaru dari kategori lain
+        if ($readAlso->count() < 2) {
+            $readAlso = $readAlso->concat(self::published()
+                ->whereNotIn('id', $related->pluck('id')->push($article->id))
+                ->take(2 - $readAlso->count())
+                ->get());
+        }
 
         $popularArticles = self::popular(5, [$article->id]);
 
         $latestArticles = self::published()
-            ->whereNotIn('id', $relatedArticles->pluck('id')->push($article->id))
+            ->whereNotIn('id', $related->pluck('id')->merge($readAlso->pluck('id'))->push($article->id))
             ->take(5)
             ->get();
 
         return view('public.artikel-detail', [
             'article' => $article,
             'relatedArticles' => $relatedArticles,
+            'readAlso' => $readAlso,
             'popularArticles' => $popularArticles,
             'latestArticles' => $latestArticles,
             'isPreview' => $isPreview,
+        ]);
+    }
+
+    /** Kumpulan artikel per tag (/tag/{slug}): halaman induk topik, mis. semua berita Prameks. */
+    public function tag(string $slug): View
+    {
+        $tag = Tag::where('slug', $slug)->firstOrFail();
+
+        $articles = self::published()
+            ->whereHas('tags', fn ($q) => $q->where('tags.id', $tag->id))
+            ->paginate(12)
+            ->withQueryString();
+
+        return view('public.tag', [
+            'tag' => $tag,
+            'articles' => $articles,
+            'popularArticles' => self::popular(5),
+        ]);
+    }
+
+    /** Indeks berita per tanggal (/indeks?tanggal=YYYY-MM-DD); tanpa tanggal = hari ini. */
+    public function indeks(): View
+    {
+        $today = Carbon::today();
+        $date = rescue(fn () => Carbon::createFromFormat('Y-m-d', (string) request('tanggal'))->startOfDay(), $today, false);
+        if ($date->gt($today)) {
+            $date = $today;
+        }
+
+        $articles = self::published()
+            ->whereBetween('published_at', [$date->copy()->startOfDay(), $date->copy()->endOfDay()])
+            ->limit(200)
+            ->get();
+
+        return view('public.indeks', [
+            'date' => $date,
+            'isToday' => $date->equalTo($today),
+            'articles' => $articles,
+            'popularArticles' => self::popular(5),
         ]);
     }
 
