@@ -92,7 +92,8 @@ class MenuItem extends Model
     {
         return match ($this->type) {
             'page' => $this->page?->isPublished() ?? false,
-            'category' => $this->category !== null,
+            // Kategori tanpa artikel terbit disembunyikan sampai ada isinya
+            'category' => $this->category?->hasPublishedArticles() ?? false,
             'url' => filled($this->url),
             default => true,
         };
@@ -125,7 +126,7 @@ class MenuItem extends Model
                 $children = $item->children->filter->isVisible()->map(fn (MenuItem $child) => static::toNode($child, []))->values()->all();
 
                 if (! $children && $location === 'navbar' && $item->type === 'category' && $item->category) {
-                    $children = $item->category->children->sortBy('name')->map(fn (Category $c) => [
+                    $children = $item->category->children->filter->hasPublishedArticles()->sortBy('name')->map(fn (Category $c) => [
                         'label' => $c->name,
                         'url' => route('public.kategori.sub', [$item->category->slug, $c->slug]),
                         'new_tab' => false,

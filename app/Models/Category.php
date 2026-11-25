@@ -6,6 +6,7 @@ use App\Traits\LogsModelActivity;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
 class Category extends Model
@@ -49,5 +50,32 @@ class Category extends Model
     public function articles(): HasMany
     {
         return $this->hasMany(Article::class);
+    }
+
+    /**
+     * ID kategori yang punya artikel terbit, termasuk kategori induk yang artikelnya ada di sub-kategori.
+     * Kategori kosong disembunyikan dari menu & sitemap (halaman tipis menurunkan penilaian kualitas situs).
+     *
+     * @return array<int, true>
+     */
+    public static function withPublishedArticleIds(): array
+    {
+        return Cache::remember('categories.with_published_articles.v1', 300, function () {
+            $ids = Article::query()
+                ->where('status', ArticleStatus::Published->value)
+                ->where(fn ($q) => $q->whereNull('published_at')->orWhere('published_at', '<=', now()))
+                ->whereNotNull('category_id')
+                ->distinct()
+                ->pluck('category_id');
+
+            $parents = static::whereIn('id', $ids)->whereNotNull('parent_id')->pluck('parent_id');
+
+            return $ids->merge($parents)->unique()->mapWithKeys(fn ($id) => [(int) $id => true])->all();
+        });
+    }
+
+    public function hasPublishedArticles(): bool
+    {
+        return isset(static::withPublishedArticleIds()[$this->id]);
     }
 }

@@ -9,23 +9,32 @@ use MaxMind\Db\Reader;
 use Throwable;
 
 /**
- * Unduh / perbarui database lokasi IP (DB-IP City Lite) untuk statistik lokasi pembaca.
+ * Unduh / perbarui database DB-IP: City Lite (lokasi pembaca) dan ASN Lite (penyaring jaringan pusat data).
  * DB-IP merilis file baru tiap awal bulan; bila file bulan ini belum ada, dipakai bulan sebelumnya.
  */
 class UpdateGeoIpDatabase extends Command
 {
     protected $signature = 'geoip:update {--force : Unduh ulang walaupun file masih baru}';
 
-    protected $description = 'Unduh atau perbarui database lokasi IP (DB-IP City Lite) untuk Laporan Analitik';
+    protected $description = 'Unduh atau perbarui database DB-IP (City Lite untuk lokasi pembaca, ASN Lite untuk penyaring pusat data)';
 
     public function handle(): int
     {
-        $path = config('analytics.geoip.path');
+        // City Lite untuk lokasi pembaca, ASN Lite untuk mengenali jaringan pusat data (trafik otomatis)
+        $ok = $this->updateDatabase(config('analytics.geoip.path'), config('analytics.geoip.download_url'));
+        $ok = $this->updateDatabase(config('analytics.geoip.asn_path'), config('analytics.geoip.asn_download_url')) && $ok;
+
+        return $ok ? self::SUCCESS : self::FAILURE;
+    }
+
+    private function updateDatabase(string $path, string $downloadUrl): bool
+    {
+        $name = basename($path);
 
         if (! $this->option('force') && is_file($path) && filemtime($path) > now()->subDays(25)->getTimestamp()) {
-            $this->info('Database lokasi masih baru (' . date('d M Y', filemtime($path)) . '), tidak perlu diunduh. Pakai --force untuk mengunduh ulang.');
+            $this->info("{$name} masih baru (" . date('d M Y', filemtime($path)) . '), tidak perlu diunduh. Pakai --force untuk mengunduh ulang.');
 
-            return self::SUCCESS;
+            return true;
         }
 
         File::ensureDirectoryExists(dirname($path));
@@ -33,7 +42,7 @@ class UpdateGeoIpDatabase extends Command
         $tmp = $path . '.download';
 
         try {
-            $url = $this->download($gz);
+            $url = $this->download($gz, $downloadUrl);
             $this->info("Mengekstrak {$url} ...");
             $this->gunzip($gz, $tmp);
 
@@ -45,21 +54,21 @@ class UpdateGeoIpDatabase extends Command
             File::move($tmp, $path);
             $this->info("Selesai: {$type}, " . round(filesize($path) / 1048576) . ' MB di ' . $path);
 
-            return self::SUCCESS;
+            return true;
         } catch (Throwable $e) {
             report($e);
-            $this->error('Gagal memperbarui database lokasi: ' . $e->getMessage());
+            $this->error("Gagal memperbarui {$name}: " . $e->getMessage());
 
-            return self::FAILURE;
+            return false;
         } finally {
             File::delete([$gz, $tmp]);
         }
     }
 
-    private function download(string $target): string
+    private function download(string $target, string $downloadUrl): string
     {
         foreach ([now(), now()->subMonthNoOverflow()] as $month) {
-            $url = str_replace('{month}', $month->format('Y-m'), config('analytics.geoip.download_url'));
+            $url = str_replace('{month}', $month->format('Y-m'), $downloadUrl);
             $this->info("Mengunduh {$url} ...");
 
             // Tulis lewat handle file milik sendiri agar ukuran file bisa diperiksa dengan pasti setelahnya

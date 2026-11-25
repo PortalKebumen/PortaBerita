@@ -11,6 +11,9 @@ return [
         'path' => storage_path('app/geoip/dbip-city-lite.mmdb'),
         // {month} diganti format YYYY-MM
         'download_url' => 'https://download.db-ip.com/free/dbip-city-lite-{month}.mmdb.gz',
+        // DB-IP ASN Lite: mengenali jaringan pusat data/cloud agar trafik otomatis tidak ikut dihitung
+        'asn_path' => storage_path('app/geoip/dbip-asn-lite.mmdb'),
+        'asn_download_url' => 'https://download.db-ip.com/free/dbip-asn-lite-{month}.mmdb.gz',
         'attribution' => 'IP Geolocation by DB-IP',
         'attribution_url' => 'https://db-ip.com',
     ],

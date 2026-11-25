@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use App\Services\Analytics\HostingNetwork;
 use Illuminate\Http\Request;
 
 /**
@@ -31,5 +32,14 @@ final class BotDetector
         }
 
         return false;
+    }
+
+    /**
+     * Bot menurut User-Agent ATAU berasal dari jaringan pusat data/cloud. Dipakai untuk penghitungan
+     * tayangan dan iklan, karena banyak perayap menyamar sebagai browser biasa dari server cloud.
+     */
+    public static function isAutomated(Request $request): bool
+    {
+        return self::isBot($request) || app(HostingNetwork::class)->contains($request->ip());
     }
 }

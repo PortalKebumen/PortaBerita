@@ -5,6 +5,7 @@ namespace App\Jobs;
 use App\Models\Article;
 use App\Models\ArticleStatus;
 use App\Models\Category;
+use App\Models\Page;
 use App\Services\SystemNotifier;
 use Carbon\Carbon;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
@@ -28,19 +29,33 @@ class GenerateSitemap implements ShouldQueue, ShouldBeUnique
     {
         $files = [];
 
-        // 1) Beranda + kategori
+        // 1) Beranda + kategori + halaman statis
         $pages = Sitemap::create()->add(
             Url::create(url('/'))
                 ->setChangeFrequency(Url::CHANGE_FREQUENCY_HOURLY)
                 ->setPriority(1.0)
         );
 
+        // Hanya kategori yang punya artikel terbit; kategori kosong = halaman tipis
+        $filled = Category::withPublishedArticleIds();
         Category::query()->whereNotNull('slug')->orderBy('id')->get(['id', 'slug'])
+            ->filter(fn (Category $category) => isset($filled[$category->id]))
             ->each(function ($category) use ($pages) {
                 $pages->add(
                     Url::create(url('/kategori/' . $category->slug))
                         ->setChangeFrequency(Url::CHANGE_FREQUENCY_DAILY)
                         ->setPriority(0.6)
+                );
+            });
+
+        // Halaman statis yang terbit (Tentang Kami, Redaksi, Pedoman Media Siber, Kebijakan Privasi, dst.)
+        Page::published()->whereNotNull('slug')->orderBy('id')->get(['id', 'slug', 'updated_at'])
+            ->each(function (Page $item) use ($pages) {
+                $pages->add(
+                    Url::create(route('public.halaman', $item->slug))
+                        ->setLastModificationDate($item->updated_at)
+                        ->setChangeFrequency(Url::CHANGE_FREQUENCY_MONTHLY)
+                        ->setPriority(0.4)
                 );
             });
 

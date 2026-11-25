@@ -13,7 +13,8 @@
         . ($parent ? ' (' . $parent->name . ')' : '') . ' di Kebumen dan sekitarnya.';
 @endphp
 
-<x-layouts.public :title="$pageTitle" :description="$description" :canonical="$articles->onFirstPage() ? url()->current() : $articles->url($articles->currentPage())">
+{{-- Kategori yang belum berisi artikel tidak diindeks (halaman tipis) --}}
+<x-layouts.public :title="$pageTitle" :description="$description" :noindex="$articles->total() === 0" :canonical="$articles->onFirstPage() ? url()->current() : $articles->url($articles->currentPage())">
     <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
 
         {{-- Breadcrumb --}}

@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Cache;
 
 /**
  * Pencatatan impresi & klik iklan. Agar laporan ke pengiklan jujur dan tidak bisa digelembungkan:
- * bot tidak dihitung, klik dihitung sekali per pengunjung per iklan per hari, dan impresi dibatasi
+ * bot dan jaringan pusat data tidak dihitung, klik dihitung sekali per pengunjung per iklan per hari, dan impresi dibatasi
  * IMPRESSION_DAILY_CAP per pengunjung per iklan per hari. Pengunjung (pseudonim) = hash IP + tanggal.
  */
 class AdTrackingController extends Controller
@@ -25,7 +25,7 @@ class AdTrackingController extends Controller
      */
     public function recordImpression(Request $request, Advertisement $advertisement): JsonResponse
     {
-        if ($advertisement->effective_status === 'active' && ! BotDetector::isBot($request)) {
+        if ($advertisement->effective_status === 'active' && ! BotDetector::isAutomated($request)) {
             $visitor = $this->visitorHash($request);
 
             if ($this->countToday("ad-imp:{$advertisement->id}:{$visitor}") <= self::IMPRESSION_DAILY_CAP) {
@@ -46,7 +46,7 @@ class AdTrackingController extends Controller
      */
     public function trackClick(Request $request, Advertisement $advertisement): RedirectResponse
     {
-        if ($advertisement->effective_status === 'active' && ! BotDetector::isBot($request)) {
+        if ($advertisement->effective_status === 'active' && ! BotDetector::isAutomated($request)) {
             $visitor = $this->visitorHash($request);
 
             if ($this->countToday("ad-click:{$advertisement->id}:{$visitor}") === 1) {

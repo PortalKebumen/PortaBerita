@@ -27,16 +27,19 @@ class PublicController extends Controller
 
     public static function kategoriNav(): array
     {
-        return Cache::remember('public.kategori_nav.v1', 300, function () {
+        return Cache::remember('public.kategori_nav.v2', 300, function () {
+            // Hanya kategori yang sudah punya artikel terbit
             return Category::whereNull('parent_id')
                 ->with(['children' => fn ($q) => $q->orderBy('name')])
                 ->orderBy('id')
                 ->get()
+                ->filter->hasPublishedArticles()
+                ->values()
                 ->map(fn ($cat) => [
                     'id' => $cat->id,
                     'label' => $cat->name,
                     'slug' => $cat->slug,
-                    'children' => $cat->children->map(fn ($c) => [
+                    'children' => $cat->children->filter->hasPublishedArticles()->values()->map(fn ($c) => [
                         'id' => $c->id,
                         'label' => $c->name,
                         'slug' => $c->slug,
@@ -215,10 +218,11 @@ class PublicController extends Controller
             $isPreview = true;
         }
 
-        // Hitung tayangan: sekali per sesi, abaikan bot dan pratinjau
-        if (! $isPreview && ! BotDetector::isBot(request())) {
-            $key = 'viewed_article_' . $article->id;
-            if (! session()->has($key)) {
+        // Hitung tayangan: sekali per pengunjung (hash IP + tanggal) per hari, abaikan bot, jaringan pusat
+        // data, dan pratinjau. Tidak memakai sesi karena perayap tanpa cookie membuat sesi baru tiap kunjungan.
+        if (! $isPreview && ! BotDetector::isAutomated(request())) {
+            $visitor = hash('sha256', request()->ip() . today()->toDateString());
+            if (Cache::add("article-view:{$article->id}:{$visitor}", true, now()->endOfDay())) {
                 // Query builder biasa agar updated_at dan activity log tidak tersentuh
                 DB::table('articles')->where('id', $article->id)->increment('views_count');
                 // Rekap harian untuk Laporan Analitik (tren & views per kategori/penulis per periode)
@@ -241,7 +245,6 @@ class PublicController extends Controller
                     ['date', 'country_code', 'region', 'city'],
                     ['views' => DB::raw('views + 1')]
                 );
-                session()->put($key, true);
             }
         }
 
