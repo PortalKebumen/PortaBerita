@@ -8,6 +8,7 @@ use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Public\AdTrackingController;
+use App\Http\Controllers\Public\NewsSitemapController;
 use App\Http\Controllers\Public\PublicController;
 use App\Models\Article;
 use App\Models\User;
@@ -28,6 +29,9 @@ Route::get('/robots.txt', function () {
 
     return response($body, 200, ['Content-Type' => 'text/plain; charset=UTF-8']);
 })->name('robots');
+
+// Sitemap Google News: artikel 2 hari terakhir, selalu terbaru (cache 5 menit); tercantum di sitemap.xml
+Route::get('/sitemap-news.xml', NewsSitemapController::class)->name('sitemap.news');
 
 // ads.txt untuk Google AdSense: dibuat dari ID penayang di Pengaturan > SEO (404 bila belum diisi)
 Route::get('/ads.txt', function () {

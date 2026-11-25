@@ -30,6 +30,7 @@
     @push('head')
         @unless ($isPreview)
             <x-seo.news-article-schema :article="$article" />
+            <x-seo.breadcrumb-schema :items="\App\Services\Seo\BreadcrumbSchema::forArticle($article)" />
         @endunless
     @endpush
 

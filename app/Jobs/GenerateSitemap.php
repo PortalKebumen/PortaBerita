@@ -100,6 +100,7 @@ class GenerateSitemap implements ShouldQueue, ShouldBeUnique
         foreach ($files as $file) {
             $index->add(url('/' . $file));
         }
+        $index->add(route('sitemap.news')); // dibuat langsung per permintaan, lihat NewsSitemapController
         $index->writeToFile(public_path('sitemap.xml'));
 
         Log::info('GenerateSitemap selesai: ' . count($files) . ' file sitemap.');
