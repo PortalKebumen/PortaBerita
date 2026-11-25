@@ -173,6 +173,7 @@ class ArticleCrudTest extends TestCase
             ->call('confirmBulkDelete')
             ->assertSet('showBulkDeleteModal', false);
 
-        $this->assertSoftDeleted('articles', ['id' => $article->id]);
+        // Artikel tidak memakai soft delete: dihapus permanen
+        $this->assertModelMissing($article);
     }
 }

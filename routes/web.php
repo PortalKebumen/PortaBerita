@@ -19,10 +19,11 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 | Urutan penting: /kategori/{parent}/{sub} harus di atas /kategori/{slug}.
 */
-// robots.txt dinamis: production mengizinkan crawling + alamat sitemap, testing/staging (SEO_INDEXING=false) melarang semua
+// robots.txt dinamis: production mengizinkan crawling (kecuali tautan pencatat klik iklan /ads/) + alamat sitemap,
+// testing/staging (SEO_INDEXING=false) melarang semua
 Route::get('/robots.txt', function () {
     $body = config('system.indexing')
-        ? "User-agent: *\nDisallow:\n\nSitemap: ".url('sitemap.xml')."\n"
+        ? "User-agent: *\nDisallow: /ads/\n\nSitemap: ".url('sitemap.xml')."\n"
         : "User-agent: *\nDisallow: /\n";
 
     return response($body, 200, ['Content-Type' => 'text/plain; charset=UTF-8']);
@@ -52,8 +53,8 @@ Route::controller(PublicController::class)->name('public.')->middleware('throttl
 |--------------------------------------------------------------------------
 | Tracking iklan (publik)
 |--------------------------------------------------------------------------
-| TODO: dua set route ini fungsinya tumpang tindih (lihat catatan di chat).
-| Setelah diputuskan, hapus salah satunya.
+| Klik: tautan banner lewat sini lalu dialihkan ke situs pengiklan. Impresi: dikirim JavaScript saat
+| banner benar-benar terlihat di layar. Aturan penghitungan ada di AdTrackingController.
 */
 Route::get('/ads/{advertisement}/click', [AdTrackingController::class, 'trackClick'])
     ->middleware('throttle:ads-click')

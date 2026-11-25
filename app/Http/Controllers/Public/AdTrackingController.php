@@ -13,7 +13,8 @@ use Illuminate\Support\Facades\Cache;
 
 /**
  * Pencatatan impresi & klik iklan. Agar laporan ke pengiklan jujur dan tidak bisa digelembungkan:
- * bot dan jaringan pusat data tidak dihitung, klik dihitung sekali per pengunjung per iklan per hari, dan impresi dibatasi
+ * bot dan jaringan pusat data tidak dihitung, klik dihitung sekali per pengunjung per iklan per hari dan hanya bila
+ * pengunjung itu sudah tercatat melihat iklannya (impresi) pada hari yang sama, dan impresi dibatasi
  * IMPRESSION_DAILY_CAP per pengunjung per iklan per hari. Pengunjung (pseudonim) = hash IP + tanggal.
  */
 class AdTrackingController extends Controller
@@ -27,6 +28,8 @@ class AdTrackingController extends Controller
     {
         if ($advertisement->effective_status === 'active' && ! BotDetector::isAutomated($request)) {
             $visitor = $this->visitorHash($request);
+            // Penanda "sudah melihat iklan ini hari ini": syarat klik dihitung
+            Cache::put("ad-seen:{$advertisement->id}:{$visitor}", true, now()->endOfDay());
 
             if ($this->countToday("ad-imp:{$advertisement->id}:{$visitor}") <= self::IMPRESSION_DAILY_CAP) {
                 AdMetric::create([
@@ -49,7 +52,9 @@ class AdTrackingController extends Controller
         if ($advertisement->effective_status === 'active' && ! BotDetector::isAutomated($request)) {
             $visitor = $this->visitorHash($request);
 
-            if ($this->countToday("ad-click:{$advertisement->id}:{$visitor}") === 1) {
+            // Klik tanpa impresi (perayap yang langsung membuka tautan klik) tidak dihitung
+            if (Cache::has("ad-seen:{$advertisement->id}:{$visitor}")
+                && $this->countToday("ad-click:{$advertisement->id}:{$visitor}") === 1) {
                 AdMetric::create([
                     'advertisement_id' => $advertisement->id,
                     'type' => 'click',

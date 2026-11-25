@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Auth;
 
+use App\Http\Middleware\ProtectAgainstSpam;
 use App\Models\User;
 use Database\Seeders\AdminUserSeeder;
 use Database\Seeders\DatabaseSeeder;
@@ -20,6 +21,7 @@ class RolePermissionTest extends TestCase
 
     public function test_demo_accounts_can_login_with_their_individual_roles(): void
     {
+        $this->withoutMiddleware(ProtectAgainstSpam::class);
         $this->seed(RoleTestUserSeeder::class);
         $this->seed(RoleTestUserSeeder::class);
         $this->assertDatabaseCount('users', 3);
@@ -129,7 +131,8 @@ class RolePermissionTest extends TestCase
 
     public function test_guests_and_users_without_permissions_cannot_access_admin(): void
     {
-        $this->get(route('admin.dashboard'))->assertRedirectToRoute('login');
+        // Tamu tidak diarahkan ke form login (alamat login dirahasiakan), cukup 404
+        $this->get(route('admin.dashboard'))->assertNotFound();
         $user = User::factory()->create();
 
         $this->actingAs($user)->get(route('admin.dashboard'))->assertForbidden();

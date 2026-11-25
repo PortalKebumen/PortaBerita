@@ -61,7 +61,7 @@ class ArticleListBulkActionTest extends TestCase
         Livewire::actingAs($editor)
             ->test(ArticleList::class)
             ->call('bulkApprove')
-            ->assertSee('Pilih minimal satu artikel');
+            ->assertDispatched('flash-message', type: 'error', text: 'Pilih minimal satu artikel terlebih dahulu.');
     }
 
     public function test_bulk_approve_skips_articles_the_user_cannot_approve(): void
@@ -77,7 +77,8 @@ class ArticleListBulkActionTest extends TestCase
             ->test(ArticleList::class)
             ->set('selectedIds', [$article->id])
             ->call('bulkApprove')
-            ->assertSee('Tidak ada artikel yang dapat diproses');
+            ->assertDispatched('flash-message', fn ($name, $params) => $params['type'] === 'error'
+                && str_starts_with($params['text'], 'Tidak ada artikel yang dapat diproses'));
 
         $this->assertSame('submitted', $article->fresh()->status->value);
     }
@@ -169,8 +170,9 @@ class ArticleListBulkActionTest extends TestCase
             ->assertSeeHtml('wire:model.live="selectedIds"')
             ->assertSeeHtml('wire:click="toggleSelectAll"')
             ->set('selectedIds', [$article->id])
-            ->assertSeeHtml('wire:click="bulkApprove"')
-            ->assertSeeHtml('wire:click="bulkPublish"')
-            ->assertSeeHtml('wire:click="bulkArchive"');
+            // Aksi massal lewat modal konfirmasi lebih dulu
+            ->assertSeeHtml('wire:click="openBulkConfirm(\'approve\')"')
+            ->assertSeeHtml('wire:click="openBulkConfirm(\'publish\')"')
+            ->assertSeeHtml('wire:click="openBulkConfirm(\'archive\')"');
     }
 }

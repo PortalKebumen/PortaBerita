@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Auth;
 
+use App\Http\Middleware\ProtectAgainstSpam;
 use App\Mail\ResetPasswordMail;
 use App\Models\User;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
@@ -13,6 +14,30 @@ use Tests\TestCase;
 class LoginEndToEndTest extends TestCase
 {
     use LazilyRefreshDatabase;
+
+    private const RESET_STATUS = 'Jika email tersebut terdaftar, tautan untuk mengatur ulang password telah dikirim. Periksa kotak masuk atau folder spam.';
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        // Honeypot & jebakan waktu diuji tersendiri (test_form_filled_by_bot_is_rejected_by_antispam)
+        $this->withoutMiddleware(ProtectAgainstSpam::class);
+    }
+
+    public function test_form_filled_by_bot_is_rejected_by_antispam(): void
+    {
+        $this->app->forgetInstance(ProtectAgainstSpam::class); // aktifkan lagi anti-spam yang dimatikan di setUp
+        User::factory()->create(['email' => 'admin@portalkebumen.test', 'password' => 'password']);
+
+        $this->post(route('login'), [
+            'email' => 'admin@portalkebumen.test',
+            'password' => 'password',
+            ProtectAgainstSpam::HONEYPOT_FIELD => 'https://spam.example',
+            ProtectAgainstSpam::TIME_FIELD => encrypt(now()->subMinute()->getTimestamp()),
+        ])->assertSessionHasErrors('email');
+
+        $this->assertGuest();
+    }
 
     public function test_login_page_renders_with_forgot_password_link(): void
     {
@@ -122,26 +147,29 @@ class LoginEndToEndTest extends TestCase
             ->assertSessionHas('password_retry_at', now()->timestamp + 60);
         $this->get(route('password.request'))->assertSee('data-auth-countdown="60"', false);
         $this->travel(20)->seconds();
+        // Permintaan yang ditahan menjawab sama persis (tanpa pesan galat) agar email terdaftar tidak bisa ditebak
         $this->post(route('password.email'), $data)
-            ->assertSessionHasErrors(['email' => trans(Password::RESET_THROTTLED)])
+            ->assertSessionHasNoErrors()
+            ->assertSessionHas('status', self::RESET_STATUS)
             ->assertSessionHas('password_retry_at', now()->timestamp + 40);
         $this->get(route('password.request'))->assertSee('data-auth-countdown="40"', false);
         Mail::assertSentCount(1);
         $this->travel(41)->seconds();
         $this->post(route('password.email'), $data)
-            ->assertSessionHas('status', trans(Password::RESET_LINK_SENT));
+            ->assertSessionHas('status', self::RESET_STATUS);
         Mail::assertSentCount(2);
     }
 
-    public function test_unknown_reset_email_shows_red_warning_without_countdown(): void
+    public function test_unknown_reset_email_gets_same_answer_as_registered_email(): void
     {
+        $this->freezeTime();
         Mail::fake();
+
+        // Jawaban & jeda kirim ulang sama dengan email terdaftar (mencegah penebakan akun)
         $this->from(route('password.request'))->post(route('password.email'), ['email' => 'missing@example.test'])
-            ->assertSessionHasErrors(['email' => trans(Password::INVALID_USER)]);
-        $this->view('auth.forgot-password', ['errors' => session('errors')])
-            ->assertSee(trans(Password::INVALID_USER))
-            ->assertSee('style="color: #dc2626;" role="alert"', false)
-            ->assertDontSee('data-auth-countdown=');
+            ->assertSessionHasNoErrors()
+            ->assertSessionHas('status', self::RESET_STATUS)
+            ->assertSessionHas('password_retry_at', now()->timestamp + 60);
         Mail::assertNothingSent();
     }
 
@@ -156,7 +184,7 @@ class LoginEndToEndTest extends TestCase
             'email' => 'admin@portalkebumen.test',
         ]);
 
-        $response->assertSessionHas('status', trans(Password::RESET_LINK_SENT));
+        $response->assertSessionHas('status', self::RESET_STATUS);
         Mail::assertSent(ResetPasswordMail::class, function (ResetPasswordMail $mail) use ($user): bool {
             return $mail->hasTo('admin@portalkebumen.test')
                 && $mail->user->is($user);
@@ -171,7 +199,7 @@ class LoginEndToEndTest extends TestCase
         ]);
         $token = Password::createToken($user);
 
-        $response = $this->post(route('password.update'), [
+        $response = $this->post(route('password.store'), [
             'token' => $token,
             'email' => 'admin@portalkebumen.test',
             'password' => 'new-secure-password',
@@ -189,7 +217,7 @@ class LoginEndToEndTest extends TestCase
             'password' => 'old-password',
         ]);
 
-        $response = $this->post(route('password.update'), [
+        $response = $this->post(route('password.store'), [
             'token' => 'invalid-token',
             'email' => 'admin@portalkebumen.test',
             'password' => 'new-secure-password',
