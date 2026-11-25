@@ -3,6 +3,7 @@
 namespace App\Livewire\Admin;
 
 use App\Livewire\Concerns\HandlesArticleMedia;
+use App\Livewire\Concerns\HandlesArticleTagsAndSeo;
 use App\Models\Article;
 use App\Models\ArticleStatus;
 use App\Models\Category;
@@ -17,6 +18,7 @@ use Illuminate\Validation\ValidationException;
 class ArticleCreate extends Component
 {
     use HandlesArticleMedia;
+    use HandlesArticleTagsAndSeo;
 
     public ?Article $article = null;
     public string $title = '';
@@ -35,7 +37,7 @@ class ArticleCreate extends Component
 
     public function rules(): array
     {
-        return [
+        return $this->tagRules() + [
             'title' => 'required|string|max:255',
             'slug' => 'required|string|unique:articles,slug|regex:/^[a-z0-9\-]+$/',
             'excerpt' => 'nullable|string|max:500',
@@ -106,6 +108,7 @@ class ArticleCreate extends Component
                 ]);
 
                 $this->syncArticleMedia($article);
+                $this->syncArticleTags($article);
 
                 SeoMeta::create([
                     'article_id' => $article->id,

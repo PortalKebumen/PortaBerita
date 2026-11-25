@@ -96,6 +96,31 @@ class DashboardController extends Controller
             }
         }
 
+        // ===== Target terbit minggu ini (Senin–Minggu) =====
+        $publishTarget = null;
+        if ($user->can('articles.view')) {
+            $weekStart = Carbon::now()->startOfWeek();
+            $published = Article::query()
+                ->where('status', ArticleStatus::Published->value)
+                ->whereBetween('published_at', [$weekStart, Carbon::now()]);
+            $lastWeek = Article::query()
+                ->where('status', ArticleStatus::Published->value)
+                ->whereBetween('published_at', [$weekStart->copy()->subWeek(), $weekStart->copy()->subSecond()])
+                ->count();
+
+            $publishTarget = [
+                'target' => max(1, (int) (\App\Models\SiteSetting::get('weekly_article_target') ?: 7)),
+                'done' => (clone $published)->count(),
+                'last_week' => $lastWeek,
+                'days_left' => (int) Carbon::now()->diffInDays($weekStart->copy()->endOfWeek()->startOfDay()),
+                'week_label' => $weekStart->translatedFormat('d M') . '–' . $weekStart->copy()->endOfWeek()->translatedFormat('d M Y'),
+                // Rincian per penulis hanya untuk yang boleh melihat semua artikel
+                'by_author' => $user->can('articles.view-any')
+                    ? (clone $published)->with('author:id,name')->get()->groupBy(fn ($a) => $a->author?->name ?? 'Tanpa penulis')->map->count()->sortDesc()
+                    : collect(),
+            ];
+        }
+
         // ===== Analitik 14 hari (redaktur: seluruh situs; penulis: artikel miliknya) =====
         $contentAnalytics = null;
         if ($user->can('articles.view')) {
@@ -120,6 +145,7 @@ class DashboardController extends Controller
 
         return view('admin.dashboard', [
             'contentAnalytics' => $contentAnalytics,
+            'publishTarget' => $publishTarget,
             'adsAnalytics' => $adsAnalytics,
             'totalPengguna' => $user->can('users.view') ? User::count() : null,
             'totalIklanAktif' => $totalIklanAktif,

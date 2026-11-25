@@ -76,4 +76,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );
+
+        // Error di production dikirim ke email & lonceng admin (dibatasi, lihat ErrorNotifier); tetap dicatat di log
+        $exceptions->report(fn (\Throwable $e) => \App\Support\ErrorNotifier::notify($e));
     })->create();

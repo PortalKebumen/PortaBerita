@@ -186,12 +186,14 @@
 
         <div class="mb-5">
             <label class="form-label">Ringkasan (Excerpt)</label>
-            <textarea wire:model="excerpt"
+            <textarea wire:model.blur="excerpt"
                 placeholder="Ringkasan singkat untuk tampilan kartu berita..."
                 rows="2"
                 class="form-textarea @error('excerpt') is-error @enderror"></textarea>
             @error('excerpt') <p class="form-error-text">{{ $message }}</p> @enderror
         </div>
+
+        @include('livewire.admin.partials.article-tags-field')
 
         <div class="mb-5">
             <label class="form-label">Gambar Sampul</label>
@@ -267,6 +269,8 @@
         @endif
 
         {{-- Pengaturan SEO (collapsible) --}}
+        @include('livewire.admin.partials.article-seo-checklist')
+
         <details class="border border-[#E4E8EF] rounded-lg mb-5">
             <summary class="cursor-pointer px-4 py-3 text-[13px] font-semibold text-[#171B28] hover:bg-[#F7F8FA] transition-colors rounded-t-lg">
                 Pengaturan SEO
@@ -285,7 +289,7 @@
 
                 <div>
                     <label class="form-label">Meta Description</label>
-                    <textarea wire:model="meta_description"
+                    <textarea wire:model.blur="meta_description"
                         placeholder="Deskripsi untuk mesin pencari (maks. 160 karakter)"
                         maxlength="160"
                         rows="2"

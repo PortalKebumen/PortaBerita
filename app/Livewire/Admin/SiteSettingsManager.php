@@ -29,6 +29,7 @@ class SiteSettingsManager extends Component
     public string $address = '';
     public string $timezone = 'Asia/Jakarta';
     public string $locale = 'id';
+    public int $weeklyArticleTarget = 7;
 
     // SEO
     public string $metaTitle = '';
@@ -76,6 +77,7 @@ class SiteSettingsManager extends Component
             'address' => 'nullable|string|max:255',
             'timezone' => 'required|in:Asia/Jakarta,Asia/Makassar,Asia/Jayapura',
             'locale' => 'required|in:id,en',
+            'weeklyArticleTarget' => 'required|integer|min:1|max:200',
 
             'metaTitle' => 'nullable|string|max:70',
             'metaDescription' => 'nullable|string|max:160',
@@ -189,6 +191,7 @@ class SiteSettingsManager extends Component
                 'address' => $this->address ?: null,
                 'timezone' => $this->timezone,
                 'locale' => $this->locale,
+                'weekly_article_target' => (string) $this->weeklyArticleTarget,
                 'logo' => $logo,
                 'meta_title' => $this->metaTitle ?: null,
                 'meta_description' => $this->metaDescription ?: null,
@@ -420,6 +423,7 @@ class SiteSettingsManager extends Component
         $this->address = (string) $s['address'];
         $this->timezone = (string) ($s['timezone'] ?: 'Asia/Jakarta');
         $this->locale = (string) ($s['locale'] ?: 'id');
+        $this->weeklyArticleTarget = max(1, (int) ($s['weekly_article_target'] ?: 7));
 
         $this->metaTitle = (string) $s['meta_title'];
         $this->metaDescription = (string) $s['meta_description'];

@@ -3,6 +3,7 @@
 namespace App\Livewire\Admin;
 
 use App\Livewire\Concerns\HandlesArticleMedia;
+use App\Livewire\Concerns\HandlesArticleTagsAndSeo;
 use App\Models\Article;
 use Illuminate\Support\Facades\Gate;
 use App\Models\Category;
@@ -17,6 +18,7 @@ use Illuminate\Validation\ValidationException;
 class ArticleEdit extends Component
 {
     use HandlesArticleMedia;
+    use HandlesArticleTagsAndSeo;
 
     public Article $article;
 
@@ -37,7 +39,7 @@ class ArticleEdit extends Component
 
     public function rules(): array
     {
-        return [
+        return $this->tagRules() + [
             'title' => 'required|string|max:255',
             'slug' => 'required|string|unique:articles,slug,' . $this->article->id . '|regex:/^[a-z0-9\-]+$/',
             'excerpt' => 'nullable|string|max:500',
@@ -95,6 +97,8 @@ class ArticleEdit extends Component
         $featured = $article->getFirstMedia('featured');
         $this->featured_image_id = $featured?->id;
         $this->featured_image_url = $featured?->getUrl('medium');
+
+        $this->loadArticleTags($article);
 
         $og = $article->getFirstMedia('og');
         $this->og_image_id = $og?->id;
@@ -156,6 +160,7 @@ class ArticleEdit extends Component
                 ]);
 
                 $this->syncArticleMedia($this->article);
+                $this->syncArticleTags($this->article);
 
                 $seoMeta = $this->article->seoMeta ?: new SeoMeta(['article_id' => $this->article->id]);
                 $canIndex = Gate::check('seo.set-indexing');

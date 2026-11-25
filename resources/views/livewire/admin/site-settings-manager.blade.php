@@ -93,6 +93,12 @@
                             </select>
                             @error('locale') <p class="form-error-text">{{ $message }}</p> @enderror
                         </div>
+                        <div>
+                            <label class="form-label">Target artikel terbit per minggu</label>
+                            <input type="number" min="1" max="200" wire:model="weeklyArticleTarget" class="form-input @error('weeklyArticleTarget') is-error @enderror">
+                            <p class="mt-1 text-[11.5px] text-[#848CA3]">Ditampilkan di dasbor sebagai pengingat ritme terbit.</p>
+                            @error('weeklyArticleTarget') <p class="form-error-text">{{ $message }}</p> @enderror
+                        </div>
                     </div>
                 </div>
             </div>

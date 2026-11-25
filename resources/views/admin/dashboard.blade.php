@@ -44,6 +44,42 @@
         @endcan
     </div>
 
+    {{-- ===== Target terbit minggu ini ===== --}}
+    @if ($publishTarget)
+        @php
+            $pt = $publishTarget;
+            $percent = min(100, (int) round($pt['done'] / $pt['target'] * 100));
+            $remaining = max(0, $pt['target'] - $pt['done']);
+        @endphp
+        <div class="bg-white border border-[#E4E8EF] rounded-2xl px-5 py-4 shadow-sm mb-6">
+            <div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+                <div class="text-[13px] font-semibold text-[#171B28]">
+                    Target terbit minggu ini
+                    <span class="font-normal text-[#848CA3]">({{ $pt['week_label'] }})</span>
+                </div>
+                <div class="text-[13px] text-[#3B4152]">
+                    <span class="text-[18px] font-semibold text-[#171B28]">{{ $pt['done'] }}</span> dari {{ $pt['target'] }} artikel
+                </div>
+            </div>
+            <div class="mt-2 h-2 rounded-full bg-[#EEF0F4] overflow-hidden" role="progressbar" aria-valuenow="{{ $pt['done'] }}" aria-valuemin="0" aria-valuemax="{{ $pt['target'] }}">
+                <div class="h-full rounded-full {{ $percent >= 100 ? 'bg-success' : 'bg-brand-600' }}" style="width: {{ $percent }}%"></div>
+            </div>
+            <div class="mt-2 text-[12px] text-[#6C7387]">
+                @if ($remaining === 0)
+                    Target tercapai.
+                @else
+                    Kurang {{ $remaining }} artikel, sisa {{ $pt['days_left'] }} hari.
+                @endif
+                Minggu lalu: {{ $pt['last_week'] }} artikel.
+                @if ($pt['by_author']->isNotEmpty())
+                    <span class="block sm:inline sm:ml-1">
+                        Per penulis: {{ $pt['by_author']->map(fn ($n, $name) => $name . ' ' . $n)->implode(', ') }}.
+                    </span>
+                @endif
+            </div>
+        </div>
+    @endif
+
     {{-- ===== Ringkasan analitik 14 hari ===== --}}
     @if ($contentAnalytics)
         @php $ca = $contentAnalytics; @endphp

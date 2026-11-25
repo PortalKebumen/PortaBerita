@@ -20,6 +20,7 @@ class SiteSetting
             'address' => null,
             'timezone' => 'Asia/Jakarta',
             'locale' => 'id',
+            'weekly_article_target' => 7, // target artikel terbit per minggu (kartu di dasbor)
             'logo' => null,        // path relatif di disk public
             'meta_title' => 'PortalKebumen.com - Kabar Terkini Seputar Kebumen',
             'meta_description' => 'Berita terkini, terpercaya, dan mendalam seputar Kabupaten Kebumen - pemerintahan, ekonomi, olahraga, dan potensi daerah.',
